@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { MessageCircle, Share2 } from "lucide-react";
+import LinkedInIcon from "./linkedin-icon";
 
 const SITE_URL = "https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/";
 const MESSAGES = {
-  linkedin: `Te invito a conocer Cuenta pública, un proyecto independiente creado por Carlos Orozco para visualizar el tiempo restante del mandato presidencial, reunir noticias nacionales e internacionales con fuentes trazables y facilitar una participación ciudadana responsable.\n\nExplora el contador, los indicadores, la metodología y el archivo documental.\n\n#Transparencia #Datos #Colombia`,
+  linkedin: `Te invito a conocer Cuenta pública, un proyecto independiente creado por Carlos Orozco (https://www.linkedin.com/in/corozco9408/) para visualizar el tiempo restante del mandato presidencial, reunir noticias nacionales e internacionales con fuentes trazables y facilitar una participación ciudadana responsable.\n\nExplora el contador, los indicadores, la metodología y el archivo documental.\n\n#Transparencia #Datos #Colombia`,
   whatsapp: `Te comparto Cuenta pública 👇\n\nEs un proyecto independiente creado por Carlos Orozco para consultar cuánto tiempo resta del mandato presidencial, revisar noticias con sus fuentes y participar enviando noticias u opiniones.\n\nPuedes verlo aquí:`,
   facebook: `Te invito a visitar Cuenta pública, un proyecto independiente creado por Carlos Orozco que busca hacer más visible y comprensible el seguimiento del mandato presidencial.\n\nEl sitio reúne un contador en tiempo real, noticias nacionales e internacionales, fuentes consultables, indicadores de opinión y espacios de participación ciudadana.\n\nConócelo, revisa sus fuentes y compártelo con quien pueda interesarle.`,
   x: "Conoce Cuenta pública: contador del mandato presidencial, noticias con fuentes, indicadores y participación ciudadana. Un proyecto independiente creado por Carlos Orozco.",
@@ -39,7 +40,7 @@ export default function SocialShare() {
     <section className="share-site" aria-labelledby="share-site-title">
       <div><p className="section-kicker">COMPARTE EL PROYECTO</p><h2 id="share-site-title">Ayuda a que más personas lo conozcan.</h2></div>
       <div className="share-actions">
-        <button onClick={shareLinkedIn}><b aria-hidden="true">in</b> LinkedIn</button>
+        <button onClick={shareLinkedIn}><LinkedInIcon size={17} aria-hidden="true" /> LinkedIn</button>
         <button onClick={() => open(`https://wa.me/?text=${encodeURIComponent(`${MESSAGES.whatsapp}\n\n${SITE_URL}`)}`)}><MessageCircle size={17} /> WhatsApp</button>
         <button onClick={() => open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(MESSAGES.x)}&url=${encodeURIComponent(SITE_URL)}`)}>𝕏 X</button>
         <button onClick={shareFacebook}>f Facebook</button>

@@ -166,6 +166,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .review-summary span { color: rgba(255,255,255,.62); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
 .review-summary strong { font-family: Georgia, serif; font-size: 28px; font-weight: 400; }
 .review-summary > p { align-self: center; padding: 0 24px; color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.5; }
+.news-controls { display: grid; grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr) auto; gap: 10px; align-items: stretch; margin-top: 18px; }
+.news-controls label { min-height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 13px; border: 1px solid rgba(255,255,255,.2); }
+.news-controls input, .news-controls select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--white); font: inherit; font-size: 13px; }
+.news-controls option { color: var(--ink); }
+.news-controls > span { min-height: 46px; display: flex; align-items: center; gap: 5px; padding: 0 14px; border: 1px solid rgba(230,255,94,.38); color: rgba(255,255,255,.62); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.news-controls > span strong { color: var(--citrus); font-size: 16px; }
 .monitor-group { margin-top: 54px; }
 .monitor-group + .monitor-group { margin-top: 76px; }
 .monitor-scope { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 3px solid var(--citrus); }
@@ -187,6 +193,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .news-card-bottom span { color: var(--citrus); }
 .news-card-bottom > div { display: flex; gap: 7px; }
 .news-card-bottom a, .news-card-bottom button { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--white); cursor: pointer; }
+.news-more { min-height: 46px; margin: 30px auto 0; padding: 0 18px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(230,255,94,.55); background: transparent; color: var(--citrus); font-size: 11px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; }
+.news-more:hover { background: var(--citrus); color: var(--ink); }
 .monitor-check { display: flex; align-items: flex-start; gap: 8px; margin: 34px 0 0; color: rgba(255,255,255,.52); font-size: 12px; line-height: 1.55; }
 .monitor-check svg { flex: 0 0 auto; margin-top: 2px; color: var(--citrus); }
 .global-radar { margin-top: 78px; padding-top: 42px; border-top: 1px solid rgba(255,255,255,.18); }
@@ -436,6 +444,8 @@ footer > span { text-align: right; }
   .news-grid { grid-template-columns: repeat(2, 1fr); }
   .review-summary { grid-template-columns: repeat(3, 1fr); }
   .review-summary > p { grid-column: 1 / 4; margin: 0; padding: 17px 20px; border-top: 1px solid rgba(255,255,255,.16); }
+  .news-controls { grid-template-columns: 2fr 1fr; }
+  .news-controls > span { grid-column: 1 / 3; }
   .radar-stats { grid-template-columns: repeat(3, 1fr); }
   .radar-stats > div { border-bottom: 1px solid rgba(255,255,255,.16); }
   .radar-grid { grid-template-columns: repeat(2, 1fr); }
@@ -494,6 +504,9 @@ footer > span { text-align: right; }
   .review-summary { grid-template-columns: 1fr; }
   .review-summary > div { min-height: 66px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.16); }
   .review-summary > p { grid-column: auto; border-top: 0; }
+  .news-controls { grid-template-columns: 1fr; }
+  .news-controls > span { grid-column: auto; }
+  .decision-row { flex-wrap: wrap; }
   .radar-heading { flex-direction: column; }
   .radar-stats, .radar-grid { grid-template-columns: 1fr; }
   .community-forms, .form-row { grid-template-columns: 1fr; }

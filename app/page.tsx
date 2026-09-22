@@ -8,11 +8,9 @@ import {
   CircleX,
   Clock3,
   ExternalLink,
-  FileCheck2,
   Flag,
   Globe2,
   History,
-  Landmark,
   Leaf,
   Link2,
   Menu,
@@ -36,6 +34,7 @@ type NewsItem = {
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: "Nacional" | "Internacional";
   category: string;
+  stage: "Campaña" | "Transición" | "Presidencia";
   decision: "Admitido" | "Corregido";
   decisionReason: string;
   evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
@@ -231,6 +230,9 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState("Todos");
   const [processFilter, setProcessFilter] = useState("Todos");
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsQuery, setNewsQuery] = useState("");
+  const [newsStage, setNewsStage] = useState("Todas");
+  const [newsLimit, setNewsLimit] = useState(6);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [sourceDirectory, setSourceDirectory] = useState<SourceEntry[]>([]);
   const [globalRadar, setGlobalRadar] = useState<GlobalRadarItem[]>([]);
@@ -243,7 +245,8 @@ export default function Home() {
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    setEcoMode(window.localStorage.getItem("cuenta-publica-eco") === "true");
+    const storedEcoMode = window.localStorage.getItem("cuenta-publica-eco") === "true";
+    window.requestAnimationFrame(() => setEcoMode(storedEcoMode));
   }, []);
 
   useEffect(() => {
@@ -292,8 +295,15 @@ export default function Home() {
 
   const nationalRecords = filtered.filter((item) => item.scope === "Nacional");
   const internationalRecords = filtered.filter((item) => item.scope === "Internacional");
-  const nationalNews = news.filter((item) => item.scope === "Nacional").slice(0, 6);
-  const internationalNews = news.filter((item) => item.scope === "Internacional").slice(0, 6);
+  const filteredNews = news.filter((item) => {
+    const stageMatches = newsStage === "Todas" || item.stage === newsStage;
+    const text = `${item.title} ${item.source} ${item.category}`.toLocaleLowerCase("es");
+    return stageMatches && (!newsQuery.trim() || text.includes(newsQuery.trim().toLocaleLowerCase("es")));
+  });
+  const nationalNewsAll = filteredNews.filter((item) => item.scope === "Nacional");
+  const internationalNewsAll = filteredNews.filter((item) => item.scope === "Internacional");
+  const nationalNews = nationalNewsAll.slice(0, newsLimit);
+  const internationalNews = internationalNewsAll.slice(0, newsLimit);
   const categories = Array.from(new Set(records.map((item) => item.category)));
   const processStatuses = Array.from(new Set(records.map((item) => item.processStatus)));
   const officialRecords = records.filter((item) => item.evidenceLevel === "Documento oficial").length;
@@ -460,7 +470,7 @@ export default function Home() {
           </div>
         </div>
         <div className="timeline-filters" aria-label="Filtros de la cronología">
-          <label>Año<select value={year} onChange={(event) => setYear(event.target.value)}><option>Todos</option>{["2026", "2027", "2028", "2029", "2030"].map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Año<select value={year} onChange={(event) => setYear(event.target.value)}><option>Todos</option>{["2025", "2026", "2027", "2028", "2029", "2030"].map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Tema<select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Todos</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Estado procesal<select value={processFilter} onChange={(event) => setProcessFilter(event.target.value)}><option>Todos</option>{processStatuses.map((item) => <option key={item}>{item}</option>)}</select></label>
           <span>{filtered.length} {filtered.length === 1 ? "hecho" : "hechos"}</span>
@@ -519,9 +529,9 @@ export default function Home() {
           <div>
             <p className="section-kicker">02 / MONITOREO DIARIO</p>
             <h2>En observación</h2>
-            <p>Resultados recientes de instituciones y canales informativos de Colombia y del exterior. Son pistas de lectura, no conclusiones editoriales.</p>
+            <p>Cobertura nacional e internacional desde el inicio de la campaña presidencial, el 16 de julio de 2025. Son pistas de lectura con fuente original, no conclusiones editoriales.</p>
           </div>
-          <span className="update-pill"><i /> Actualización cada 24 horas</span>
+          <span className="update-pill"><i /> Revisión varias veces al día</span>
         </div>
         {reviewStats && (
           <div className="review-summary" aria-label="Resultado de la revisión automática">
@@ -529,6 +539,13 @@ export default function Home() {
             <div><PencilLine size={18} /><span>Corregidos</span><strong>{reviewStats.corrected}</strong></div>
             <div><CircleX size={18} /><span>Rechazados</span><strong>{reviewStats.rejected}</strong></div>
             <p>Política editorial v{reviewStats.policyVersion} · Los rechazados no se publican.</p>
+          </div>
+        )}
+        {newsState === "ready" && (
+          <div className="news-controls" role="search" aria-label="Filtrar noticias monitoreadas">
+            <label><Search size={17} /><span className="sr-only">Buscar noticia o fuente</span><input value={newsQuery} onChange={(event) => { setNewsQuery(event.target.value); setNewsLimit(6); }} placeholder="Buscar titular, medio o tema" /></label>
+            <label><History size={17} /><span className="sr-only">Filtrar por etapa</span><select value={newsStage} onChange={(event) => { setNewsStage(event.target.value); setNewsLimit(6); }}><option>Todas</option><option>Campaña</option><option>Transición</option><option>Presidencia</option></select></label>
+            <span><strong>{filteredNews.length}</strong> resultados · desde 16 jul 2025</span>
           </div>
         )}
         {newsState === "loading" && <div className="news-message">Consultando cobertura reciente…</div>}
@@ -540,8 +557,8 @@ export default function Home() {
             <div className="news-grid">
               {nationalNews.map((item) => (
                 <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
-                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
-                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.category}</span></div>
+                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.stage}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
@@ -558,8 +575,8 @@ export default function Home() {
             <div className="news-grid">
               {internationalNews.map((item) => (
                 <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
-                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
-                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.category}</span></div>
+                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.stage}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
@@ -569,6 +586,9 @@ export default function Home() {
               ))}
             </div>
           </div>
+        )}
+        {(nationalNewsAll.length > newsLimit || internationalNewsAll.length > newsLimit) && (
+          <button className="news-more" onClick={() => setNewsLimit((current) => current + 6)}><ChevronDown size={17} /> Mostrar más noticias</button>
         )}
         {globalStats && (
           <div className="global-radar" id="radar-mundial">

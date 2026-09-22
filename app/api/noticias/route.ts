@@ -13,6 +13,7 @@ type BaseNews = {
 type CandidateNews = BaseNews & { trustedSource: boolean; curated?: boolean; country?: string; language?: string; domain?: string };
 type PublicNews = BaseNews & {
   category: string;
+  stage: "Campaña" | "Transición" | "Presidencia";
   decision: "Admitido" | "Corregido";
   decisionReason: string;
   evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
@@ -24,6 +25,11 @@ type PublicNews = BaseNews & {
 };
 
 export type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string; country?: string; region?: string };
+
+const CAMPAIGN_START = "2025-07-16T00:00:00-05:00";
+const ELECTION_DAY = new Date("2026-06-21T23:59:59-05:00").getTime();
+const INAUGURATION_DAY = new Date("2026-08-07T00:00:00-05:00").getTime();
+const SUBJECT_PATTERN = /abelardo(?:\s+gabriel)?\s+de\s+la\s+espriella|de\s+la\s+espriella|defensores\s+de\s+la\s+patria/i;
 
 const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "presidencia.gov.co", scope: "Nacional", official: true, label: "Presidencia de Colombia" },
@@ -50,6 +56,9 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "lasillavacia.com", scope: "Nacional", label: "La Silla Vacía" },
   { domain: "cuestionpublica.com", scope: "Nacional", label: "Cuestión Pública" },
   { domain: "noticiasrcn.com", scope: "Nacional", label: "Noticias RCN" },
+  { domain: "eluniversal.com.co", scope: "Nacional", label: "El Universal", country: "Colombia", region: "Colombia" },
+  { domain: "semana.com", scope: "Nacional", label: "Semana", country: "Colombia", region: "Colombia" },
+  { domain: "wradio.com.co", scope: "Nacional", label: "W Radio", country: "Colombia", region: "Colombia" },
   { domain: "state.gov", scope: "Internacional", official: true, label: "Departamento de Estado de EE. UU." },
   { domain: "whitehouse.gov", scope: "Internacional", official: true, label: "Casa Blanca" },
   { domain: "oas.org", scope: "Internacional", official: true, label: "OEA" },
@@ -62,6 +71,7 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "france24.com", scope: "Internacional", label: "France 24" },
   { domain: "cnn.com", scope: "Internacional", label: "CNN en Español" },
   { domain: "elpais.com", scope: "Internacional", label: "El País" },
+  { domain: "efe.com", scope: "Internacional", label: "Agencia EFE", country: "España", region: "Europa" },
   { domain: "theguardian.com", scope: "Internacional", label: "The Guardian" },
   { domain: "aljazeera.com", scope: "Internacional", label: "Al Jazeera" },
   { domain: "lanacion.com.ar", scope: "Internacional", label: "La Nación", country: "Argentina", region: "América Latina" },
@@ -138,6 +148,33 @@ const SOURCE_PROFILES: SourceProfile[] = [
 
 const CURATED_CHANNELS: BaseNews[] = [
   {
+    id: "campana-caracol-anuncio",
+    title: "Abelardo de la Espriella confirmó su candidatura presidencial y el inicio de la recolección de firmas",
+    source: "Caracol Radio",
+    url: "https://caracol.com.co/2025/07/17/no-me-arrodillo-peleo-abelardo-de-la-espriella-confirma-su-candidatura-presidencial-para-2026/?outputType=amp",
+    publishedAt: "2025-07-17T06:00:00-05:00",
+    kind: "Cobertura periodística",
+    scope: "Nacional",
+  },
+  {
+    id: "campana-elpais-convencion",
+    title: "El candidato Abelardo de la Espriella reunió a sus seguidores en la convención de Defensores de la Patria",
+    source: "El País",
+    url: "https://elpais.com/america-colombia/2025-11-04/el-candidato-ultra-abelardo-de-la-espriella-se-da-un-bano-de-masas-en-un-congreso-en-bogota-el-tigre-ha-despertado.html",
+    publishedAt: "2025-11-04T06:00:00+01:00",
+    kind: "Cobertura periodística",
+    scope: "Internacional",
+  },
+  {
+    id: "campana-efe-firmas",
+    title: "De la Espriella entregó firmas para avalar su candidatura presidencial",
+    source: "Agencia EFE",
+    url: "https://efe.com/mundo/2025-12-04/candidato-abelardo-de-la-espriella-colombia-presidencia-campana/",
+    publishedAt: "2025-12-04T12:00:00-05:00",
+    kind: "Cobertura periodística",
+    scope: "Internacional",
+  },
+  {
     id: "nacional-caracol-justicia",
     title: "El presidente se pronunció sobre decisiones judiciales durante una alocución",
     source: "Noticias Caracol",
@@ -209,6 +246,13 @@ function classify(title: string) {
   return CATEGORY_RULES.find(({ pattern }) => pattern.test(title))?.label ?? "Gobierno";
 }
 
+function stageFor(publishedAt: string): PublicNews["stage"] {
+  const timestamp = Date.parse(publishedAt);
+  if (timestamp <= ELECTION_DAY) return "Campaña";
+  if (timestamp < INAUGURATION_DAY) return "Transición";
+  return "Presidencia";
+}
+
 function normalizeTitle(title: string) {
   return title.trim().replace(/\s+/g, " ").replace(/([!?])\1+/g, "$1");
 }
@@ -228,17 +272,28 @@ function reviewCandidate(candidate: CandidateNews) {
   if (!/^https:\/\//i.test(candidate.url) || Number.isNaN(Date.parse(candidate.publishedAt))) {
     return { decision: "Rechazado" as const, reason: "El enlace o la fecha no permiten verificar el hallazgo." };
   }
-  if (!candidate.curated && !/abelardo|espriella/i.test(candidate.title)) {
+  if (!candidate.curated && !SUBJECT_PATTERN.test(candidate.title)) {
     return { decision: "Rechazado" as const, reason: "El título no tiene relación directa con la persona monitoreada." };
   }
 
   const correctedTitle = normalizeTitle(candidate.title);
   const corrected = correctedTitle !== candidate.title;
-  const { trustedSource: _trustedSource, curated: _curated, ...publishable } = candidate;
+  const publishable = {
+    id: candidate.id,
+    title: candidate.title,
+    source: candidate.source,
+    url: candidate.url,
+    publishedAt: candidate.publishedAt,
+    kind: candidate.kind,
+    scope: candidate.scope,
+    country: candidate.country,
+    language: candidate.language,
+  };
   const item: PublicNews = {
     ...publishable,
     title: correctedTitle,
     category: classify(correctedTitle),
+    stage: stageFor(candidate.publishedAt),
     decision: corrected ? "Corregido" : "Admitido",
     decisionReason: corrected
       ? "Se normalizó únicamente la forma del titular; el enlace original permanece disponible."
@@ -310,8 +365,8 @@ async function checkLink(item: PublicNews): Promise<PublicNews> {
 
 async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
-    q: '"Abelardo de la Espriella"',
-    language: "es",
+    q: '("Abelardo de la Espriella" OR "De la Espriella" OR "Defensores de la Patria")',
+    from: CAMPAIGN_START.slice(0, 10),
     sortBy: "publishedAt",
     pageSize: "100",
   });
@@ -326,7 +381,7 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
       const hostname = new URL(url).hostname;
       const profile = profileFor(hostname);
       const title = String(article.title ?? "Sin título");
-      if (!/abelardo|espriella/i.test(title)) return [];
+      if (!SUBJECT_PATTERN.test(title)) return [];
       return [{
         id: idFor(url),
         title,
@@ -346,7 +401,7 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
 
 async function fromGdelt(): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
-    query: '("Abelardo de la Espriella" OR "Abelardo De La Espriella" OR "De la Espriella")',
+    query: '("Abelardo de la Espriella" OR "Abelardo Gabriel de la Espriella" OR "De la Espriella" OR "Defensores de la Patria")',
     mode: "ArtList",
     maxrecords: "250",
     format: "json",
@@ -363,7 +418,7 @@ async function fromGdelt(): Promise<CandidateNews[]> {
       const hostname = new URL(url).hostname;
       const profile = profileFor(hostname);
       const title = String(article.title ?? "Sin título");
-      if (!/abelardo|espriella/i.test(title)) return [];
+      if (!SUBJECT_PATTERN.test(title)) return [];
       return [{
         id: idFor(url),
         title,
@@ -381,16 +436,82 @@ async function fromGdelt(): Promise<CandidateNews[]> {
   });
 }
 
+function decodeXml(value: string) {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function xmlTag(item: string, tag: string) {
+  return decodeXml(item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1]?.trim() ?? "");
+}
+
+async function fromGoogleNews(): Promise<CandidateNews[]> {
+  const feedsToSearch = [
+    { query: '"Abelardo de la Espriella" after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-07-15 before:2026-01-01', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-12-31 before:2026-08-07', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "en-US", gl: "US", ceid: "US:en" },
+    { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "es", gl: "ES", ceid: "ES:es" },
+  ];
+  const feeds = await Promise.allSettled(feedsToSearch.map(async ({ query, hl, gl, ceid }) => {
+    const params = new URLSearchParams({ q: query, hl, gl, ceid });
+    const response = await fetch(`https://news.google.com/rss/search?${params}`, {
+      headers: { "User-Agent": "CuentaPublica/1.3 (documentary monitoring)" },
+    });
+    if (!response.ok) throw new Error(`Google News RSS ${response.status}`);
+    return response.text();
+  }));
+
+  return feeds.flatMap((feed) => {
+    if (feed.status !== "fulfilled") return [];
+    return [...feed.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => {
+      try {
+        const item = match[1];
+        const title = normalizeTitle(xmlTag(item, "title").replace(/\s+-\s+[^-]+$/, ""));
+        if (!SUBJECT_PATTERN.test(title)) return [];
+        const url = xmlTag(item, "link");
+        const sourceMatch = item.match(/<source[^>]*url="([^"]+)"[^>]*>([\s\S]*?)<\/source>/i);
+        const sourceUrl = decodeXml(sourceMatch?.[1] ?? "");
+        const hostname = new URL(sourceUrl || url).hostname;
+        const profile = profileFor(hostname);
+        const publishedAt = new Date(xmlTag(item, "pubDate")).toISOString();
+        if (Date.parse(publishedAt) < Date.parse(CAMPAIGN_START)) return [];
+        return [{
+          id: idFor(url),
+          title,
+          source: profile?.label ?? decodeXml(sourceMatch?.[2] ?? hostname),
+          url,
+          publishedAt,
+          kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+          scope: profile?.scope ?? "Internacional",
+          trustedSource: Boolean(profile),
+          country: profile?.country ?? (profile?.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+          language: "Español",
+          domain: hostname.replace(/^www\./, ""),
+        }];
+      } catch { return []; }
+    });
+  });
+}
+
 export async function GET() {
   let provider = "curated";
   let discovered: CandidateNews[] = [];
-  try {
-    const apiKey = process.env.NEWS_API_KEY;
-    discovered = apiKey ? await fromNewsApi(apiKey) : await fromGdelt();
-    provider = apiKey ? "NewsAPI" : "GDELT";
-  } catch (error) {
-    console.error("news-monitor", error);
-  }
+  const apiKey = process.env.NEWS_API_KEY;
+  const providers = [
+    { name: "Google News RSS", request: fromGoogleNews() },
+    { name: "GDELT", request: fromGdelt() },
+    ...(apiKey ? [{ name: "NewsAPI", request: fromNewsApi(apiKey) }] : []),
+  ];
+  const results = await Promise.allSettled(providers.map(({ request }) => request));
+  discovered = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  provider = providers.filter((_, index) => results[index].status === "fulfilled").map(({ name }) => name).join(" + ") || "curated";
+  results.forEach((result, index) => { if (result.status === "rejected") console.error("news-monitor", providers[index].name, result.reason); });
 
   const candidates = Array.from(
     new Map([
@@ -402,13 +523,22 @@ export async function GET() {
   const publishable = reviewed
     .flatMap((result) => result.item ? [result.item] : [])
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
-    .slice(0, 24);
-  const items = await Promise.all(groupCoverage(publishable).slice(0, 12).map(checkLink));
+    .slice(0, 600);
+  const grouped = groupCoverage(publishable);
+  const stageLimits: Record<PublicNews["stage"], number> = { Presidencia: 50, Transición: 50, Campaña: 80 };
+  const selected = (["Presidencia", "Transición", "Campaña"] as const)
+    .flatMap((stage) => grouped.filter((item) => item.stage === stage).slice(0, stageLimits[stage]))
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+  const checkedRecent = await Promise.all(selected.slice(0, 18).map(checkLink));
+  const items = [...checkedRecent, ...selected.slice(18).map((item) => ({
+    ...item,
+    linkCheck: { status: "No comprobado" as const, checkedAt: new Date().toISOString() },
+  }))];
   const review = {
     admitted: reviewed.filter(({ decision }) => decision === "Admitido").length,
     corrected: reviewed.filter(({ decision }) => decision === "Corregido").length,
     rejected: reviewed.filter(({ decision }) => decision === "Rechazado").length,
-    policyVersion: "1.1",
+    policyVersion: "1.2",
   };
   const sourceDirectory = SOURCE_PROFILES.map((profile) => ({
     domain: profile.domain,
@@ -451,7 +581,16 @@ export async function GET() {
   };
 
   return NextResponse.json(
-    { items, review, sourceDirectory, globalRadar, globalStats, updatedAt: new Date().toISOString(), provider },
-    { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } },
+    {
+      items,
+      review,
+      sourceDirectory,
+      globalRadar,
+      globalStats,
+      coverage: { startsAt: CAMPAIGN_START, stages: ["Campaña", "Transición", "Presidencia"] },
+      updatedAt: new Date().toISOString(),
+      provider,
+    },
+    { headers: { "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400" } },
   );
 }
