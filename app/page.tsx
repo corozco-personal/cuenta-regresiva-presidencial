@@ -11,6 +11,7 @@ import {
   Flag,
   Globe2,
   History,
+  Hourglass,
   Leaf,
   Link2,
   Menu,
@@ -187,6 +188,37 @@ const corrections = [
   { date: "22 sep 2026", item: "Etiqueta editorial", before: "Aprobado", after: "Admitido para monitoreo", reason: "Evitar que la admisión de una fuente se interprete como certificación de todas sus afirmaciones." },
   { date: "21 sep 2026", item: "Política de correcciones", before: "Sin registro público", after: "Bitácora pública incorporada", reason: "Hacer visibles los cambios editoriales y su justificación." },
 ];
+
+const campaignPromises = [
+  {
+    title: "Donar el salario presidencial",
+    status: "Cumplida",
+    detail: "El primer salario fue destinado a dos centros geriátricos afectados por el terremoto del Quindío.",
+    source: "Europa Press",
+    url: "https://www.europapress.es/internacional/noticia-espriella-cumple-promesa-renuncia-primer-sueldo-favor-dos-geriatricos-afectados-terremoto-20260913014550.html",
+  },
+  {
+    title: "Poner en marcha un plan de choque en salud",
+    status: "Pendiente",
+    detail: "La Presidencia anunció el inicio del plan; su resultado todavía requiere seguimiento verificable.",
+    source: "Presidencia de la República",
+    url: "https://www.presidencia.gov.co/prensa/Paginas/Declaracion-del-Presidente-de-la-Republica-Abelardo-De-La-Espriella-al-termino-260921.aspx",
+  },
+  {
+    title: "Recuperar territorios en los primeros 90 días",
+    status: "Pendiente",
+    detail: "El plazo de la promesa continúa abierto y no permite declarar un cumplimiento definitivo.",
+    source: "Programa de gobierno",
+    url: "https://defensoresdelapatria.com/wp-content/uploads/2026/04/PROPUESTAS-ABELARDO-DE-LA-ESPRIELLA-EL-TIGRE.pdf",
+  },
+  {
+    title: "Reducir la burocracia estatal en 40 %",
+    status: "Pendiente",
+    detail: "No existe todavía evidencia pública suficiente para marcar la meta como cumplida.",
+    source: "Programa de gobierno",
+    url: "https://propuestas.abelardopresidente.com.co/",
+  },
+] as const;
 
 const websiteJsonLd = {
   "@context": "https://schema.org",
@@ -401,57 +433,76 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
-          <div className="panel-topline">
-            <span>TIEMPO RESTANTE</span>
-            <span className="live-dot"><i /> {ecoMode ? "CADA MINUTO" : "EN VIVO"}</span>
-          </div>
-          <div className="countdown-grid">
-            {timeUnits.map(([value, label], index) => (
-              <div className={index === 0 ? "time-block featured" : "time-block"} key={label}>
-                <strong>{value}</strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mandate-progress">
-            <div className="progress-summary">
-              <span>Mandato transcurrido</span>
-              <strong>{progress.toFixed(1).replace(".", ",")}%</strong>
+        <div className="hero-dashboard">
+          <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
+            <div className="panel-topline">
+              <span>TIEMPO RESTANTE</span>
+              <span className="live-dot"><i /> {ecoMode ? "CADA MINUTO" : "EN VIVO"}</span>
             </div>
-            <div className="timeline-wrap">
-              <div
-                className="timeline-track"
-                role="progressbar"
-                aria-label="Porcentaje transcurrido del mandato"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Number(progress.toFixed(1))}
-              >
-                <span className="timeline-fill" style={{ width: `${progress}%` }} />
-                <span className="today-marker" style={{ left: `${progress}%` }}>
-                  <span className="today-label"><Flag size={13} aria-hidden="true" /> Hoy</span>
-                  <i aria-hidden="true" />
-                </span>
+            <div className="countdown-grid">
+              {timeUnits.map(([value, label], index) => (
+                <div className={index === 0 ? "time-block featured" : "time-block"} key={label}>
+                  <strong>{value}</strong>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mandate-progress">
+              <div className="progress-summary">
+                <span>Mandato transcurrido</span>
+                <strong>{progress.toFixed(1).replace(".", ",")}%</strong>
               </div>
-              <div className="timeline-milestones" aria-label="Hitos anuales del mandato">
-                {milestones.map((milestone, index) => (
-                  <div
-                    className={`milestone ${index === 0 ? "milestone-first" : ""} ${index === milestones.length - 1 ? "milestone-last" : ""}`}
-                    style={{ left: `${milestone.position}%` }}
-                    key={milestone.year}
-                  >
-                    <Flag size={15} aria-hidden="true" />
-                    <strong>{milestone.year}</strong>
-                    {milestone.label && <small>{milestone.label}</small>}
-                  </div>
-                ))}
+              <div className="timeline-wrap">
+                <div
+                  className="timeline-track"
+                  role="progressbar"
+                  aria-label="Porcentaje transcurrido del mandato"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Number(progress.toFixed(1))}
+                >
+                  <span className="timeline-fill" style={{ width: `${progress}%` }} />
+                  <span className="today-marker" style={{ left: `${progress}%` }}>
+                    <span className="today-label"><Flag size={13} aria-hidden="true" /> Hoy</span>
+                    <i aria-hidden="true" />
+                  </span>
+                </div>
+                <div className="timeline-milestones" aria-label="Hitos anuales del mandato">
+                  {milestones.map((milestone, index) => (
+                    <div
+                      className={`milestone ${index === 0 ? "milestone-first" : ""} ${index === milestones.length - 1 ? "milestone-last" : ""}`}
+                      style={{ left: `${milestone.position}%` }}
+                      key={milestone.year}
+                    >
+                      <Flag size={15} aria-hidden="true" />
+                      <strong>{milestone.year}</strong>
+                      {milestone.label && <small>{milestone.label}</small>}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+            <p className="countdown-note">
+              El cálculo usa la hora de Colombia y cuenta hasta el inicio del día. La hora oficial de transmisión de mando se actualizará cuando sea publicada.
+            </p>
           </div>
-          <p className="countdown-note">
-            El cálculo usa la hora de Colombia y cuenta hasta el inicio del día. La hora oficial de transmisión de mando se actualizará cuando sea publicada.
-          </p>
+
+          <aside className="promises-panel" aria-labelledby="promises-title">
+            <div className="promises-heading">
+              <div><span>SEGUIMIENTO</span><h2 id="promises-title">Promesas de campaña</h2></div>
+              <small>Revisión: 22 sep 2026</small>
+            </div>
+            <div className="promises-list">
+              {campaignPromises.map((promise) => (
+                <article className={`promise-item promise-${promise.status === "Cumplida" ? "done" : "pending"}`} key={promise.title}>
+                  <span className="promise-icon" aria-hidden="true">{promise.status === "Cumplida" ? <CheckCircle2 size={20} /> : <Hourglass size={19} />}</span>
+                  <div><strong>{promise.title}</strong><p>{promise.detail}</p><a href={promise.url} target="_blank" rel="noreferrer">{promise.source} <ExternalLink size={12} /></a></div>
+                  <small>{promise.status}</small>
+                </article>
+              ))}
+            </div>
+            <p className="promises-note">“Pendiente” también incluye metas cuyo plazo sigue abierto. El inicio de una acción no equivale a su cumplimiento.</p>
+          </aside>
         </div>
       </section>
 
