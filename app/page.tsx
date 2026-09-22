@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import Community from "./components/community";
+import SocialShare from "./components/social-share";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -348,6 +349,7 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
           <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
+          <a href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a>
           <a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
           <a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
@@ -432,6 +434,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <SocialShare />
 
       <section className="archive section-shell" id="archivo" hidden>
         <div className="section-heading">
