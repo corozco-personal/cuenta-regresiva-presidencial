@@ -360,20 +360,25 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
           <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
+          <a className="nav-priority nav-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Presidente</a>
+          <a className="nav-priority nav-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a>
+          <a className="nav-priority nav-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
             <div className="nav-more-panel">
-              <a href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+              <a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
             </div>
           </details>
         </nav>
-        <CompactPresence />
-        <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
-          <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
-        </button>
-        <button className="menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="Abrir menú">
-          {menuOpen ? <X size={21} /> : <Menu size={21} />}
-        </button>
+        <div className="header-actions">
+          <CompactPresence />
+          <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
+            <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
+          </button>
+          <button className="menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="Abrir menú">
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
       </header>
 
       <section className="hero" id="inicio">

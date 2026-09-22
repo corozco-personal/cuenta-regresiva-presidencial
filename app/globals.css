@@ -56,12 +56,14 @@ a { color: inherit; }
 .skip-link:focus { transform: translateY(0); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--citrus); outline-offset: 3px; }
 
-.site-header { height: 74px; padding: 0 clamp(20px, 5vw, 76px); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.18); color: var(--white); background: var(--forest); position: sticky; top: 0; z-index: 100; }
+.site-header { height: 74px; padding: 0 clamp(20px, 5vw, 76px); display: flex; align-items: center; gap: clamp(18px, 2.4vw, 34px); border-bottom: 1px solid rgba(255,255,255,.18); color: var(--white); background: var(--forest); position: sticky; top: 0; z-index: 100; }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 800; text-transform: uppercase; text-decoration: none; letter-spacing: -.02em; }
 .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid currentColor; border-radius: 50%; font-size: 12px; }
-.nav { display: flex; gap: 34px; font-size: 13px; text-transform: uppercase; letter-spacing: .09em; }
+.nav { margin-left: auto; display: flex; align-items: center; gap: clamp(16px, 2vw, 30px); font-size: 13px; text-transform: uppercase; letter-spacing: .09em; }
 .nav a { text-decoration: none; opacity: .76; transition: opacity .2s; }
 .nav a:hover { opacity: 1; }
+.nav-priority { display: none; }
+.header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
 .compact-presence { flex: 0 0 auto; min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.28); color: var(--white); text-decoration: none; }
 .compact-presence > span { width: 7px; height: 7px; border-radius: 50%; background: #62c88d; box-shadow: 0 0 0 4px rgba(98,200,141,.13); }
 .compact-presence strong { font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -80,6 +82,21 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .eco-button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.28); background: transparent; color: rgba(255,255,255,.74); padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
 .eco-button.active { color: var(--citrus); border-color: var(--citrus); }
 .menu-button { display: none; background: none; border: 0; color: inherit; }
+
+@media (min-width: 1100px) {
+  .nav-priority-2 { display: inline; }
+  .nav-more-panel .more-priority-2 { display: none; }
+}
+
+@media (min-width: 1250px) {
+  .nav-priority-3 { display: inline; }
+  .nav-more-panel .more-priority-3 { display: none; }
+}
+
+@media (min-width: 1420px) {
+  .nav-priority-4 { display: inline; }
+  .nav-more-panel .more-priority-4 { display: none; }
+}
 
 .hero { min-height: 620px; padding: clamp(48px, 5vw, 72px) clamp(20px, 7vw, 110px) clamp(70px, 7vw, 95px); display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: clamp(32px, 4vw, 44px); background: var(--forest); color: var(--white); overflow: hidden; position: relative; }
 .hero::after { content: ""; position: absolute; width: 560px; height: 560px; border: 1px solid rgba(230,255,94,.18); border-radius: 50%; right: -210px; bottom: -330px; box-shadow: 0 0 0 70px rgba(230,255,94,.025), 0 0 0 140px rgba(230,255,94,.018); }
@@ -597,8 +614,9 @@ footer > span { text-align: right; }
   .indicator-summary article { border-bottom: 1px solid var(--line); }
   .nav { gap: 18px; }
   .site-header { height: 66px; }
+  .header-actions { margin-left: auto; }
   .menu-button { display: block; order: 3; }
-  .eco-button { margin-left: auto; }
+  .eco-button { margin-left: 0; }
   .nav { display: none; position: absolute; top: 66px; left: 0; right: 0; padding: 24px; background: var(--forest); border-top: 1px solid rgba(255,255,255,.15); flex-direction: column; gap: 22px; }
   .nav-open { display: flex; }
   .nav .nav-more { width: 100%; }
@@ -664,7 +682,7 @@ footer > span { text-align: right; }
   .compact-presence { padding: 0 8px; }
   .compact-presence small { display: inline; font-size: 8px; }
   .menu-button { display: block; order: 3; }
-  .eco-button { margin-left: auto; }
+  .eco-button { margin-left: 0; }
   .nav { display: none; position: absolute; top: 66px; left: 0; right: 0; padding: 24px; background: var(--forest); border-top: 1px solid rgba(255,255,255,.15); flex-direction: column; gap: 22px; }
   .nav-open { display: flex; }
   .hero { min-height: auto; padding-top: 70px; padding-bottom: 80px; gap: 55px; }
