@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, ne } from "drizzle-orm";
 import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { newsSubmissions } from "../../../db/schema";
@@ -29,7 +29,9 @@ function normalizeUrl(raw: string) {
 
 export async function GET() {
   try {
-    const rows = await getDb().select().from(newsSubmissions).orderBy(desc(newsSubmissions.createdAt)).limit(30);
+    const rows = await getDb().select().from(newsSubmissions)
+      .where(ne(newsSubmissions.status, "rejected"))
+      .orderBy(desc(newsSubmissions.createdAt)).limit(30);
     return Response.json({ submissions: rows.map(publicSubmission) });
   } catch {
     return Response.json({ error: "Los aportes no están disponibles temporalmente." }, { status: 503 });
@@ -38,7 +40,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const limited = await enforceRateLimit(request, "aportes", 12, 900);
+    const limited = await enforceRateLimit(request, "aportes", 6, 900);
     if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
@@ -83,6 +85,10 @@ export async function POST(request: Request) {
     if (accessible && relevant && profile?.official) { status = "publishable"; reason = "Fuente oficial accesible y relacionada; puede considerarse como fuente primaria."; }
     else if (accessible && relevant && profile) { status = "review"; reason = "Medio incluido en el directorio. Se conserva como aporte periodístico pendiente de corroboración independiente."; }
     else if (accessible && relevant) { status = "review"; reason = "Fuente nueva: el enlace es accesible y relevante, pero su confiabilidad aún debe evaluarse."; }
+
+    if (status === "rejected") {
+      return Response.json({ error: `${reason} El intento no se guardó ni se publicó.` }, { status: 422 });
+    }
 
     const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
