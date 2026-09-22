@@ -391,12 +391,14 @@ export default function Home() {
           <p className="hero-intro">
             Cuenta regresiva hasta la fecha constitucional estimada de finalización del periodo presidencial 2026–2030.
           </p>
-          <div className="target-date">
-            <Clock3 size={18} />
-            <span>Fecha objetivo</span>
-            <strong>7 de agosto de 2030</strong>
+          <div className="hero-meta-row">
+            <div className="target-date">
+              <Clock3 size={18} />
+              <span>Fecha objetivo</span>
+              <strong>7 de agosto de 2030</strong>
+            </div>
+            <a className="creator-byline" href="/autor"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
           </div>
-          <a className="creator-byline" href="/autor"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
         </div>
 
         <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
