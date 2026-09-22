@@ -7,6 +7,7 @@ import { countryNames } from "../../data/countries";
 import { httpsUrl, plainText } from "../../data/input-security";
 import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
+import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -100,11 +101,18 @@ export async function POST(request: Request) {
     else if (accessible && relevant && profile) { status = "pending_manual"; reason = "Medio incluido en el directorio; pendiente de aprobación manual."; }
     else if (accessible && relevant) { status = "pending_manual"; reason = "Fuente nueva accesible y relevante; requiere aprobación manual y corroboración adicional."; }
 
-    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
+    const reviewToken = status === "pending_manual" ? createReviewToken() : null;
+    const reviewExpiresAt = reviewToken ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null;
+    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, emailReviewTokenHash: reviewToken ? await hashReviewToken(reviewToken) : null, emailReviewExpiresAt: reviewExpiresAt, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
     await recordModerationAction({ itemType: "news", itemId: row.id, fromStatus: "received", toStatus: status, reason });
     if (status === "quarantined") {
       await recordSecurityEvent(request, { endpoint: "aportes", category: "spam", severity: "medium", reason, payload: { url: normalized, country } });
+    } else if (reviewToken) {
+      try {
+        const notification = await sendReviewNotification({ itemType: "news", itemId: row.id, token: reviewToken, title: title || host, summary: reason, source: `${host} · ${[municipality, department, country].filter(Boolean).join(" · ")}` });
+        if (notification.sent) await db.update(newsSubmissions).set({ emailNotifiedAt: new Date().toISOString() }).where(eq(newsSubmissions.id, row.id));
+      } catch { /* La cola y el panel siguen disponibles si el correo falla. */ }
     }
     return Response.json({ queued: true, status: "pending_review" }, { status: 202 });
   } catch (error) {

@@ -43,6 +43,13 @@
       "when": 1790112749419,
       "tag": "0005_fluffy_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790114960323,
+      "tag": "0006_nifty_wendigo",
+      "breakpoints": true
     }
   ]
 }

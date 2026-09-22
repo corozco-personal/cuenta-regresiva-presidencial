@@ -6,5 +6,9 @@ declare namespace Cloudflare {
     TURNSTILE_SITE_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     REVIEWER_EMAIL?: string;
+    RESEND_API_KEY?: string;
+    REVIEW_NOTIFICATION_EMAIL?: string;
+    REVIEW_FROM_EMAIL?: string;
+    PURGE_SUBMISSIONS_TOKEN?: string;
   }
 }

@@ -13,6 +13,10 @@ export const opinions = sqliteTable("opinions", {
   status: text("status").notNull(),
   moderationReason: text("moderation_reason"),
   visitorHash: text("visitor_hash"),
+  emailReviewTokenHash: text("email_review_token_hash"),
+  emailReviewExpiresAt: text("email_review_expires_at"),
+  emailNotifiedAt: text("email_notified_at"),
+  emailReviewedAt: text("email_reviewed_at"),
   createdAt: text("created_at").notNull(),
 }, (table) => [
   uniqueIndex("opinions_content_hash_unique").on(table.contentHash),
@@ -35,6 +39,10 @@ export const newsSubmissions = sqliteTable("news_submissions", {
   reliability: text("reliability").notNull(),
   reason: text("reason").notNull(),
   visitorHash: text("visitor_hash"),
+  emailReviewTokenHash: text("email_review_token_hash"),
+  emailReviewExpiresAt: text("email_review_expires_at"),
+  emailNotifiedAt: text("email_notified_at"),
+  emailReviewedAt: text("email_reviewed_at"),
   createdAt: text("created_at").notNull(),
 }, (table) => [
   uniqueIndex("news_submissions_url_hash_unique").on(table.urlHash),

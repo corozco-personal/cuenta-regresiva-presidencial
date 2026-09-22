@@ -6,6 +6,7 @@ import { plainText } from "../../data/input-security";
 import { classifyOpinion, looksAutomatedOpinion } from "../../data/opinion-moderation";
 import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
+import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
 
 const ALLOWED_STANCES = new Set(["A favor", "En contra", "Neutral", "Mixta"]);
 const OFFENSIVE = /\b(imb[eé]cil|idiota|est[uú]pido|malparid|hijueput|maric[oó]n|puta|basura humana|rata inmunda|matar|mu[eé]rete)\b/i;
@@ -112,15 +113,23 @@ export async function POST(request: Request) {
     const offensive = OFFENSIVE.test(normalized);
     const status = offensive || !classification.accepted ? "quarantined" : "pending_manual";
     const moderationReason = offensive ? "Lenguaje ofensivo o de odio" : classification.reason;
+    const reviewToken = status === "pending_manual" ? createReviewToken() : null;
+    const reviewExpiresAt = reviewToken ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null;
     const row: typeof opinions.$inferInsert = {
       id: crypto.randomUUID(), contentHash, displayName, isAnonymous: isAnonymous ? "1" : "0", country,
       department: department || null, municipality: municipality || null, stance, comment, status,
-      moderationReason, visitorHash, createdAt: new Date().toISOString(),
+      moderationReason, visitorHash, emailReviewTokenHash: reviewToken ? await hashReviewToken(reviewToken) : null,
+      emailReviewExpiresAt: reviewExpiresAt, createdAt: new Date().toISOString(),
     };
     await db.insert(opinions).values(row);
     await recordModerationAction({ itemType: "opinion", itemId: row.id, fromStatus: "received", toStatus: status, reason: moderationReason });
     if (status === "quarantined") {
       await recordSecurityEvent(request, { endpoint: "opiniones", category: "spam", severity: offensive ? "high" : "low", reason: moderationReason, payload: { comment, country, stance } });
+    } else if (reviewToken) {
+      try {
+        const notification = await sendReviewNotification({ itemType: "opinion", itemId: row.id, token: reviewToken, title: `Opinión ${stance.toLowerCase()}`, summary: comment, source: [municipality, department, country].filter(Boolean).join(" · ") });
+        if (notification.sent) await db.update(opinions).set({ emailNotifiedAt: new Date().toISOString() }).where(eq(opinions.id, row.id));
+      } catch { /* La cola y el panel siguen disponibles si el correo falla. */ }
     }
     return Response.json({ queued: true, status: "pending_review" }, { status: 202 });
   } catch (error) {
