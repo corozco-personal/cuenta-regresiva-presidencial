@@ -2,7 +2,7 @@
 
 ## Qué se actualiza automáticamente
 
-`/api/noticias` consulta cada 24 horas menciones recientes de “Abelardo de la Espriella”. Si existe la variable secreta `NEWS_API_KEY`, utiliza NewsAPI. Sin ella, usa GDELT. Los resultados se limitan a una lista explícita de dominios y aparecen únicamente en **En observación**, separados entre fuentes nacionales e internacionales.
+`/api/noticias` consulta menciones recientes de “Abelardo de la Espriella” mediante Google News RSS y GDELT; si existe la variable secreta `NEWS_API_KEY`, también utiliza NewsAPI. La respuesta se renueva cada seis horas. Los resultados se contrastan con un directorio explícito de dominios y se separan entre fuentes nacionales e internacionales.
 
 Las fuentes nacionales incluyen Presidencia, CNE, Registraduría, altas cortes, órganos de control, Congreso, Cancillería, fuerza pública y medios colombianos identificados. Las internacionales incluyen organismos multilaterales, portales oficiales extranjeros y canales como DW, Reuters, AP, BBC, France 24, CNN en Español y El País.
 
@@ -21,7 +21,7 @@ No se publican rumores, capturas sin procedencia, titulares que excedan lo proba
 
 ## Actualización
 
-El endpoint envía una política de caché de 24 horas. Para usar NewsAPI en el despliegue, configure `NEWS_API_KEY` como secreto del sitio. La clave nunca debe añadirse al repositorio ni al código del navegador.
+El endpoint envía una política de caché de seis horas, con disponibilidad de la respuesta anterior durante una actualización. Para usar NewsAPI en el despliegue, configure `NEWS_API_KEY` como secreto del sitio. La clave nunca debe añadirse al repositorio ni al código del navegador.
 
 ## Correcciones
 

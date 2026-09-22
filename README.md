@@ -1,126 +1,153 @@
-# vinext-starter
+# Cuenta pública
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+Portal ciudadano e independiente para seguir el periodo presidencial de Colombia mediante una cuenta regresiva, noticias nacionales e internacionales, promesas de campaña, fuentes documentales, indicadores y participación ciudadana.
 
-## Prerequisites
+**Sitio público:** [cuenta-regresiva-presidencial.carlos940807.chatgpt.site](https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site)
+
+## Propósito
+
+La información sobre un presidente suele estar distribuida entre entidades oficiales, medios, documentos, declaraciones y conversaciones públicas. Cuenta pública reúne esas piezas en un solo lugar, conserva el enlace a su procedencia y diferencia entre documentos oficiales, cobertura periodística y opiniones.
+
+El proyecto no busca decirle a las personas qué pensar ni promover una posición política o social. Su objetivo es reducir la brecha producida por la cantidad y heterogeneidad de la información, facilitando que cada visitante consulte las fuentes y forme su propio criterio.
+
+Es una iniciativa personal de **Carlos Eduardo Orozco**, sin financiación, promoción o afiliación con partidos, campañas, gobiernos, empresas, organizaciones o movimientos de ningún tipo. Es de acceso libre, sin ánimo de lucro y no busca generar ingresos.
+
+## Funcionalidades
+
+- Cuenta regresiva hasta la fecha constitucional estimada de entrega de la Presidencia.
+- Barra temporal del mandato con porcentaje transcurrido e hitos anuales.
+- Seguimiento de promesas con estados, plazos, avance documental y evidencias.
+- Monitor de noticias nacionales e internacionales desde el inicio de la campaña.
+- Actualización de fuentes cada seis horas mediante caché del servidor.
+- Agrupación de coberturas similares para reducir duplicados.
+- Archivo cronológico con búsqueda y filtros por etapa y alcance.
+- Directorio mundial de medios e instituciones admitidas para monitoreo.
+- Muro de opiniones con anonimato opcional, moderación y detección de duplicados.
+- Formulario para proponer noticias con evaluación de enlace, fuente y relevancia.
+- Indicadores de favorabilidad, audiencia agregada y usuarios activos.
+- Resumen semanal descargable y canal RSS público.
+- Bitácora pública de correcciones y metodología editorial.
+- Modo de bajo consumo y diseño responsive.
+
+## Criterio editorial
+
+La aparición de una noticia no certifica todas las afirmaciones de la fuente ni representa una posición del proyecto. El sistema:
+
+1. admite fuentes mediante un directorio público;
+2. exige enlaces HTTPS, fechas válidas y relación directa con el tema monitoreado;
+3. diferencia alegación, investigación, imputación, decisión judicial y hecho documentado;
+4. conserva y muestra la procedencia de cada registro;
+5. agrupa coberturas que describen un mismo hecho;
+6. registra las correcciones editoriales relevantes; y
+7. separa hechos, coberturas periodísticas y opiniones ciudadanas.
+
+La metodología completa puede consultarse en [`EDITORIAL.md`](./EDITORIAL.md) y en la [página pública de metodología](https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/metodologia).
+
+## Uso de inteligencia artificial
+
+La inteligencia artificial se utilizó como apoyo para el diseño, desarrollo, programación, pruebas y organización inicial de la plataforma. No se utiliza como fuente autónoma ni para presentar afirmaciones generadas como hechos comprobados.
+
+El portal busca que lo publicado sea trazable hasta su fuente, sus datos o su método. Trazabilidad no significa que toda afirmación de una fuente sea verdadera: permite comprobarla, contrastarla y cuestionarla.
+
+## Tecnologías
+
+- React 19 y TypeScript
+- Next.js 16 sobre Vinext/Vite
+- Cloudflare Workers y D1
+- Drizzle ORM
+- Tailwind CSS
+- Recharts
+- Lucide Icons
+- OpenAI Sites para publicación
+
+## Desarrollo local
+
+### Requisitos
 
 - Node.js `>=22.13.0`
-- Portable: Windows, macOS, or Linux; no Bash required
-- Managed Linux: managed Linux runtime with Bash, `flock`, `curl`, `sha256sum`, and GNU `timeout`
-- Git is required only for publishing
+- npm
 
-## Sites Lifecycle
+### Instalación
 
-The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `app/` and follow the Sites skill for installation, preview, builds, and publishing.
-
-Run `node <plugin-root>/scripts/configure-execution-profile.mjs` only when the profile is unknown for the current checkout and environment. Profile changes do not alter tracked source or require reinstalling otherwise-valid dependencies; restart an existing preview to use the new selection. Do not commit or upload `.sites-runtime/`.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` runs `npm ci` once against the shared lockfile, disables parent-workspace discovery, and includes required dev/optional dependencies despite production/omit settings. Sharp defaults to prebuilt binaries unless explicitly configured otherwise. Do not overlap installers.
-
-- **Portable:** Preserve host HOME, npm cache, registry, proxy, temporary paths, retry/concurrency settings, and lifecycle-script policy. Use `--prefer-offline --no-audit --no-fund`.
-- **Managed Linux:** Use the existing project-local HOME/cache/tmp setup and Linux install lock, tarball preflight, and timeout. Restore the image-seeded npm cache only when its lockfile hash matches; retain network fallback. Builds keep their existing timeout. These helpers are not invoked by the portable profile.
-
-`scripts/sites-env.mjs` preserves the caller's HOME, npm cache, proxy, XDG, and temporary-directory configuration while defaulting Wrangler and Miniflare state to the checkout. If npm reports an unwritable cache, select a writable path with `npm_config_cache` for that install. The `dev` and `start` scripts also keep Wrangler logs inside the checkout. Generated `.sites-runtime/` and `.wrangler/` directories are disposable and ignored by Git.
-
-On portable, `npm run dev` uses `vinext dev` with HMR, starting at port 5173. Vinext records the running server in ignored `.vinext/` state, rejects an ordinary duplicate launch, and recovers stale state after a stopped process; exactly simultaneous starts can race. Pass `--port <port>` or `--hostname <host>` after `npm run dev --` when needed; keep portable previews on loopback.
-
-For browser QA on managed Linux, use `sites-preview start`. The project's dev script runs Vite and accepts the supervisor's `--host 0.0.0.0 --port 4173 --strictPort` arguments. The internal browser uses `http://terminal.local:4173/`; it is not a user-facing URL. The supervisor owns the preview lifecycle. The ignored local profile survives the supervisor's cleared process environment.
-
-The portable profile simulates ChatGPT sign-in only for loopback development requests. Visit `/signin-with-chatgpt?return_to=/` to sign in as `local_seedy` (`seedy@sites.test`, display name `Seedy`) and `/signout-with-chatgpt?return_to=/` to sign out. The development cookie preserves that identity across server restarts. Mock auth is disabled in the managed-linux profile and is not included in production builds; hosted authentication remains dispatch-owned.
-
-The Worker uses `vinext/server/fetch-handler`, including Vinext's config-aware image handling. After building, `npm start` runs that Worker locally through Wrangler on `127.0.0.1`, sharing `.wrangler/state` with dev preview and local D1 migrations; it does not deploy the site or simulate sign-in. Use the URL printed by the server. Pass `npm start -- --port <port>` to select a different built-preview port.
-
-Local previews use Miniflare's placeholder `Request.cf` metadata without a network lookup. Set `CLOUDFLARE_CF_FETCH_ENABLED=true` to opt into fetching preview metadata; this setting does not change hosted request metadata.
-
-Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=true` to opt in.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Use it as the durable user key; use email and name for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive `oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty `name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by `oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+git clone https://github.com/corozco-personal/cuenta-regresiva-presidencial.git
+cd cuenta-regresiva-presidencial
+npm ci
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Construye el proyecto para generar la configuración local del Worker:
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use the returned `userId` as the stable user key for user-owned records; do not use email as a durable identifier.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the OAuth cookies, and identity header injection. Do not implement app routes for those reserved paths. Routes that do not import and call the helper remain anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the Sites hosting platform's access policy controls for workspace-wide restrictions, or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Local D1 migrations
-
-For a D1-backed local preview, generate SQL with `npm run db:generate`. Build once through the Sites skill's build entrypoint (or `npm run build` for standalone use) to generate `dist/server/wrangler.json`, rebuilding if bindings change. From the project root, apply each pending migration in order:
-
-```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_example.sql
+```bash
+npm run build
 ```
 
-Replace the filename with the pending migration and `DB` with your D1 binding name if different. Use `.wrangler/state`, not `.wrangler/state/v3`; Wrangler adds the versioned directories. Do not replay migrations already applied locally. This updates only the preview database; publishing applies production migrations separately.
+Aplica las migraciones D1 en orden:
 
-## Diagnostic Commands
+```bash
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_flashy_iron_lad.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_stormy_justice.sql
+```
 
-- `npm run install:ci`: perform the one locked dependency install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: preview the built Worker locally with D1/R2 support
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+Inicia el entorno de desarrollo:
 
-When using the Sites plugin, follow its skill instructions for installation, builds, and publishing. These npm commands remain available for standalone use.
+```bash
+npm run dev
+```
 
-The portable build runs Vinext directly without a host `timeout` command. The managed-linux build uses `scripts/build-verified.sh` and its existing `SITES_BUILD_TIMEOUT` setting.
+La aplicación estará disponible normalmente en `http://localhost:5173`.
 
-## Learn More
+## Variables de entorno
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+El portal funciona con Google News RSS, GDELT y las fuentes curadas incluidas en el código. De forma opcional puede utilizar NewsAPI:
+
+```text
+NEWS_API_KEY=tu_clave
+```
+
+No agregues claves reales al repositorio. Los archivos `.env*` están ignorados por Git y los secretos de producción deben configurarse en la plataforma de alojamiento.
+
+## Comandos disponibles
+
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Inicia el servidor de desarrollo. |
+| `npm run build` | Genera el Worker y los recursos de producción. |
+| `npm run start` | Ejecuta localmente el resultado construido. |
+| `npm run lint` | Revisa el código con ESLint. |
+| `npm run db:generate` | Genera migraciones después de modificar el esquema. |
+
+## Estructura principal
+
+```text
+app/                 Rutas, páginas, componentes y API
+app/api/             Noticias, opiniones, aportes, indicadores y analítica
+app/data/            Datos editoriales compartidos
+db/                  Esquema y conexión D1 mediante Drizzle
+drizzle/             Migraciones SQL
+public/              Recursos públicos y metadatos de seguridad
+.openai/hosting.json Configuración lógica del sitio alojado
+```
+
+## Privacidad y seguridad
+
+- La analítica pública utiliza datos agregados.
+- No se incorporan rastreadores publicitarios.
+- Los identificadores utilizados para limitar opiniones duplicadas se transforman criptográficamente y no se muestran públicamente.
+- Las preferencias de interfaz se guardan localmente en el navegador.
+- Los reportes no exponen direcciones IP ni rutas internas.
+- La política pública está disponible en [`/privacidad`](https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/privacidad).
+
+## Contribuciones
+
+Antes de proponer un cambio editorial, incluye la fuente original, la fecha y una explicación verificable. No envíes rumores, capturas sin procedencia, información privada, insultos ni contenido que confunda una alegación con un hecho probado.
+
+Para cambios de código:
+
+1. crea una rama desde `main`;
+2. realiza cambios acotados;
+3. ejecuta `npm run lint && npm run build`; y
+4. abre un pull request explicando el propósito y la validación realizada.
+
+## Licencia
+
+El código fuente se distribuye bajo la [licencia MIT](./LICENSE). Las marcas, textos y contenidos enlazados de terceros pertenecen a sus respectivos titulares y conservan sus propias condiciones de uso.
