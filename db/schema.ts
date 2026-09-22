@@ -29,6 +29,8 @@ export const newsSubmissions = sqliteTable("news_submissions", {
   submitterName: text("submitter_name"),
   isAnonymous: text("is_anonymous").notNull().default("1"),
   country: text("country").notNull(),
+  department: text("department"),
+  municipality: text("municipality"),
   status: text("status").notNull(),
   reliability: text("reliability").notNull(),
   reason: text("reason").notNull(),

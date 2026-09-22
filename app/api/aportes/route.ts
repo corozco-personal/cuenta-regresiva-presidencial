@@ -14,7 +14,7 @@ async function digest(value: string) {
 }
 
 function publicSubmission(row: typeof newsSubmissions.$inferSelect) {
-  return { id: row.id, url: row.url, domain: row.domain, title: row.title, status: row.status, reliability: row.reliability, reason: row.reason, country: row.country, createdAt: row.createdAt };
+  return { id: row.id, url: row.url, domain: row.domain, title: row.title, status: row.status, reliability: row.reliability, reason: row.reason, country: row.country, department: row.department, municipality: row.municipality, createdAt: row.createdAt };
 }
 
 function normalizeUrl(raw: string) {
@@ -48,6 +48,8 @@ export async function POST(request: Request) {
     if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
     const rawUrl = httpsUrl(payload.url);
     const country = plainText(payload.country, { max: 80 });
+    const department = country === "Colombia" ? plainText(payload.department, { max: 100, optional: true }) : "";
+    const municipality = country === "Colombia" ? plainText(payload.municipality, { max: 100, optional: true }) : "";
     const isAnonymous = payload.isAnonymous !== false;
     const submitterName = isAnonymous ? null : plainText(payload.submitterName, { min: 2, max: 80 });
     if (!countryNames.has(country) || (!isAnonymous && !submitterName)) return Response.json({ error: "Completa el enlace, selecciona un país válido y, si aplica, tu nombre." }, { status: 400 });
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
       return Response.json({ error: `${reason} El intento no se guardó ni se publicó.` }, { status: 422 });
     }
 
-    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
+    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
     return Response.json({ submission: publicSubmission(row as typeof newsSubmissions.$inferSelect) }, { status: 201 });
   } catch (error) {

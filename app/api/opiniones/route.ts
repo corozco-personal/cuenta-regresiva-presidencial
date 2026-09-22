@@ -66,8 +66,8 @@ export async function POST(request: Request) {
     if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
     const comment = plainText(payload.comment, { min: 20, max: 1200, multiline: true });
     const country = plainText(payload.country, { max: 80 });
-    const department = plainText(payload.department, { max: 100, optional: true });
-    const municipality = plainText(payload.municipality, { max: 100, optional: true });
+    const department = country === "Colombia" ? plainText(payload.department, { max: 100, optional: true }) : "";
+    const municipality = country === "Colombia" ? plainText(payload.municipality, { max: 100, optional: true }) : "";
     const stance = String(payload.stance ?? "Neutral");
     const isAnonymous = payload.isAnonymous !== false;
     const displayName = isAnonymous ? null : plainText(payload.displayName, { min: 2, max: 80 });
