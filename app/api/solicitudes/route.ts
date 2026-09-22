@@ -3,6 +3,7 @@ import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { correctionRequests } from "../../../db/schema";
 import { httpsUrl, plainText, safeEmail } from "../../data/input-security";
+import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 
 const TYPES = new Set(["Corrección", "Derecho de réplica", "Actualización", "Retiro de datos personales"]);
 async function digest(value: string) { const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)); return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
@@ -16,8 +17,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "solicitudes", 8, 900);
+    if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
+    const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-correction");
+    if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
     const requestType = plainText(payload.requestType, { max: 40 }); const subject = plainText(payload.subject, { min: 8, max: 160 });
     const relatedUrl = safeUrl(httpsUrl(payload.relatedUrl)); const explanation = plainText(payload.explanation, { min: 40, max: 2000, multiline: true });
     const evidenceUrl = payload.evidenceUrl ? safeUrl(httpsUrl(payload.evidenceUrl)) : null;

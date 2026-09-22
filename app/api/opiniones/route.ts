@@ -4,6 +4,7 @@ import { opinions } from "../../../db/schema";
 import { countryNames } from "../../data/countries";
 import { plainText } from "../../data/input-security";
 import { looksAutomatedOpinion } from "../../data/opinion-moderation";
+import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 
 const ALLOWED_STANCES = new Set(["A favor", "En contra", "Neutral", "Mixta"]);
 const OFFENSIVE = /\b(imb[eé]cil|idiota|est[uú]pido|malparid|hijueput|maric[oó]n|puta|basura humana|rata inmunda|matar|mu[eé]rete)\b/i;
@@ -57,8 +58,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "opiniones", 8, 900);
+    if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
+    const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-opinion");
+    if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
     const comment = plainText(payload.comment, { min: 20, max: 1200, multiline: true });
     const country = plainText(payload.country, { max: 80 });
     const department = plainText(payload.department, { max: 100, optional: true });

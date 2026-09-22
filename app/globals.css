@@ -325,6 +325,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .check-label input { width: 17px; height: 17px; accent-color: var(--forest); }
 .community-form > button { min-height: 46px; border: 0; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--forest); color: var(--white); font-size: 11px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; }
 .community-form > button:disabled { opacity: .55; cursor: wait; }
+.turnstile-field { width: 100%; margin: 0 0 18px; display: grid; gap: 8px; }
+.turnstile-field > span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.turnstile-field > div { width: 100%; min-height: 65px; }
+.turnstile-field small { color: #9a321f; font-size: 11px; line-height: 1.4; }
 .form-message { padding: 13px; border-left: 3px solid var(--citrus); background: #f5f5eb; font-size: 13px; line-height: 1.5; }
 .form-note { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .form-note svg { flex: 0 0 auto; }

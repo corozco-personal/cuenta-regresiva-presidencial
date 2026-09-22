@@ -1,4 +1,5 @@
 import { getD1 } from "../../../db";
+import { enforceRateLimit } from "../../data/edge-security";
 
 const SESSION_PATTERN = /^[a-f0-9-]{20,80}$/i;
 const EVENT_TYPES = new Set(["pageview", "interaction"]);
@@ -20,6 +21,8 @@ function startDay(days: number) {
 
 export async function POST(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "analitica", 240, 60);
+    if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     const sessionId = clean(payload.sessionId, "", 80);
     if (!SESSION_PATTERN.test(sessionId)) return Response.json({ error: "Sesión inválida." }, { status: 400 });

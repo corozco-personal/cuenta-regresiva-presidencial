@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, ExternalLink, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
 import CountrySelect from "./country-select";
+import TurnstileWidget from "./turnstile-widget";
 
 type Opinion = { id: string; displayName: string; country: string; department?: string; municipality?: string; stance: string; status: string; comment: string; createdAt: string };
 type Submission = { id: string; url: string; domain: string; title?: string; status: string; reliability: string; reason: string; country: string; createdAt: string };
@@ -22,6 +23,12 @@ export default function Community() {
   const [sendingNews, setSendingNews] = useState(false);
   const [opinionAnonymous, setOpinionAnonymous] = useState(true);
   const [newsAnonymous, setNewsAnonymous] = useState(true);
+  const [newsTurnstileToken, setNewsTurnstileToken] = useState("");
+  const [opinionTurnstileToken, setOpinionTurnstileToken] = useState("");
+  const [newsTurnstileEnabled, setNewsTurnstileEnabled] = useState(false);
+  const [opinionTurnstileEnabled, setOpinionTurnstileEnabled] = useState(false);
+  const [newsTurnstileReset, setNewsTurnstileReset] = useState(0);
+  const [opinionTurnstileReset, setOpinionTurnstileReset] = useState(0);
 
   async function refresh() {
     const [opinionResponse, newsResponse] = await Promise.all([fetch("/api/opiniones", { cache: "no-store" }), fetch("/api/aportes")]);
@@ -43,8 +50,9 @@ export default function Community() {
     const data = Object.fromEntries(new FormData(form));
     let contributorId = window.localStorage.getItem("cuenta-publica-contributor");
     if (!contributorId) { contributorId = crypto.randomUUID(); window.localStorage.setItem("cuenta-publica-contributor", contributorId); }
-    const response = await fetch("/api/opiniones", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, isAnonymous: opinionAnonymous, contributorId }) });
+    const response = await fetch("/api/opiniones", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, isAnonymous: opinionAnonymous, contributorId, turnstileToken: opinionTurnstileToken }) });
     const result = await readJson(response);
+    if (opinionTurnstileEnabled) setOpinionTurnstileReset((value) => value + 1);
     if (!response.ok) setOpinionMessage(result.error);
     else {
       setOpinionMessage(result.filtered ? "La opinión se conservó, pero su texto quedó oculto por la política de convivencia." : "Tu opinión ya forma parte del muro.");
@@ -58,8 +66,9 @@ export default function Community() {
     setSendingNews(true); setNewsMessage("Comprobando el enlace, la fuente y su relación con el tema…");
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
-    const response = await fetch("/api/aportes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, isAnonymous: newsAnonymous }) });
+    const response = await fetch("/api/aportes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, isAnonymous: newsAnonymous, turnstileToken: newsTurnstileToken }) });
     const result = await readJson(response);
+    if (newsTurnstileEnabled) setNewsTurnstileReset((value) => value + 1);
     if (!response.ok) setNewsMessage(result.error);
     else { setNewsMessage(`${statusLabel[result.submission.status]}. ${result.submission.reason}`); form.reset(); setNewsAnonymous(true); await refresh(); }
     setSendingNews(false);
@@ -78,8 +87,9 @@ export default function Community() {
           <label>Enlace HTTPS<input name="url" type="url" required maxLength={2048} inputMode="url" autoComplete="url" placeholder="https://medio.com/noticia" /></label>
           <div className="form-row form-row-country"><CountrySelect id="news-country" label="País desde donde aportas" /><div className="anonymous-field"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={newsAnonymous} onChange={(e) => setNewsAnonymous(e.target.checked)} />Enviar de forma anónima</label></div></div>
           {!newsAnonymous && <label>Tu nombre<input name="submitterName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
+          <TurnstileWidget action="submit-news" resetSignal={newsTurnstileReset} onToken={setNewsTurnstileToken} onEnabled={setNewsTurnstileEnabled} />
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingNews}><Send size={16} />{sendingNews ? "Evaluando…" : "Evaluar y enviar enlace"}</button>
+          <button disabled={sendingNews || (newsTurnstileEnabled && !newsTurnstileToken)}><Send size={16} />{sendingNews ? "Evaluando…" : "Evaluar y enviar enlace"}</button>
           {newsMessage && <p className="form-message" aria-live="polite">{newsMessage}</p>}
           <p className="form-note"><ShieldCheck size={15} /> Un medio confiable no convierte automáticamente una afirmación en un hecho probado.</p>
         </form>
@@ -91,8 +101,9 @@ export default function Community() {
           <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>
           <div className="anonymous-field anonymous-field-full"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={opinionAnonymous} onChange={(e) => setOpinionAnonymous(e.target.checked)} />Publicar de forma anónima</label></div>
           {!opinionAnonymous && <label>Tu nombre<input name="displayName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
+          <TurnstileWidget action="submit-opinion" resetSignal={opinionTurnstileReset} onToken={setOpinionTurnstileToken} onEnabled={setOpinionTurnstileEnabled} />
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingOpinion}><MessageSquarePlus size={16} />{sendingOpinion ? "Revisando…" : "Publicar opinión"}</button>
+          <button disabled={sendingOpinion || (opinionTurnstileEnabled && !opinionTurnstileToken)}><MessageSquarePlus size={16} />{sendingOpinion ? "Revisando…" : "Publicar opinión"}</button>
           {opinionMessage && <p className="form-message" aria-live="polite">{opinionMessage}</p>}
         </form>
       </div>

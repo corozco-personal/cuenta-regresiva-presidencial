@@ -5,6 +5,7 @@ import { newsSubmissions } from "../../../db/schema";
 import { profileFor } from "../noticias/route";
 import { countryNames } from "../../data/countries";
 import { httpsUrl, plainText } from "../../data/input-security";
+import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -37,8 +38,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "aportes", 12, 900);
+    if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
+    const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-news");
+    if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
     const rawUrl = httpsUrl(payload.url);
     const country = plainText(payload.country, { max: 80 });
     const isAnonymous = payload.isAnonymous !== false;

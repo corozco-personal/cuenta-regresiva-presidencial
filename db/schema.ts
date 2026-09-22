@@ -1,4 +1,4 @@
-import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const opinions = sqliteTable("opinions", {
   id: text("id").primaryKey(),
@@ -123,4 +123,14 @@ export const analyticsEvents = sqliteTable("analytics_events", {
   index("analytics_events_day_type_idx").on(table.day, table.eventType),
   index("analytics_events_page_day_idx").on(table.page, table.day),
   index("analytics_events_session_day_idx").on(table.sessionId, table.day),
+]);
+
+export const edgeRateLimits = sqliteTable("edge_rate_limits", {
+  bucketKey: text("bucket_key").primaryKey(),
+  scope: text("scope").notNull(),
+  windowStartedAt: integer("window_started_at").notNull(),
+  requestCount: integer("request_count").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  index("edge_rate_limits_updated_idx").on(table.updatedAt),
 ]);

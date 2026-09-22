@@ -87,6 +87,7 @@ Aplica las migraciones D1 en orden:
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_flashy_iron_lad.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_stormy_justice.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_typical_silver_samurai.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_tidy_argent.sql
 ```
 
 Inicia el entorno de desarrollo:
@@ -104,6 +105,16 @@ El portal funciona con Google News RSS, GDELT y las fuentes curadas incluidas en
 ```text
 NEWS_API_KEY=tu_clave
 ```
+
+Los formularios ciudadanos admiten Cloudflare Turnstile. En producción deben configurarse un widget restringido al dominio público y estas variables:
+
+```text
+TURNSTILE_SITE_KEY=clave_publica_del_widget
+TURNSTILE_SECRET_KEY=secreto_del_widget
+RATE_LIMIT_SALT=valor_aleatorio_largo
+```
+
+La clave pública se entrega al navegador mediante `/api/seguridad`; el secreto nunca se expone. Cuando ambas claves existen, opiniones, noticias aportadas y solicitudes de corrección exigen un token válido, de un solo uso y correspondiente a la acción esperada. Sin las dos claves, Turnstile permanece desactivado para no simular una protección inexistente. El límite persistente por IP, agente, ruta y ventana temporal funciona de manera independiente en el Worker.
 
 No agregues claves reales al repositorio. Los archivos `.env*` están ignorados por Git y los secretos de producción deben configurarse en la plataforma de alojamiento.
 
@@ -136,6 +147,8 @@ public/              Recursos públicos y metadatos de seguridad
 - Los identificadores utilizados para limitar opiniones duplicadas se transforman criptográficamente y no se muestran públicamente.
 - Las preferencias de interfaz se guardan localmente en el navegador.
 - Los reportes no exponen direcciones IP ni rutas internas.
+- Los formularios públicos utilizan límites persistentes en el borde; las identidades de red se almacenan únicamente como huellas con sal secreta.
+- Turnstile se valida exclusivamente en el servidor cuando sus credenciales de producción están configuradas.
 - La política pública está disponible en [`/privacidad`](https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/privacidad).
 
 ## Contribuciones
