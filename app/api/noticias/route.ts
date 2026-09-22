@@ -10,7 +10,7 @@ type BaseNews = {
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: Scope;
 };
-type CandidateNews = BaseNews & { trustedSource: boolean; curated?: boolean };
+type CandidateNews = BaseNews & { trustedSource: boolean; curated?: boolean; country?: string; language?: string; domain?: string };
 type PublicNews = BaseNews & {
   category: string;
   decision: "Admitido" | "Corregido";
@@ -19,9 +19,11 @@ type PublicNews = BaseNews & {
   processStatus: "Alegación" | "Investigación" | "Imputación" | "Decisión judicial" | "Hecho documentado";
   sources: Array<{ source: string; url: string; kind: BaseNews["kind"] }>;
   linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
+  country?: string;
+  language?: string;
 };
 
-type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string };
+type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string; country?: string; region?: string };
 
 const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "presidencia.gov.co", scope: "Nacional", official: true, label: "Presidencia de Colombia" },
@@ -62,6 +64,76 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "elpais.com", scope: "Internacional", label: "El País" },
   { domain: "theguardian.com", scope: "Internacional", label: "The Guardian" },
   { domain: "aljazeera.com", scope: "Internacional", label: "Al Jazeera" },
+  { domain: "lanacion.com.ar", scope: "Internacional", label: "La Nación", country: "Argentina", region: "América Latina" },
+  { domain: "clarin.com", scope: "Internacional", label: "Clarín", country: "Argentina", region: "América Latina" },
+  { domain: "folha.uol.com.br", scope: "Internacional", label: "Folha de S.Paulo", country: "Brasil", region: "América Latina" },
+  { domain: "oglobo.globo.com", scope: "Internacional", label: "O Globo", country: "Brasil", region: "América Latina" },
+  { domain: "eluniversal.com.mx", scope: "Internacional", label: "El Universal", country: "México", region: "América Latina" },
+  { domain: "latercera.com", scope: "Internacional", label: "La Tercera", country: "Chile", region: "América Latina" },
+  { domain: "elcomercio.pe", scope: "Internacional", label: "El Comercio", country: "Perú", region: "América Latina" },
+  { domain: "eluniverso.com", scope: "Internacional", label: "El Universo", country: "Ecuador", region: "América Latina" },
+  { domain: "elpais.com.uy", scope: "Internacional", label: "El País Uruguay", country: "Uruguay", region: "América Latina" },
+  { domain: "abc.com.py", scope: "Internacional", label: "ABC Color", country: "Paraguay", region: "América Latina" },
+  { domain: "eldeber.com.bo", scope: "Internacional", label: "El Deber", country: "Bolivia", region: "América Latina" },
+  { domain: "nacion.com", scope: "Internacional", label: "La Nación", country: "Costa Rica", region: "América Latina" },
+  { domain: "prensa.com", scope: "Internacional", label: "La Prensa", country: "Panamá", region: "América Latina" },
+  { domain: "listindiario.com", scope: "Internacional", label: "Listín Diario", country: "República Dominicana", region: "Caribe" },
+  { domain: "jamaica-gleaner.com", scope: "Internacional", label: "Jamaica Gleaner", country: "Jamaica", region: "Caribe" },
+  { domain: "lemonde.fr", scope: "Internacional", label: "Le Monde", country: "Francia", region: "Europa" },
+  { domain: "spiegel.de", scope: "Internacional", label: "Der Spiegel", country: "Alemania", region: "Europa" },
+  { domain: "repubblica.it", scope: "Internacional", label: "la Repubblica", country: "Italia", region: "Europa" },
+  { domain: "publico.pt", scope: "Internacional", label: "Público", country: "Portugal", region: "Europa" },
+  { domain: "nrc.nl", scope: "Internacional", label: "NRC", country: "Países Bajos", region: "Europa" },
+  { domain: "irishtimes.com", scope: "Internacional", label: "The Irish Times", country: "Irlanda", region: "Europa" },
+  { domain: "aftenposten.no", scope: "Internacional", label: "Aftenposten", country: "Noruega", region: "Europa" },
+  { domain: "dn.se", scope: "Internacional", label: "Dagens Nyheter", country: "Suecia", region: "Europa" },
+  { domain: "hs.fi", scope: "Internacional", label: "Helsingin Sanomat", country: "Finlandia", region: "Europa" },
+  { domain: "politiken.dk", scope: "Internacional", label: "Politiken", country: "Dinamarca", region: "Europa" },
+  { domain: "wyborcza.pl", scope: "Internacional", label: "Gazeta Wyborcza", country: "Polonia", region: "Europa" },
+  { domain: "aktualne.cz", scope: "Internacional", label: "Aktuálně.cz", country: "Chequia", region: "Europa" },
+  { domain: "derstandard.at", scope: "Internacional", label: "Der Standard", country: "Austria", region: "Europa" },
+  { domain: "swissinfo.ch", scope: "Internacional", label: "SWI swissinfo.ch", country: "Suiza", region: "Europa" },
+  { domain: "ekathimerini.com", scope: "Internacional", label: "Kathimerini", country: "Grecia", region: "Europa" },
+  { domain: "kyivindependent.com", scope: "Internacional", label: "The Kyiv Independent", country: "Ucrania", region: "Europa" },
+  { domain: "balkaninsight.com", scope: "Internacional", label: "Balkan Insight", country: "Balcanes", region: "Europa" },
+  { domain: "nation.africa", scope: "Internacional", label: "Nation Africa", country: "Kenia", region: "África" },
+  { domain: "premiumtimesng.com", scope: "Internacional", label: "Premium Times", country: "Nigeria", region: "África" },
+  { domain: "dailymaverick.co.za", scope: "Internacional", label: "Daily Maverick", country: "Sudáfrica", region: "África" },
+  { domain: "monitor.co.ug", scope: "Internacional", label: "Daily Monitor", country: "Uganda", region: "África" },
+  { domain: "newtimes.co.rw", scope: "Internacional", label: "The New Times", country: "Ruanda", region: "África" },
+  { domain: "graphic.com.gh", scope: "Internacional", label: "Daily Graphic", country: "Ghana", region: "África" },
+  { domain: "thecitizen.co.tz", scope: "Internacional", label: "The Citizen", country: "Tanzania", region: "África" },
+  { domain: "allafrica.com", scope: "Internacional", label: "AllAfrica", country: "África", region: "África" },
+  { domain: "jeuneafrique.com", scope: "Internacional", label: "Jeune Afrique", country: "África francófona", region: "África" },
+  { domain: "le360.ma", scope: "Internacional", label: "Le360", country: "Marruecos", region: "África" },
+  { domain: "egyptindependent.com", scope: "Internacional", label: "Egypt Independent", country: "Egipto", region: "África" },
+  { domain: "thehindu.com", scope: "Internacional", label: "The Hindu", country: "India", region: "Asia" },
+  { domain: "indianexpress.com", scope: "Internacional", label: "The Indian Express", country: "India", region: "Asia" },
+  { domain: "dawn.com", scope: "Internacional", label: "Dawn", country: "Pakistán", region: "Asia" },
+  { domain: "thedailystar.net", scope: "Internacional", label: "The Daily Star", country: "Bangladés", region: "Asia" },
+  { domain: "kathmandupost.com", scope: "Internacional", label: "The Kathmandu Post", country: "Nepal", region: "Asia" },
+  { domain: "straitstimes.com", scope: "Internacional", label: "The Straits Times", country: "Singapur", region: "Asia" },
+  { domain: "channelnewsasia.com", scope: "Internacional", label: "CNA", country: "Singapur", region: "Asia" },
+  { domain: "malaysiakini.com", scope: "Internacional", label: "Malaysiakini", country: "Malasia", region: "Asia" },
+  { domain: "bangkokpost.com", scope: "Internacional", label: "Bangkok Post", country: "Tailandia", region: "Asia" },
+  { domain: "vnexpress.net", scope: "Internacional", label: "VnExpress", country: "Vietnam", region: "Asia" },
+  { domain: "kompas.com", scope: "Internacional", label: "Kompas", country: "Indonesia", region: "Asia" },
+  { domain: "philstar.com", scope: "Internacional", label: "The Philippine Star", country: "Filipinas", region: "Asia" },
+  { domain: "japantimes.co.jp", scope: "Internacional", label: "The Japan Times", country: "Japón", region: "Asia" },
+  { domain: "asahi.com", scope: "Internacional", label: "The Asahi Shimbun", country: "Japón", region: "Asia" },
+  { domain: "koreaherald.com", scope: "Internacional", label: "The Korea Herald", country: "Corea del Sur", region: "Asia" },
+  { domain: "scmp.com", scope: "Internacional", label: "South China Morning Post", country: "Hong Kong", region: "Asia" },
+  { domain: "taipeitimes.com", scope: "Internacional", label: "Taipei Times", country: "Taiwán", region: "Asia" },
+  { domain: "haaretz.com", scope: "Internacional", label: "Haaretz", country: "Israel", region: "Oriente Medio" },
+  { domain: "timesofisrael.com", scope: "Internacional", label: "The Times of Israel", country: "Israel", region: "Oriente Medio" },
+  { domain: "arabnews.com", scope: "Internacional", label: "Arab News", country: "Arabia Saudita", region: "Oriente Medio" },
+  { domain: "thenationalnews.com", scope: "Internacional", label: "The National", country: "Emiratos Árabes Unidos", region: "Oriente Medio" },
+  { domain: "al-monitor.com", scope: "Internacional", label: "Al-Monitor", country: "Oriente Medio", region: "Oriente Medio" },
+  { domain: "abc.net.au", scope: "Internacional", label: "ABC News Australia", country: "Australia", region: "Oceanía" },
+  { domain: "smh.com.au", scope: "Internacional", label: "The Sydney Morning Herald", country: "Australia", region: "Oceanía" },
+  { domain: "rnz.co.nz", scope: "Internacional", label: "RNZ", country: "Nueva Zelanda", region: "Oceanía" },
+  { domain: "nzherald.co.nz", scope: "Internacional", label: "NZ Herald", country: "Nueva Zelanda", region: "Oceanía" },
+  { domain: "fijitimes.com", scope: "Internacional", label: "The Fiji Times", country: "Fiyi", region: "Oceanía" },
 ];
 
 const CURATED_CHANNELS: BaseNews[] = [
@@ -264,6 +336,9 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
         kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
         scope: profile?.scope ?? "Internacional",
         trustedSource: Boolean(profile),
+        country: profile?.country ?? (profile?.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+        language: "Español",
+        domain: hostname.replace(/^www\./, ""),
       }];
     } catch { return []; }
   });
@@ -271,9 +346,9 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
 
 async function fromGdelt(): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
-    query: '"Abelardo de la Espriella"',
+    query: '("Abelardo de la Espriella" OR "Abelardo De La Espriella" OR "De la Espriella")',
     mode: "ArtList",
-    maxrecords: "100",
+    maxrecords: "250",
     format: "json",
     sort: "DateDesc",
   });
@@ -298,6 +373,9 @@ async function fromGdelt(): Promise<CandidateNews[]> {
         kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
         scope: profile?.scope ?? "Internacional",
         trustedSource: Boolean(profile),
+        country: String(article.sourcecountry ?? profile?.country ?? "Sin identificar"),
+        language: String(article.language ?? "Sin identificar"),
+        domain: hostname.replace(/^www\./, ""),
       }];
     } catch { return []; }
   });
@@ -337,13 +415,43 @@ export async function GET() {
     label: profile.label ?? profile.domain,
     scope: profile.scope,
     kind: profile.official ? "Institución oficial" : "Medio periodístico",
+    country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Cobertura internacional"),
+    region: profile.region ?? (profile.scope === "Nacional" ? "Colombia" : "Global"),
     criterion: profile.official
       ? "Publica documentos o comunicaciones institucionales de primera mano."
       : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
   }));
+  const domainCounts = discovered.reduce<Record<string, number>>((counts, item) => {
+    const domain = item.domain ?? new URL(item.url).hostname.replace(/^www\./, "");
+    counts[domain] = (counts[domain] ?? 0) + 1;
+    return counts;
+  }, {});
+  const globalRadar = discovered.slice(0, 80).map((item) => ({
+    id: item.id,
+    title: item.title,
+    source: item.source,
+    domain: item.domain ?? new URL(item.url).hostname.replace(/^www\./, ""),
+    url: item.url,
+    publishedAt: item.publishedAt,
+    country: item.country ?? "Sin identificar",
+    language: item.language ?? "Sin identificar",
+    status: item.trustedSource ? "Admitido para monitoreo" : "Pendiente de evaluación",
+    signal: item.trustedSource
+      ? "Directorio editorial"
+      : (domainCounts[item.domain ?? ""] ?? 0) > 1
+        ? "Cobertura recurrente"
+        : "Hallazgo puntual",
+  }));
+  const globalStats = {
+    results: globalRadar.length,
+    countries: new Set(globalRadar.map((item) => item.country).filter((value) => value !== "Sin identificar")).size,
+    languages: new Set(globalRadar.map((item) => item.language).filter((value) => value !== "Sin identificar")).size,
+    domains: new Set(globalRadar.map((item) => item.domain)).size,
+    catalogSources: SOURCE_PROFILES.length,
+  };
 
   return NextResponse.json(
-    { items, review, sourceDirectory, updatedAt: new Date().toISOString(), provider },
+    { items, review, sourceDirectory, globalRadar, globalStats, updatedAt: new Date().toISOString(), provider },
     { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } },
   );
 }

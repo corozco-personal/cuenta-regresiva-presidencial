@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FileCheck2,
   Flag,
+  Globe2,
   History,
   Landmark,
   Leaf,
@@ -41,7 +42,9 @@ type NewsItem = {
   linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
 };
 type ReviewStats = { admitted: number; corrected: number; rejected: number; policyVersion: string };
-type SourceEntry = { domain: string; label: string; scope: string; kind: string; criterion: string };
+type SourceEntry = { domain: string; label: string; scope: string; kind: string; criterion: string; country: string; region: string };
+type GlobalRadarItem = { id: string; title: string; source: string; domain: string; url: string; publishedAt: string; country: string; language: string; status: string; signal: string };
+type GlobalStats = { results: number; countries: number; languages: number; domains: number; catalogSources: number };
 
 const START = new Date("2026-08-07T00:00:00-05:00").getTime();
 const TARGET = new Date("2030-08-07T00:00:00-05:00").getTime();
@@ -183,6 +186,20 @@ const corrections = [
   { date: "21 sep 2026", item: "Política de correcciones", before: "Sin registro público", after: "Bitácora pública incorporada", reason: "Hacer visibles los cambios editoriales y su justificación." },
 ];
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Cuenta pública",
+  url: "https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/",
+  description: "Cuenta regresiva, radar mundial de medios y archivo documental del periodo presidencial de Colombia.",
+  creator: {
+    "@type": "Person",
+    "@id": "https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/autor#carlos-orozco",
+    name: "Carlos Orozco",
+    url: "https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/autor",
+  },
+};
+
 function getCountdown(): Countdown {
   const diff = Math.max(0, TARGET - Date.now());
   return {
@@ -214,6 +231,12 @@ export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [sourceDirectory, setSourceDirectory] = useState<SourceEntry[]>([]);
+  const [globalRadar, setGlobalRadar] = useState<GlobalRadarItem[]>([]);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [radarCountry, setRadarCountry] = useState("Todos");
+  const [radarQuery, setRadarQuery] = useState("");
+  const [sourceRegion, setSourceRegion] = useState("Todas");
+  const [sourceQuery, setSourceQuery] = useState("");
   const [monitorUpdatedAt, setMonitorUpdatedAt] = useState<string | null>(null);
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -244,6 +267,8 @@ export default function Home() {
         setNews(Array.isArray(data.items) ? data.items : []);
         setReviewStats(data.review ?? null);
         setSourceDirectory(Array.isArray(data.sourceDirectory) ? data.sourceDirectory : []);
+        setGlobalRadar(Array.isArray(data.globalRadar) ? data.globalRadar : []);
+        setGlobalStats(data.globalStats ?? null);
         setMonitorUpdatedAt(data.updatedAt ?? null);
         setNewsState("ready");
       })
@@ -270,6 +295,18 @@ export default function Home() {
   const categories = Array.from(new Set(records.map((item) => item.category)));
   const processStatuses = Array.from(new Set(records.map((item) => item.processStatus)));
   const officialRecords = records.filter((item) => item.evidenceLevel === "Documento oficial").length;
+  const radarCountries = Array.from(new Set(globalRadar.map((item) => item.country))).sort((a, b) => a.localeCompare(b, "es"));
+  const filteredRadar = globalRadar.filter((item) => {
+    const countryMatches = radarCountry === "Todos" || item.country === radarCountry;
+    const text = `${item.title} ${item.source} ${item.domain}`.toLocaleLowerCase("es");
+    return countryMatches && (!radarQuery.trim() || text.includes(radarQuery.trim().toLocaleLowerCase("es")));
+  });
+  const sourceRegions = Array.from(new Set(sourceDirectory.map((item) => item.region))).sort((a, b) => a.localeCompare(b, "es"));
+  const filteredSources = sourceDirectory.filter((item) => {
+    const regionMatches = sourceRegion === "Todas" || item.region === sourceRegion;
+    const text = `${item.label} ${item.domain} ${item.country}`.toLocaleLowerCase("es");
+    return regionMatches && (!sourceQuery.trim() || text.includes(sourceQuery.trim().toLocaleLowerCase("es")));
+  });
 
   const toggleEcoMode = () => {
     setEcoMode((current) => {
@@ -300,6 +337,7 @@ export default function Home() {
 
   return (
     <main className={ecoMode ? "eco-mode" : ""}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <a className="skip-link" href="#archivo">Saltar al archivo</a>
       <header className="site-header">
         <a className="brand" href="#inicio" aria-label="Ir al inicio">
@@ -311,6 +349,7 @@ export default function Home() {
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Monitoreo</a>
           <a href="#fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
           <a href="#metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
+          <a href="/autor?utm_source=header&utm_medium=navegacion&utm_campaign=portafolio" onClick={() => setMenuOpen(false)}>Autor</a>
         </nav>
         <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
           <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
@@ -335,6 +374,7 @@ export default function Home() {
             <span>Fecha objetivo</span>
             <strong>7 de agosto de 2030</strong>
           </div>
+          <a className="creator-byline" href="/autor?utm_source=hero&utm_medium=byline&utm_campaign=portafolio"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
         </div>
 
         <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
@@ -524,6 +564,41 @@ export default function Home() {
             </div>
           </div>
         )}
+        {globalStats && (
+          <div className="global-radar" id="radar-mundial">
+            <div className="radar-heading">
+              <div><Globe2 size={28} /><div><strong>Radar mundial</strong><p>Descubrimiento multilingüe de medios nacionales, regionales y locales. Los hallazgos nuevos permanecen en evaluación hasta superar la política editorial.</p></div></div>
+              <span>GDELT · más de 100 idiomas</span>
+            </div>
+            <div className="radar-stats">
+              <div><strong>{globalStats.catalogSources}</strong><span>medios en el directorio</span></div>
+              <div><strong>{globalStats.results}</strong><span>resultados del ciclo</span></div>
+              <div><strong>{globalStats.countries}</strong><span>países detectados</span></div>
+              <div><strong>{globalStats.languages}</strong><span>idiomas detectados</span></div>
+              <div><strong>{globalStats.domains}</strong><span>dominios distintos</span></div>
+            </div>
+            <div className="radar-filters">
+              <label><Search size={16} /><span className="sr-only">Buscar medio o titular mundial</span><input value={radarQuery} onChange={(event) => setRadarQuery(event.target.value)} placeholder="Buscar medio, dominio o titular" /></label>
+              <label><Globe2 size={16} /><span className="sr-only">Filtrar radar por país</span><select value={radarCountry} onChange={(event) => setRadarCountry(event.target.value)}><option>Todos</option>{radarCountries.map((country) => <option key={country}>{country}</option>)}</select></label>
+            </div>
+            {filteredRadar.length > 0 ? (
+              <div className="radar-grid">
+                {filteredRadar.slice(0, 24).map((item) => (
+                  <article key={item.url}>
+                    <div><span>{item.country}</span><span>{item.language}</span></div>
+                    <strong>{item.source}</strong>
+                    <p>{item.title}</p>
+                    <div className="radar-signals"><span>{item.status}</span><span>{item.signal}</span></div>
+                    <a href={item.url} target="_blank" rel="noreferrer">{item.domain}<ArrowUpRight size={14} /></a>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="radar-empty">Este ciclo no devolvió resultados para el filtro seleccionado. El directorio mundial permanece activo y la búsqueda volverá a ejecutarse en la siguiente actualización.</p>
+            )}
+            <p className="radar-note">Cobertura exhaustiva significa consultar un índice mundial y ampliar continuamente el directorio; no existe una base capaz de garantizar literalmente todos los medios de todos los países. Un medio descubierto no se presenta como confiable hasta ser evaluado.</p>
+          </div>
+        )}
         {monitorUpdatedAt && <p className="monitor-check"><Link2 size={14} /> Enlaces comprobados el {new Date(monitorUpdatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}. “No comprobado” indica que el sitio externo no respondió; no implica que el contenido sea falso.</p>}
       </section>
 
@@ -532,7 +607,7 @@ export default function Home() {
           <div>
             <p className="section-kicker">03 / TRANSPARENCIA</p>
             <h2>Cómo leer el archivo</h2>
-            <p>Fuentes admitidas, estados procesales y cambios editoriales en un solo lugar.</p>
+            <p>Directorio internacional de medios globales, nacionales y regionales, además de estados procesales y cambios editoriales.</p>
           </div>
           <History size={38} aria-hidden="true" />
         </div>
@@ -554,14 +629,19 @@ export default function Home() {
         </div>
 
         <details className="sources-directory">
-          <summary>Consultar las {sourceDirectory.length || 39} fuentes admitidas <ChevronDown size={17} /></summary>
+          <summary>Consultar las {sourceDirectory.length || globalStats?.catalogSources || 38} fuentes admitidas <ChevronDown size={17} /></summary>
+          <div className="directory-filters">
+            <label><Search size={16} /><span className="sr-only">Buscar fuente o país</span><input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} placeholder="Buscar medio, dominio o país" /></label>
+            <label><Globe2 size={16} /><span className="sr-only">Filtrar fuentes por región</span><select value={sourceRegion} onChange={(event) => setSourceRegion(event.target.value)}><option>Todas</option>{sourceRegions.map((region) => <option key={region}>{region}</option>)}</select></label>
+            <span>{filteredSources.length} fuentes</span>
+          </div>
           <div className="source-grid">
-            {sourceDirectory.map((source) => (
+            {filteredSources.map((source) => (
               <article key={source.domain}>
-                <span>{source.scope} · {source.kind}</span>
+                <span>{source.country} · {source.region}</span>
                 <strong>{source.label}</strong>
                 <a href={`https://${source.domain}`} target="_blank" rel="noreferrer">{source.domain}<ExternalLink size={13} /></a>
-                <p>{source.criterion}</p>
+                <p>{source.kind}. {source.criterion}</p>
               </article>
             ))}
           </div>
@@ -598,19 +678,31 @@ export default function Home() {
           <summary>Leer política editorial completa <ChevronDown size={17} /></summary>
           <div className="policy-detail">
             <p><strong>1. Admisión.</strong> Solo se consideran entidades oficiales y medios incluidos en la lista pública de fuentes. Un resultado de un proveedor externo no queda aprobado por aparecer en la búsqueda.</p>
-            <p><strong>2. Verificación.</strong> El enlace debe usar HTTPS, incluir una fecha válida y referirse directamente a Abelardo de la Espriella. La fuente original queda accesible.</p>
-            <p><strong>3. Lenguaje.</strong> Denuncia, investigación, imputación, sanción y sentencia se tratan como estados distintos. Una acusación no se presenta como hecho probado.</p>
-            <p><strong>4. Correcciones.</strong> La automatización solo corrige forma —espacios y puntuación repetida—. Cambios de fondo requieren nueva evidencia y deben reflejarse en el archivo.</p>
-            <p><strong>5. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
-            <p><strong>6. Derecho de respuesta.</strong> Cuando existe una respuesta pública de la persona o institución señalada, se incorpora junto al hecho con su enlace original.</p>
-            <p><strong>7. Alcance.</strong> “Admitido para monitoreo” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
+            <p><strong>2. Descubrimiento mundial.</strong> El radar consulta GDELT para localizar cobertura en más de 100 idiomas y registrar país, idioma y dominio. Los medios no incluidos en el directorio aparecen como pendientes de evaluación.</p>
+            <p><strong>3. Verificación.</strong> El enlace debe usar HTTPS, incluir una fecha válida y referirse directamente a Abelardo de la Espriella. La fuente original queda accesible.</p>
+            <p><strong>4. Lenguaje.</strong> Denuncia, investigación, imputación, sanción y sentencia se tratan como estados distintos. Una acusación no se presenta como hecho probado.</p>
+            <p><strong>5. Correcciones.</strong> La automatización solo corrige forma —espacios y puntuación repetida—. Cambios de fondo requieren nueva evidencia y deben reflejarse en el archivo.</p>
+            <p><strong>6. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
+            <p><strong>7. Derecho de respuesta.</strong> Cuando existe una respuesta pública de la persona o institución señalada, se incorpora junto al hecho con su enlace original.</p>
+            <p><strong>8. Alcance.</strong> “Admitido para monitoreo” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
           </div>
         </details>
       </section>
 
+      <section className="creator-section" id="autor">
+        <div className="creator-number">CO</div>
+        <div>
+          <p className="section-kicker">DETRÁS DEL PROYECTO</p>
+          <h2>Un sistema público también puede ser una muestra de cómo trabajo.</h2>
+          <p>Diseñé y desarrollé Cuenta pública para explorar cómo el producto digital, la automatización y el criterio editorial pueden convertir información dispersa en una herramienta comprensible y verificable.</p>
+          <div className="creator-skills"><span>Diseño de producto</span><span>Desarrollo web</span><span>Automatización</span><span>Visualización de datos</span></div>
+          <a href="/autor?utm_source=homepage&utm_medium=creator_section&utm_campaign=portafolio">Conoce el proyecto y a su creador <ArrowUpRight size={17} /></a>
+        </div>
+      </section>
+
       <footer>
         <a className="brand" href="#inicio"><span className="brand-mark">07</span><span>Cuenta pública</span></a>
-        <p>Proyecto independiente de seguimiento documental. No está afiliado a la Presidencia de la República.</p>
+        <p>Proyecto independiente de seguimiento documental creado por <a href="/autor?utm_source=footer&utm_medium=credit&utm_campaign=portafolio">Carlos Orozco</a>. No está afiliado a la Presidencia de la República.</p>
         <span>Última revisión editorial: 21 sep 2026</span>
       </footer>
       <span className="sr-only" aria-live="polite">{sharedId ? "Enlace copiado o compartido" : ""}</span>
