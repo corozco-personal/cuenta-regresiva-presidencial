@@ -34,7 +34,7 @@ export default function SubpageHeader() {
         <details className="nav-more">
           <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
           <div className="nav-more-panel">
-            <Link className="more-priority-2" href="/presidente">Sobre el presidente</Link><Link className="more-priority-3" href="/favorabilidad">Indicadores</Link><Link className="more-priority-4" href="/archivo">Archivo</Link><Link href="/reportes">Reportes</Link><Link href="/fuentes">Fuentes</Link><Link href="/metodologia">Metodología</Link><Link href="/acerca">Acerca de</Link><Link href="/autor">Quién soy</Link>
+            <Link href="/">Inicio</Link><Link className="more-priority-2" href="/presidente">Sobre el presidente</Link><Link className="more-priority-3" href="/favorabilidad">Indicadores</Link><Link className="more-priority-4" href="/archivo">Archivo</Link><Link href="/reportes">Reportes</Link><Link href="/fuentes">Fuentes</Link><Link href="/metodologia">Metodología</Link><Link href="/acerca">Acerca de</Link><Link href="/autor">Quién soy</Link>
           </div>
         </details>
       </nav>
