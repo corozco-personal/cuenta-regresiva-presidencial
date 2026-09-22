@@ -23,7 +23,7 @@ type PublicNews = BaseNews & {
   language?: string;
 };
 
-type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string; country?: string; region?: string };
+export type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string; country?: string; region?: string };
 
 const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "presidencia.gov.co", scope: "Nacional", official: true, label: "Presidencia de Colombia" },
@@ -175,7 +175,7 @@ const CURATED_CHANNELS: BaseNews[] = [
   },
 ];
 
-function profileFor(hostname: string) {
+export function profileFor(hostname: string) {
   const normalized = hostname.replace(/^www\./, "").toLowerCase();
   return SOURCE_PROFILES.find(({ domain }) => normalized === domain || normalized.endsWith(`.${domain}`));
 }

@@ -23,6 +23,7 @@ import {
   Tags,
   X,
 } from "lucide-react";
+import Community from "./components/community";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -347,6 +348,7 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Monitoreo</a>
+          <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
           <a href="#fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
           <a href="#metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
           <a href="/autor?utm_source=header&utm_medium=navegacion&utm_campaign=portafolio" onClick={() => setMenuOpen(false)}>Autor</a>
@@ -602,10 +604,12 @@ export default function Home() {
         {monitorUpdatedAt && <p className="monitor-check"><Link2 size={14} /> Enlaces comprobados el {new Date(monitorUpdatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}. “No comprobado” indica que el sitio externo no respondió; no implica que el contenido sea falso.</p>}
       </section>
 
+      <Community />
+
       <section className="transparency section-shell" id="fuentes">
         <div className="section-heading">
           <div>
-            <p className="section-kicker">03 / TRANSPARENCIA</p>
+          <p className="section-kicker">04 / TRANSPARENCIA</p>
             <h2>Cómo leer el archivo</h2>
             <p>Directorio internacional de medios globales, nacionales y regionales, además de estados procesales y cambios editoriales.</p>
           </div>
@@ -661,7 +665,7 @@ export default function Home() {
 
       <section className="method section-shell" id="metodologia">
         <div className="method-title">
-          <p className="section-kicker">04 / CRITERIO EDITORIAL</p>
+          <p className="section-kicker">05 / CRITERIO EDITORIAL</p>
           <h2>Una regla para cada hallazgo.</h2>
         </div>
         <div className="policy-intro">
@@ -685,6 +689,8 @@ export default function Home() {
             <p><strong>6. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
             <p><strong>7. Derecho de respuesta.</strong> Cuando existe una respuesta pública de la persona o institución señalada, se incorpora junto al hecho con su enlace original.</p>
             <p><strong>8. Alcance.</strong> “Admitido para monitoreo” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
+            <p><strong>9. Aportes ciudadanos.</strong> Los enlaces repetidos se bloquean por su URL normalizada. Las fuentes oficiales relevantes pueden marcarse como publicables; los medios y fuentes nuevas quedan en evaluación y nunca entran automáticamente al archivo verificado.</p>
+            <p><strong>10. Opiniones.</strong> Un identificador anónimo del navegador limita el muro a un aporte por persona; también se impiden duplicados exactos y textos con una similitud sustancial. Los insultos o mensajes de odio se conservan para trazabilidad, pero su contenido se oculta. La postura política, por sí sola, nunca es motivo de filtrado.</p>
           </div>
         </details>
       </section>
