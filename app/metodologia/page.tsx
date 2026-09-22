@@ -13,6 +13,10 @@ const policies = [
   ["Aportes ciudadanos", "Una fuente oficial relevante puede marcarse como publicable. Una nota periodística o una fuente nueva queda en evaluación y no entra automáticamente al archivo documental."],
   ["Opiniones y duplicados", "Un identificador anónimo del navegador limita el muro a un aporte por persona. También se comparan huellas exactas y similitud sustancial entre textos."],
   ["Moderación", "Los insultos y mensajes de odio se conservan para trazabilidad, pero su texto se oculta públicamente. La postura política nunca es, por sí sola, motivo de filtrado."],
+  ["Orientación de medios", "La orientación se toma de evaluaciones externas agregadas por Ground News a partir de AllSides, Ad Fontes Media y Media Bias/Fact Check. Es una calificación del medio, no del artículo. Los medios sin evaluación permanecen como ‘sin datos’."],
+  ["Factualidad de medios", "La factualidad describe prácticas generales de una publicación —uso de fuentes, contexto y correcciones— y no certifica que una noticia concreta sea verdadera. Cuenta pública no genera estas calificaciones con inteligencia artificial."],
+  ["Propiedad y financiación", "La entidad propietaria o financiadora se documenta mediante páginas corporativas, registros o información institucional. La propiedad aporta contexto, pero no determina por sí sola la calidad ni la orientación de una cobertura."],
+  ["Puntos ciegos", "Solo se muestra una distribución ideológica cuando existen calificaciones externas. Con menos de tres fuentes calificadas no se emite una alerta de posible punto ciego, evitando conclusiones estadísticas sobre muestras insuficientes."],
 ];
 
 export default function MethodPage() {
