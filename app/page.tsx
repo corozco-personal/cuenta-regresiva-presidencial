@@ -5,13 +5,16 @@ import {
   ArrowUpRight,
   CheckCircle2,
   ChevronDown,
+  CircleX,
   Clock3,
   FileCheck2,
   Flag,
   Landmark,
   Menu,
+  PencilLine,
   Search,
   ShieldCheck,
+  Tags,
   X,
 } from "lucide-react";
 
@@ -24,7 +27,11 @@ type NewsItem = {
   publishedAt: string;
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: "Nacional" | "Internacional";
+  category: string;
+  decision: "Aprobado" | "Corregido";
+  decisionReason: string;
 };
+type ReviewStats = { approved: number; corrected: number; rejected: number; policyVersion: string };
 
 const START = new Date("2026-08-07T00:00:00-05:00").getTime();
 const TARGET = new Date("2030-08-07T00:00:00-05:00").getTime();
@@ -140,6 +147,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("Todos");
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -163,6 +171,7 @@ export default function Home() {
       })
       .then((data) => {
         setNews(Array.isArray(data.items) ? data.items : []);
+        setReviewStats(data.review ?? null);
         setNewsState("ready");
       })
       .catch(() => setNewsState("error"));
@@ -349,6 +358,14 @@ export default function Home() {
           </div>
           <span className="update-pill"><i /> Actualización cada 24 horas</span>
         </div>
+        {reviewStats && (
+          <div className="review-summary" aria-label="Resultado de la revisión automática">
+            <div><CheckCircle2 size={18} /><span>Aprobados</span><strong>{reviewStats.approved}</strong></div>
+            <div><PencilLine size={18} /><span>Corregidos</span><strong>{reviewStats.corrected}</strong></div>
+            <div><CircleX size={18} /><span>Rechazados</span><strong>{reviewStats.rejected}</strong></div>
+            <p>Política editorial v{reviewStats.policyVersion} · Los rechazados no se publican.</p>
+          </div>
+        )}
         {newsState === "loading" && <div className="news-message">Consultando cobertura reciente…</div>}
         {newsState === "error" && <div className="news-message">El monitor está temporalmente indisponible. El archivo verificado sigue accesible.</div>}
         {newsState === "ready" && news.length === 0 && <div className="news-message">No se encontraron resultados nuevos en esta actualización.</div>}
@@ -359,7 +376,9 @@ export default function Home() {
               {nationalNews.map((item) => (
                 <article className="news-card" key={item.id}>
                   <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
+                  <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-card-bottom"><span>{item.kind}</span><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div>
                 </article>
               ))}
@@ -373,7 +392,9 @@ export default function Home() {
               {internationalNews.map((item) => (
                 <article className="news-card" key={item.id}>
                   <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
+                  <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-card-bottom"><span>{item.kind}</span><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div>
                 </article>
               ))}
@@ -385,16 +406,28 @@ export default function Home() {
       <section className="method section-shell" id="metodologia">
         <div className="method-title">
           <p className="section-kicker">03 / CRITERIO EDITORIAL</p>
-          <h2>Primero la evidencia.</h2>
+          <h2>Una regla para cada hallazgo.</h2>
         </div>
-        <div className="method-grid">
-          <div><FileCheck2 /><strong>Fuente primaria</strong><p>Presidencia, CNE, Registraduría, órganos de control, altas cortes y demás entidades públicas.</p></div>
-          <div><Landmark /><strong>Contexto preciso</strong><p>Se diferencia entre denuncia, investigación, imputación y decisión judicial.</p></div>
-          <div><ShieldCheck /><strong>Corrección abierta</strong><p>Cada registro conserva sus enlaces y puede actualizarse si aparecen nuevos hechos.</p></div>
+        <div className="policy-intro">
+          <p>El sistema aplica estas políticas antes de mostrar una noticia. La decisión, la categoría y su motivo quedan visibles junto al enlace original.</p>
+          <span>Sin panel privado</span>
+        </div>
+        <div className="method-grid policy-grid">
+          <div><CheckCircle2 /><strong>Aprobar</strong><p>Publicar cuando la fuente está admitida, el enlace es verificable y el titular se refiere directamente al mandatario.</p></div>
+          <div><PencilLine /><strong>Corregir</strong><p>Normalizar espacios o puntuación repetida sin alterar afirmaciones. El vínculo al texto original siempre se conserva.</p></div>
+          <div><CircleX /><strong>Rechazar</strong><p>Excluir fuentes no admitidas, enlaces inseguros, fechas inválidas o resultados sin relación directa.</p></div>
+          <div><Tags /><strong>Clasificar</strong><p>Asignar automáticamente ámbito, tipo de fuente y tema: justicia, elecciones, relaciones exteriores, seguridad, economía, derechos o gobierno.</p></div>
         </div>
         <details>
           <summary>Leer política editorial completa <ChevronDown size={17} /></summary>
-          <p>El monitor automático no publica por sí mismo una acusación como hecho probado. Consulta entidades oficiales colombianas, medios nacionales identificados y canales internacionales reconocidos. Los registros del archivo exigen una fuente primaria o corroboración independiente, lenguaje neutral y la respuesta de las personas o instituciones señaladas cuando esté disponible. “Verificado” describe la trazabilidad de la evidencia citada, no una aprobación política.</p>
+          <div className="policy-detail">
+            <p><strong>1. Admisión.</strong> Solo se consideran entidades oficiales y medios incluidos en la lista pública de fuentes. Un resultado de un proveedor externo no queda aprobado por aparecer en la búsqueda.</p>
+            <p><strong>2. Verificación.</strong> El enlace debe usar HTTPS, incluir una fecha válida y referirse directamente a Abelardo de la Espriella. La fuente original queda accesible.</p>
+            <p><strong>3. Lenguaje.</strong> Denuncia, investigación, imputación, sanción y sentencia se tratan como estados distintos. Una acusación no se presenta como hecho probado.</p>
+            <p><strong>4. Correcciones.</strong> La automatización solo corrige forma —espacios y puntuación repetida—. Cambios de fondo requieren nueva evidencia y deben reflejarse en el archivo.</p>
+            <p><strong>5. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
+            <p><strong>6. Alcance.</strong> “Aprobado” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
+          </div>
         </details>
       </section>
 

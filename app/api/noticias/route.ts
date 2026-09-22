@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 type Scope = "Nacional" | "Internacional";
-type PublicNews = {
+type BaseNews = {
   id: string;
   title: string;
   source: string;
@@ -9,6 +9,12 @@ type PublicNews = {
   publishedAt: string;
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: Scope;
+};
+type CandidateNews = BaseNews & { trustedSource: boolean; curated?: boolean };
+type PublicNews = BaseNews & {
+  category: string;
+  decision: "Aprobado" | "Corregido";
+  decisionReason: string;
 };
 
 type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string };
@@ -54,7 +60,7 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "aljazeera.com", scope: "Internacional", label: "Al Jazeera" },
 ];
 
-const CURATED_CHANNELS: PublicNews[] = [
+const CURATED_CHANNELS: BaseNews[] = [
   {
     id: "nacional-caracol-justicia",
     title: "El presidente se pronunció sobre decisiones judiciales durante una alocución",
@@ -114,7 +120,52 @@ function gdeltDate(value?: string) {
   return new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`).toISOString();
 }
 
-async function fromNewsApi(apiKey: string): Promise<PublicNews[]> {
+const CATEGORY_RULES = [
+  { label: "Justicia y control", pattern: /juez|justicia|corte|fiscal|procuradur|contralor|fallo|sentencia|investiga|imputa/i },
+  { label: "Elecciones", pattern: /elecci|candidat|voto|cne|registradur|campaña|posesi|proclama/i },
+  { label: "Relaciones exteriores", pattern: /canciller|diplom|exterior|estados unidos|venezuela|israel|onu|oea|embajad/i },
+  { label: "Seguridad y defensa", pattern: /seguridad|defensa|policía|ejército|militar|violencia|atentado/i },
+  { label: "Economía", pattern: /econom|hacienda|presupuesto|impuesto|empleo|inflación|comercio/i },
+  { label: "Derechos", pattern: /derechos|tutela|víctima|menor|libertad|defensoría/i },
+];
+
+function classify(title: string) {
+  return CATEGORY_RULES.find(({ pattern }) => pattern.test(title))?.label ?? "Gobierno";
+}
+
+function normalizeTitle(title: string) {
+  return title.trim().replace(/\s+/g, " ").replace(/([!?])\1+/g, "$1");
+}
+
+function reviewCandidate(candidate: CandidateNews) {
+  if (!candidate.trustedSource) {
+    return { decision: "Rechazado" as const, reason: "La fuente no está en la lista pública de canales admitidos." };
+  }
+  if (!/^https:\/\//i.test(candidate.url) || Number.isNaN(Date.parse(candidate.publishedAt))) {
+    return { decision: "Rechazado" as const, reason: "El enlace o la fecha no permiten verificar el hallazgo." };
+  }
+  if (!candidate.curated && !/abelardo|espriella/i.test(candidate.title)) {
+    return { decision: "Rechazado" as const, reason: "El título no tiene relación directa con la persona monitoreada." };
+  }
+
+  const correctedTitle = normalizeTitle(candidate.title);
+  const corrected = correctedTitle !== candidate.title;
+  const { trustedSource: _trustedSource, curated: _curated, ...publishable } = candidate;
+  const item: PublicNews = {
+    ...publishable,
+    title: correctedTitle,
+    category: classify(correctedTitle),
+    decision: corrected ? "Corregido" : "Aprobado",
+    decisionReason: corrected
+      ? "Se normalizó únicamente la forma del titular; el enlace original permanece disponible."
+      : candidate.kind === "Fuente primaria"
+        ? "Fuente oficial admitida y referencia directa al asunto monitoreado."
+        : "Medio admitido, referencia directa y enlace verificable.",
+  };
+  return { decision: item.decision, reason: item.decisionReason, item };
+}
+
+async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
     q: '"Abelardo de la Espriella"',
     language: "es",
@@ -132,21 +183,22 @@ async function fromNewsApi(apiKey: string): Promise<PublicNews[]> {
       const hostname = new URL(url).hostname;
       const profile = profileFor(hostname);
       const title = String(article.title ?? "Sin título");
-      if (!profile || !/abelardo|espriella/i.test(title)) return [];
+      if (!/abelardo|espriella/i.test(title)) return [];
       return [{
         id: idFor(url),
         title,
-        source: profile.label ?? String((article.source as { name?: string } | undefined)?.name ?? hostname),
+        source: profile?.label ?? String((article.source as { name?: string } | undefined)?.name ?? hostname),
         url,
         publishedAt: String(article.publishedAt ?? new Date().toISOString()),
-        kind: profile.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
-        scope: profile.scope,
+        kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+        scope: profile?.scope ?? "Internacional",
+        trustedSource: Boolean(profile),
       }];
     } catch { return []; }
   });
 }
 
-async function fromGdelt(): Promise<PublicNews[]> {
+async function fromGdelt(): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
     query: '"Abelardo de la Espriella"',
     mode: "ArtList",
@@ -165,15 +217,16 @@ async function fromGdelt(): Promise<PublicNews[]> {
       const hostname = new URL(url).hostname;
       const profile = profileFor(hostname);
       const title = String(article.title ?? "Sin título");
-      if (!profile || !/abelardo|espriella/i.test(title)) return [];
+      if (!/abelardo|espriella/i.test(title)) return [];
       return [{
         id: idFor(url),
         title,
-        source: profile.label ?? String(article.domain ?? hostname),
+        source: profile?.label ?? String(article.domain ?? hostname),
         url,
         publishedAt: gdeltDate(String(article.seendate ?? "")),
-        kind: profile.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
-        scope: profile.scope,
+        kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+        scope: profile?.scope ?? "Internacional",
+        trustedSource: Boolean(profile),
       }];
     } catch { return []; }
   });
@@ -181,7 +234,7 @@ async function fromGdelt(): Promise<PublicNews[]> {
 
 export async function GET() {
   let provider = "curated";
-  let discovered: PublicNews[] = [];
+  let discovered: CandidateNews[] = [];
   try {
     const apiKey = process.env.NEWS_API_KEY;
     discovered = apiKey ? await fromNewsApi(apiKey) : await fromGdelt();
@@ -190,14 +243,26 @@ export async function GET() {
     console.error("news-monitor", error);
   }
 
-  const items = Array.from(
-    new Map([...discovered, ...CURATED_CHANNELS].map((item) => [item.url, item])).values(),
-  )
+  const candidates = Array.from(
+    new Map([
+      ...discovered,
+      ...CURATED_CHANNELS.map((item) => ({ ...item, trustedSource: true, curated: true })),
+    ].map((item) => [item.url, item])).values(),
+  );
+  const reviewed = candidates.map(reviewCandidate);
+  const items = reviewed
+    .flatMap((result) => result.item ? [result.item] : [])
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
     .slice(0, 24);
+  const review = {
+    approved: reviewed.filter(({ decision }) => decision === "Aprobado").length,
+    corrected: reviewed.filter(({ decision }) => decision === "Corregido").length,
+    rejected: reviewed.filter(({ decision }) => decision === "Rechazado").length,
+    policyVersion: "1.0",
+  };
 
   return NextResponse.json(
-    { items, updatedAt: new Date().toISOString(), provider },
+    { items, review, updatedAt: new Date().toISOString(), provider },
     { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } },
   );
 }
