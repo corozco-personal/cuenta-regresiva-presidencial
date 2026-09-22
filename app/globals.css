@@ -407,6 +407,16 @@ footer p a { color: var(--citrus); font-weight: 800; }
 .about-principles article > span { color: var(--muted); font-family: Georgia, serif; font-size: 25px; }
 .about-principles h2 { margin: 0 0 12px; font-family: Georgia, serif; font-size: clamp(27px, 3vw, 38px); font-weight: 400; line-height: 1.05; letter-spacing: -.025em; }
 .about-principles p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+.ai-disclosure { margin-top: clamp(55px, 8vw, 90px); padding: clamp(34px, 6vw, 66px); border: 1px solid var(--line); background: var(--cream); }
+.ai-disclosure h2 { max-width: 930px; margin: 0; font-family: Georgia, serif; font-size: clamp(38px, 5.4vw, 68px); font-weight: 400; line-height: 1; letter-spacing: -.045em; }
+.ai-disclosure > p:not(.section-kicker):not(.ai-disclosure-note) { max-width: 850px; margin: 26px 0 0; color: var(--muted); font-size: 17px; line-height: 1.7; }
+.ai-verification-grid { margin-top: 38px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.ai-verification-grid > div { min-height: 170px; padding: 26px 24px 26px 0; display: flex; flex-direction: column; gap: 13px; }
+.ai-verification-grid > div + div { padding-left: 24px; border-left: 1px solid var(--line); }
+.ai-verification-grid strong { font-family: Georgia, serif; font-size: 22px; font-weight: 400; }
+.ai-verification-grid span { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.ai-disclosure .ai-disclosure-note { max-width: 930px; margin: 30px 0 0; font-size: 15px; line-height: 1.7; }
+.ai-disclosure-note strong { color: var(--forest); }
 .independence-notice { margin-top: clamp(55px, 8vw, 90px); padding: clamp(34px, 6vw, 66px); background: var(--forest); color: var(--white); }
 .independence-notice h2 { margin: 0; color: var(--citrus); font-family: Georgia, serif; font-size: clamp(38px, 5.4vw, 68px); font-weight: 400; line-height: 1; letter-spacing: -.045em; }
 .independence-notice > p:not(.section-kicker) { max-width: 820px; margin: 25px 0 0; color: rgba(255,255,255,.72); font-size: 17px; line-height: 1.7; }
@@ -678,7 +688,10 @@ footer > span { text-align: right; }
 @media (max-width: 680px) {
   .about-principles article { grid-template-columns: 42px minmax(0, 1fr); gap: 14px; }
   .about-principles p { font-size: 15px; }
-  .independence-notice { margin-right: -20px; margin-left: -20px; }
+  .ai-disclosure, .independence-notice { margin-right: -20px; margin-left: -20px; }
+  .ai-verification-grid { grid-template-columns: 1fr; }
+  .ai-verification-grid > div { min-height: auto; padding: 22px 0; }
+  .ai-verification-grid > div + div { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
   .share-site { grid-template-columns: 1fr; }
   .share-actions { justify-content: flex-start; }
   .share-notice { grid-column: auto; }

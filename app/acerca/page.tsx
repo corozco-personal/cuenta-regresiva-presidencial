@@ -53,6 +53,17 @@ export default function AboutPage() {
             </article>
           ))}
         </div>
+        <aside className="ai-disclosure">
+          <p className="section-kicker">DECLARACIÓN DE USO DE INTELIGENCIA ARTIFICIAL</p>
+          <h2>IA para construir la herramienta, no para inventar los hechos.</h2>
+          <p>La inteligencia artificial fue utilizada como apoyo durante el diseño, el desarrollo, la programación, las pruebas y la organización inicial de esta plataforma. Su uso no sustituye las fuentes originales, el criterio editorial ni la posibilidad de comprobar la información.</p>
+          <div className="ai-verification-grid">
+            <div><strong>Información trazable</strong><span>Las noticias y los hechos remiten a su fuente mediante enlaces consultables.</span></div>
+            <div><strong>Cálculos reproducibles</strong><span>El contador, los porcentajes y los indicadores parten de fechas, datos y reglas visibles.</span></div>
+            <div><strong>Contenido identificado</strong><span>Los documentos, las coberturas y las opiniones se presentan como categorías diferentes.</span></div>
+          </div>
+          <p className="ai-disclosure-note"><strong>Todo lo que el portal muestra, calcula o consulta es 100 % verificable en su procedencia, sus datos o su método.</strong> La plataforma no publica afirmaciones generadas por IA como si fueran noticias o hechos comprobados, ni utiliza la IA como una fuente autónoma de información. Las opiniones ciudadanas se identifican expresamente como opiniones.</p>
+        </aside>
         <aside className="independence-notice">
           <p className="section-kicker">DECLARACIÓN DE INDEPENDENCIA</p>
           <h2>Sin financiación, promoción ni afiliación.</h2>
