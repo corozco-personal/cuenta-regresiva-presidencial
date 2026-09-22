@@ -337,21 +337,21 @@ export default function Home() {
   ];
 
   return (
-    <main className={ecoMode ? "eco-mode" : ""}>
+    <main className={`home-streamlined ${ecoMode ? "eco-mode" : ""}`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-      <a className="skip-link" href="#archivo">Saltar al archivo</a>
+      <a className="skip-link" href="#monitoreo">Saltar a las noticias</a>
       <header className="site-header">
         <a className="brand" href="#inicio" aria-label="Ir al inicio">
           <span className="brand-mark">07</span>
           <span>Cuenta pública</span>
         </a>
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
-          <a href="#archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
-          <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Monitoreo</a>
+          <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
           <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
-          <a href="#fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
-          <a href="#metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
-          <a href="/autor?utm_source=header&utm_medium=navegacion&utm_campaign=portafolio" onClick={() => setMenuOpen(false)}>Autor</a>
+          <a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
+          <a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
+          <a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
+          <a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
         </nav>
         <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
           <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
@@ -376,7 +376,7 @@ export default function Home() {
             <span>Fecha objetivo</span>
             <strong>7 de agosto de 2030</strong>
           </div>
-          <a className="creator-byline" href="/autor?utm_source=hero&utm_medium=byline&utm_campaign=portafolio"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
+          <a className="creator-byline" href="/autor"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
         </div>
 
         <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
@@ -433,7 +433,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="archive section-shell" id="archivo">
+      <section className="archive section-shell" id="archivo" hidden>
         <div className="section-heading">
           <div>
             <p className="section-kicker">01 / ARCHIVO</p>
@@ -503,7 +503,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="evidence-dashboard" aria-label="Estadísticas del archivo">
+      <section className="evidence-dashboard" aria-label="Estadísticas del archivo" hidden>
         <div><strong>{records.length}</strong><span>hechos documentados</span></div>
         <div><strong>{officialRecords}</strong><span>documentos oficiales</span></div>
         <div><strong>{records.length - officialRecords}</strong><span>coberturas periodísticas</span></div>
@@ -606,7 +606,7 @@ export default function Home() {
 
       <Community />
 
-      <section className="transparency section-shell" id="fuentes">
+      <section className="transparency section-shell" id="fuentes" hidden>
         <div className="section-heading">
           <div>
           <p className="section-kicker">04 / TRANSPARENCIA</p>
@@ -663,7 +663,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="method section-shell" id="metodologia">
+      <section className="method section-shell" id="metodologia" hidden>
         <div className="method-title">
           <p className="section-kicker">05 / CRITERIO EDITORIAL</p>
           <h2>Una regla para cada hallazgo.</h2>
@@ -695,7 +695,7 @@ export default function Home() {
         </details>
       </section>
 
-      <section className="creator-section" id="autor">
+      <section className="creator-section" id="autor" hidden>
         <div className="creator-number">CO</div>
         <div>
           <p className="section-kicker">DETRÁS DEL PROYECTO</p>
@@ -708,7 +708,7 @@ export default function Home() {
 
       <footer>
         <a className="brand" href="#inicio"><span className="brand-mark">07</span><span>Cuenta pública</span></a>
-        <p>Proyecto independiente de seguimiento documental creado por <a href="/autor?utm_source=footer&utm_medium=credit&utm_campaign=portafolio">Carlos Orozco</a>. No está afiliado a la Presidencia de la República.</p>
+        <p>Soy <a href="/autor">Carlos Orozco</a>. Creé este proyecto para reunir en un solo lugar el tiempo del mandato, las noticias y la participación ciudadana. No está afiliado a la Presidencia de la República.</p>
         <span>Última revisión editorial: 21 sep 2026</span>
       </footer>
       <span className="sr-only" aria-live="polite">{sharedId ? "Enlace copiado o compartido" : ""}</span>
