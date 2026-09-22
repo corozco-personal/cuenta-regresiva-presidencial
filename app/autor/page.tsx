@@ -13,7 +13,7 @@ export default function AuthorPage() {
     <main className="subpage">
       <header className="subpage-header">
         <Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link>
-        <nav><Link href="/">Inicio</Link><Link href="/favorabilidad">Indicadores</Link><Link href="/archivo">Archivo</Link><Link href="/fuentes">Fuentes</Link><Link href="/metodologia">Metodología</Link></nav>
+        <nav><Link href="/">Inicio</Link><Link href="/presidente">Presidente</Link><Link href="/favorabilidad">Indicadores</Link><Link href="/archivo">Archivo</Link><Link href="/fuentes">Fuentes</Link><Link href="/metodologia">Metodología</Link></nav>
       </header>
       <section className="subpage-hero">
         <p className="section-kicker">QUIÉN ESTÁ DETRÁS</p>

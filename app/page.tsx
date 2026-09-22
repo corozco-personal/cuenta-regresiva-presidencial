@@ -359,6 +359,7 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
           <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
+          <a href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a>
           <a href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a>
           <a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
