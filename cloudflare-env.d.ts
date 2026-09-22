@@ -9,6 +9,5 @@ declare namespace Cloudflare {
     RESEND_API_KEY?: string;
     REVIEW_NOTIFICATION_EMAIL?: string;
     REVIEW_FROM_EMAIL?: string;
-    PURGE_SUBMISSIONS_TOKEN?: string;
   }
 }

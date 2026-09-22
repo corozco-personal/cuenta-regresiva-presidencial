@@ -1,7 +1,6 @@
-import { env } from "cloudflare:workers";
-import { desc, eq, or } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { moderationActions, newsSubmissions, opinions } from "../../../db/schema";
+import { newsSubmissions, opinions } from "../../../db/schema";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { getAuthorizedReviewer } from "../../data/reviewer-auth";
 
@@ -15,11 +14,6 @@ function hasValidOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return true;
   try { return origin === new URL(request.url).origin; } catch { return false; }
-}
-
-async function digest(value: string) {
-  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export async function GET() {
@@ -88,25 +82,5 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, status: next });
   } catch {
     return Response.json({ error: "No fue posible registrar la decisión." }, { status: 503 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  const expected = env.PURGE_SUBMISSIONS_TOKEN?.trim();
-  const supplied = request.headers.get("x-purge-token")?.trim();
-  if (!expected || !supplied || await digest(expected) !== await digest(supplied)) return unauthorized();
-  try {
-    const db = getDb();
-    const [opinionRows, newsRows] = await Promise.all([
-      db.select({ id: opinions.id }).from(opinions),
-      db.select({ id: newsSubmissions.id }).from(newsSubmissions),
-    ]);
-    await db.delete(moderationActions).where(or(eq(moderationActions.itemType, "opinion"), eq(moderationActions.itemType, "news")));
-    await db.delete(opinions);
-    await db.delete(newsSubmissions);
-    await recordSecurityEvent(request, { endpoint: "maintenance-purge", category: "bot", severity: "high", reason: `Limpieza autorizada: ${opinionRows.length} opiniones y ${newsRows.length} enlaces identificados como spam automatizado` });
-    return Response.json({ ok: true, deleted: { opinions: opinionRows.length, submissions: newsRows.length } }, { headers: { "Cache-Control": "private, no-store" } });
-  } catch {
-    return Response.json({ error: "No fue posible completar la limpieza." }, { status: 503 });
   }
 }
