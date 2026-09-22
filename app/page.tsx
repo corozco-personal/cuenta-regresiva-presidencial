@@ -8,6 +8,7 @@ import {
   CircleX,
   Clock3,
   ExternalLink,
+  Filter,
   Flag,
   Globe2,
   History,
@@ -27,6 +28,7 @@ import ShareOptions from "./components/share-options";
 import NavigationCatalog from "./components/navigation-catalog";
 import CompactPresence from "./components/compact-presence";
 import { campaignPromises } from "./data/campaign-promises";
+import { clientPlainText } from "./data/client-input";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -513,11 +515,11 @@ export default function Home() {
           <label className="search-box">
             <Search size={18} />
             <span className="sr-only">Buscar en el archivo</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en el archivo" />
+            <input value={query} maxLength={120} onChange={(event) => setQuery(clientPlainText(event.target.value))} placeholder="Buscar en el archivo" />
           </label>
           <div className="filter-buttons" aria-label="Filtrar por alcance">
             {["Todos", "Nacional", "Internacional"].map((item) => (
-              <button key={item} className={scope === item ? "active" : ""} onClick={() => setScope(item)}>{item}</button>
+              <button key={item} className={scope === item ? "active" : ""} onClick={() => setScope(item)}><Filter size={14} />{item}</button>
             ))}
           </div>
         </div>
@@ -595,7 +597,7 @@ export default function Home() {
         )}
         {newsState === "ready" && (
           <div className="news-controls" role="search" aria-label="Filtrar noticias monitoreadas">
-            <label><Search size={17} /><span className="sr-only">Buscar noticia o fuente</span><input value={newsQuery} onChange={(event) => { setNewsQuery(event.target.value); setNewsLimit(6); }} placeholder="Buscar titular, medio o tema" /></label>
+            <label><Search size={17} /><span className="sr-only">Buscar noticia o fuente</span><input value={newsQuery} maxLength={120} onChange={(event) => { setNewsQuery(clientPlainText(event.target.value)); setNewsLimit(6); }} placeholder="Buscar titular, medio o tema" /></label>
             <label><History size={17} /><span className="sr-only">Filtrar por etapa</span><select value={newsStage} onChange={(event) => { setNewsStage(event.target.value); setNewsLimit(6); }}><option>Todas</option><option>Campaña</option><option>Transición</option><option>Presidencia</option></select></label>
             <span><strong>{filteredNews.length}</strong> resultados · desde 16 jul 2025</span>
           </div>
@@ -656,7 +658,7 @@ export default function Home() {
               <div><strong>{globalStats.domains}</strong><span>dominios distintos</span></div>
             </div>
             <div className="radar-filters">
-              <label><Search size={16} /><span className="sr-only">Buscar medio o titular mundial</span><input value={radarQuery} onChange={(event) => setRadarQuery(event.target.value)} placeholder="Buscar medio, dominio o titular" /></label>
+              <label><Search size={16} /><span className="sr-only">Buscar medio o titular mundial</span><input value={radarQuery} maxLength={120} onChange={(event) => setRadarQuery(clientPlainText(event.target.value))} placeholder="Buscar medio, dominio o titular" /></label>
               <label><Globe2 size={16} /><span className="sr-only">Filtrar radar por país</span><select value={radarCountry} onChange={(event) => setRadarCountry(event.target.value)}><option>Todos</option>{radarCountries.map((country) => <option key={country}>{country}</option>)}</select></label>
             </div>
             {filteredRadar.length > 0 ? (
@@ -711,7 +713,7 @@ export default function Home() {
         <details className="sources-directory">
           <summary>Consultar las {sourceDirectory.length || globalStats?.catalogSources || 38} fuentes admitidas <ChevronDown size={17} /></summary>
           <div className="directory-filters">
-            <label><Search size={16} /><span className="sr-only">Buscar fuente o país</span><input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} placeholder="Buscar medio, dominio o país" /></label>
+            <label><Search size={16} /><span className="sr-only">Buscar fuente o país</span><input value={sourceQuery} maxLength={120} onChange={(event) => setSourceQuery(clientPlainText(event.target.value))} placeholder="Buscar medio, dominio o país" /></label>
             <label><Globe2 size={16} /><span className="sr-only">Filtrar fuentes por región</span><select value={sourceRegion} onChange={(event) => setSourceRegion(event.target.value)}><option>Todas</option>{sourceRegions.map((region) => <option key={region}>{region}</option>)}</select></label>
             <span>{filteredSources.length} fuentes</span>
           </div>

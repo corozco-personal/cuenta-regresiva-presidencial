@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Download, Eye, MousePointerClick, RefreshCw, Users } from "lucide-react";
+import { Activity, CalendarDays, Download, Eye, MousePointerClick, RefreshCw, Users } from "lucide-react";
 import ActivityChart from "./activity-chart";
 
 type Row = { day: string; users: number; pageviews: number; interactions: number };
@@ -69,7 +69,7 @@ export default function AnalyticsDashboard() {
   return (
     <div className="analytics-dashboard">
       <div className="analytics-toolbar">
-        <div className="range-buttons" aria-label="Periodo del reporte">{[7, 30, 90].map((value) => <button key={value} className={range === value ? "active" : ""} onClick={() => changeRange(value)}>{value} días</button>)}</div>
+        <div className="range-buttons" aria-label="Periodo del reporte">{[7, 30, 90].map((value) => <button key={value} className={range === value ? "active" : ""} onClick={() => changeRange(value)}><CalendarDays size={15} />{value} días</button>)}</div>
         <button className="export-report" onClick={exportCsv} disabled={!data}><Download size={17} /> Descargar CSV</button>
       </div>
 

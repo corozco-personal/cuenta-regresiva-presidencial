@@ -3,6 +3,8 @@ import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { newsSubmissions } from "../../../db/schema";
 import { profileFor } from "../noticias/route";
+import { countryNames } from "../../data/countries";
+import { httpsUrl, plainText } from "../../data/input-security";
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -37,11 +39,11 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
-    const rawUrl = String(payload.url ?? "").trim();
-    const country = String(payload.country ?? "").trim();
+    const rawUrl = httpsUrl(payload.url);
+    const country = plainText(payload.country, { max: 80 });
     const isAnonymous = payload.isAnonymous !== false;
-    const submitterName = isAnonymous ? null : String(payload.submitterName ?? "").trim();
-    if (!rawUrl || !country || country.length > 80 || (!isAnonymous && !submitterName)) return Response.json({ error: "Completa el enlace, el país y, si aplica, tu nombre." }, { status: 400 });
+    const submitterName = isAnonymous ? null : plainText(payload.submitterName, { min: 2, max: 80 });
+    if (!countryNames.has(country) || (!isAnonymous && !submitterName)) return Response.json({ error: "Completa el enlace, selecciona un país válido y, si aplica, tu nombre." }, { status: 400 });
     const { normalized, host } = normalizeUrl(rawUrl);
     const urlHash = await digest(normalized);
     const db = getDb();
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
     return Response.json({ submission: publicSubmission(row as typeof newsSubmissions.$inferSelect) }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "unsafe") return Response.json({ error: "Solo se aceptan enlaces HTTPS públicos y seguros." }, { status: 400 });
+    if (error instanceof Error && error.message === "invalid-text") return Response.json({ error: "Uno de los campos contiene formato no permitido. Escribe únicamente texto plano." }, { status: 400 });
     if (error instanceof Error && error.name === "AbortError") return Response.json({ error: "La fuente tardó demasiado en responder. No se guardó el envío." }, { status: 408 });
     const message = error instanceof Error ? error.message : "";
     if (message.includes("UNIQUE")) return Response.json({ error: "Este enlace ya fue enviado.", duplicate: true }, { status: 409 });

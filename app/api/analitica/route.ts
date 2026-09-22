@@ -2,9 +2,10 @@ import { getD1 } from "../../../db";
 
 const SESSION_PATTERN = /^[a-f0-9-]{20,80}$/i;
 const EVENT_TYPES = new Set(["pageview", "interaction"]);
+const ACTIONS = new Set(["heartbeat", "event"]);
 
 function clean(value: unknown, fallback: string, max = 100) {
-  return String(value ?? fallback).replace(/[\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) || fallback;
+  return String(value ?? fallback).normalize("NFKC").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) || fallback;
 }
 
 function bogotaDay(date = new Date()) {
@@ -23,8 +24,10 @@ export async function POST(request: Request) {
     const sessionId = clean(payload.sessionId, "", 80);
     if (!SESSION_PATTERN.test(sessionId)) return Response.json({ error: "Sesión inválida." }, { status: 400 });
 
-    const page = clean(payload.page, "/", 120).split("?")[0];
+    const requestedPage = clean(payload.page, "/", 120).split("?")[0];
+    const page = /^\/[a-z0-9/_-]*$/i.test(requestedPage) ? requestedPage : "/";
     const action = clean(payload.action, "heartbeat", 20);
+    if (!ACTIONS.has(action)) return Response.json({ error: "Acción inválida." }, { status: 400 });
     const now = new Date().toISOString();
     const db = getD1();
     await db.prepare(`

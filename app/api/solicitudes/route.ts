@@ -2,6 +2,7 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { correctionRequests } from "../../../db/schema";
+import { httpsUrl, plainText, safeEmail } from "../../data/input-security";
 
 const TYPES = new Set(["Corrección", "Derecho de réplica", "Actualización", "Retiro de datos personales"]);
 async function digest(value: string) { const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)); return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
@@ -17,10 +18,10 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
-    const requestType = String(payload.requestType ?? ""); const subject = String(payload.subject ?? "").trim();
-    const relatedUrl = safeUrl(String(payload.relatedUrl ?? "").trim()); const explanation = String(payload.explanation ?? "").trim();
-    const evidenceUrl = payload.evidenceUrl ? safeUrl(String(payload.evidenceUrl).trim()) : null;
-    const displayName = String(payload.displayName ?? "").trim() || null; const contact = String(payload.contact ?? "").trim().toLowerCase();
+    const requestType = plainText(payload.requestType, { max: 40 }); const subject = plainText(payload.subject, { min: 8, max: 160 });
+    const relatedUrl = safeUrl(httpsUrl(payload.relatedUrl)); const explanation = plainText(payload.explanation, { min: 40, max: 2000, multiline: true });
+    const evidenceUrl = payload.evidenceUrl ? safeUrl(httpsUrl(payload.evidenceUrl)) : null;
+    const displayName = plainText(payload.displayName, { min: 2, max: 80, optional: true }) || null; const contact = safeEmail(payload.contact);
     if (!TYPES.has(requestType) || subject.length < 8 || subject.length > 160 || explanation.length < 40 || explanation.length > 2000) return Response.json({ error: "Completa el tipo, asunto, enlace y una explicación de 40 a 2.000 caracteres." }, { status: 400 });
     const visitorHash = await digest(`${request.headers.get("cf-connecting-ip") ?? "unknown"}|${request.headers.get("user-agent") ?? "unknown"}`);
     const dayAgo = new Date(Date.now() - 86_400_000).toISOString(); const db = getDb();
@@ -30,5 +31,5 @@ export async function POST(request: Request) {
       contactHash: contact ? await digest(contact) : null, visitorHash, status: "Recibida", classification: requestType,
       publicSummary: `${requestType}: ${subject}`, createdAt: new Date().toISOString() };
     await db.insert(correctionRequests).values(row); return Response.json({ request: publicRow(row as typeof correctionRequests.$inferSelect) }, { status: 201 });
-  } catch (error) { return Response.json({ error: error instanceof Error && error.message === "unsafe" ? "Usa únicamente enlaces HTTPS públicos." : "No fue posible registrar la solicitud." }, { status: 400 }); }
+  } catch (error) { const message = error instanceof Error ? error.message : ""; return Response.json({ error: message === "unsafe" ? "Usa únicamente enlaces HTTPS públicos." : message === "invalid-contact" ? "El correo de contacto no es válido." : message === "invalid-text" ? "Uno de los campos contiene formato no permitido. Escribe únicamente texto plano." : "No fue posible registrar la solicitud." }, { status: 400 }); }
 }

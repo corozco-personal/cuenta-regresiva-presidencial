@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, MessageSquareText, Newspaper, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
+import CountrySelect from "./country-select";
 
 type Opinion = { id: string; displayName: string; country: string; department?: string; municipality?: string; stance: string; status: string; comment: string; createdAt: string };
 type Submission = { id: string; url: string; domain: string; title?: string; status: string; reliability: string; reason: string; country: string; createdAt: string };
@@ -74,11 +75,11 @@ export default function Community() {
       <div className="community-forms">
         <form className="community-form" onSubmit={submitNews}>
           <div className="form-title"><Newspaper /><div><h3>Enviar una noticia</h3><p>Pega el enlace original. El sistema revisa seguridad, acceso, fuente, relevancia y duplicidad.</p></div></div>
-          <label>Enlace HTTPS<input name="url" type="url" required placeholder="https://medio.com/noticia" /></label>
-          <div className="form-row"><label>País desde donde aportas<input name="country" required maxLength={80} placeholder="Colombia" /></label><label className="check-label"><input type="checkbox" checked={newsAnonymous} onChange={(e) => setNewsAnonymous(e.target.checked)} />Enviar de forma anónima</label></div>
-          {!newsAnonymous && <label>Tu nombre<input name="submitterName" required maxLength={80} /></label>}
+          <label>Enlace HTTPS<input name="url" type="url" required maxLength={2048} inputMode="url" autoComplete="url" placeholder="https://medio.com/noticia" /></label>
+          <div className="form-row form-row-country"><CountrySelect id="news-country" label="País desde donde aportas" /><div className="anonymous-field"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={newsAnonymous} onChange={(e) => setNewsAnonymous(e.target.checked)} />Enviar de forma anónima</label></div></div>
+          {!newsAnonymous && <label>Tu nombre<input name="submitterName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingNews}>{sendingNews ? "Evaluando…" : "Evaluar y enviar enlace"}</button>
+          <button disabled={sendingNews}><Send size={16} />{sendingNews ? "Evaluando…" : "Evaluar y enviar enlace"}</button>
           {newsMessage && <p className="form-message" aria-live="polite">{newsMessage}</p>}
           <p className="form-note"><ShieldCheck size={15} /> Un medio confiable no convierte automáticamente una afirmación en un hecho probado.</p>
         </form>
@@ -86,12 +87,12 @@ export default function Community() {
         <form className="community-form" onSubmit={submitOpinion}>
           <div className="form-title"><MessageSquareText /><div><h3>Publicar una opinión</h3><p>Un aporte por navegador cada 24 horas. Las coincidencias exactas o sustancialmente similares no se vuelven a publicar.</p></div></div>
           <label>Tu opinión<textarea name="comment" required minLength={20} maxLength={1200} rows={5} placeholder="Comparte un argumento concreto…" /></label>
-          <div className="form-row"><label>Posición<select name="stance" defaultValue="Neutral"><option>A favor</option><option>En contra</option><option>Neutral</option><option>Mixta</option></select></label><label>País<input name="country" required maxLength={80} placeholder="Colombia" /></label></div>
-          <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} /></label></div>
-          <label className="check-label"><input type="checkbox" checked={opinionAnonymous} onChange={(e) => setOpinionAnonymous(e.target.checked)} />Publicar de forma anónima</label>
-          {!opinionAnonymous && <label>Tu nombre<input name="displayName" required maxLength={80} /></label>}
+          <div className="form-row"><label>Posición<select name="stance" defaultValue="Neutral"><option>A favor</option><option>En contra</option><option>Neutral</option><option>Mixta</option></select></label><CountrySelect id="opinion-country" /></div>
+          <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>
+          <div className="anonymous-field anonymous-field-full"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={opinionAnonymous} onChange={(e) => setOpinionAnonymous(e.target.checked)} />Publicar de forma anónima</label></div>
+          {!opinionAnonymous && <label>Tu nombre<input name="displayName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingOpinion}>{sendingOpinion ? "Revisando…" : "Publicar opinión"}</button>
+          <button disabled={sendingOpinion}><MessageSquarePlus size={16} />{sendingOpinion ? "Revisando…" : "Publicar opinión"}</button>
           {opinionMessage && <p className="form-message" aria-live="polite">{opinionMessage}</p>}
         </form>
       </div>

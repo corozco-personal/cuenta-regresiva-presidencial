@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, FileSearch2, Globe2, Info, Layers3, Scale, Share2 } from "lucide-react";
+import { ChevronDown, ExternalLink, FileSearch2, Globe2, Info, Layers3, Scale, Share2 } from "lucide-react";
 import { biasGroup, getMediaProfile } from "../data/media-transparency";
 import { analyzeHeadlineFrame, contrastLevel, headlineDistance } from "../data/coverage-methodology";
 
@@ -73,6 +73,6 @@ export default function CoverageComparator() {
         <div className="source-rating-links"><a href={source.url} target="_blank" rel="noreferrer">Abrir cobertura <ExternalLink size={13} /></a>{profile.ratingSource && <a href={profile.ratingSource} target="_blank" rel="noreferrer">Ver calificación</a>}{profile.ownershipSource && <a href={profile.ownershipSource} target="_blank" rel="noreferrer">Ver propiedad</a>}</div>
       </article>; })}</div>
     </article>) : <p className="empty-state">No hay coberturas disponibles para comparar.</p>}</div>
-    {grouped.length > limit && <button className="comparison-more" onClick={() => setLimit(value => value + 18)}>Ver 18 historias más</button>}
+    {grouped.length > limit && <button className="comparison-more" onClick={() => setLimit(value => value + 18)}><ChevronDown size={17} />Ver 18 historias más</button>}
   </>;
 }

@@ -1,6 +1,8 @@
 import { and, desc, eq, gte, notLike } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { opinions } from "../../../db/schema";
+import { countryNames } from "../../data/countries";
+import { plainText } from "../../data/input-security";
 import { looksAutomatedOpinion } from "../../data/opinion-moderation";
 
 const ALLOWED_STANCES = new Set(["A favor", "En contra", "Neutral", "Mixta"]);
@@ -57,16 +59,15 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json() as Record<string, unknown>;
     if (payload.website) return Response.json({ ok: true }, { status: 201 });
-    const comment = String(payload.comment ?? "").trim();
-    const country = String(payload.country ?? "").trim();
-    const department = String(payload.department ?? "").trim();
-    const municipality = String(payload.municipality ?? "").trim();
+    const comment = plainText(payload.comment, { min: 20, max: 1200, multiline: true });
+    const country = plainText(payload.country, { max: 80 });
+    const department = plainText(payload.department, { max: 100, optional: true });
+    const municipality = plainText(payload.municipality, { max: 100, optional: true });
     const stance = String(payload.stance ?? "Neutral");
     const isAnonymous = payload.isAnonymous !== false;
-    const displayName = isAnonymous ? null : String(payload.displayName ?? "").trim();
-    if (comment.length < 20 || comment.length > 1200 || !country || country.length > 80 || !ALLOWED_STANCES.has(stance) || (!isAnonymous && !displayName)) {
-      return Response.json({ error: "Revisa los campos: la opinión debe tener entre 20 y 1.200 caracteres." }, { status: 400 });
-    }
+    const displayName = isAnonymous ? null : plainText(payload.displayName, { min: 2, max: 80 });
+    if (!countryNames.has(country)) return Response.json({ error: "Selecciona un país válido de la lista." }, { status: 400 });
+    if (!ALLOWED_STANCES.has(stance) || (!isAnonymous && !displayName)) return Response.json({ error: "Revisa la posición y el nombre antes de publicar." }, { status: 400 });
     if (looksAutomatedOpinion(comment)) {
       return Response.json({ error: "El texto parece contenido automático o de prueba y no puede publicarse." }, { status: 400 });
     }
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Ya existe una opinión sustancialmente similar. Puedes aportar un argumento diferente.", duplicate: true }, { status: 409 });
     }
 
-    const contributorId = String(payload.contributorId ?? "").trim();
+    const contributorId = String(payload.contributorId ?? "").trim().slice(0, 80);
     const network = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     const userAgent = request.headers.get("user-agent")?.slice(0, 220) ?? "unknown";
     const visitorSource = network
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message.includes("UNIQUE")) return Response.json({ error: "Esta opinión ya fue publicada.", duplicate: true }, { status: 409 });
+    if (["invalid-text"].includes(message)) return Response.json({ error: "Uno de los campos contiene formato no permitido. Escribe únicamente texto plano." }, { status: 400 });
     return Response.json({ error: "No fue posible guardar la opinión. Intenta nuevamente." }, { status: 503 });
   }
 }

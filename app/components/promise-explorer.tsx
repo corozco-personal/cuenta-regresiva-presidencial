@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, CircleHelp, Clock3, ExternalLink, Search } from "lucide-react";
 import { campaignPromises, promiseStatusDefinition, type PromiseStatus } from "../data/campaign-promises";
+import { clientPlainText } from "../data/client-input";
 
 const statuses: Array<"Todos" | PromiseStatus> = ["Todos", "Cumplida", "En ejecución", "Pendiente", "Vencida", "Incumplida", "Sin evidencia suficiente"];
 
@@ -26,7 +27,7 @@ export default function PromiseExplorer() {
       <CircleHelp size={20} /><p><strong>La unidad de análisis es la promesa, no el anuncio.</strong> Un acto de gobierno puede ser evidencia de ejecución sin demostrar todavía el resultado prometido.</p>
     </section>
     <section className="promise-toolbar" aria-label="Filtrar promesas">
-      <label><Search size={17} /><span className="sr-only">Buscar promesa</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar promesa o tema" /></label>
+      <label><Search size={17} /><span className="sr-only">Buscar promesa</span><input value={query} maxLength={120} onChange={(event) => setQuery(clientPlainText(event.target.value))} placeholder="Buscar promesa o tema" /></label>
       <label><span>Estado</span><select value={status} onChange={(event) => setStatus(event.target.value as (typeof statuses)[number])}>{statuses.map((item) => <option key={item}>{item}</option>)}</select></label>
     </section>
     <section className="promise-catalog">
