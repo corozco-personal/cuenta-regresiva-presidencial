@@ -366,7 +366,7 @@ export default function Home() {
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
             <div className="nav-more-panel">
-              <a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+              <a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
             </div>
           </details>
         </nav>
@@ -742,7 +742,7 @@ export default function Home() {
 
       <footer>
         <a className="brand" href="#inicio"><span className="brand-mark">07</span><span>Cuenta pública</span></a>
-        <p>Soy <a href="/autor">Carlos Orozco</a>. Creé este proyecto para reunir en un solo lugar el tiempo del mandato, las noticias y la participación ciudadana. No está afiliado a la Presidencia de la República.</p>
+        <p>Soy <a href="/autor">Carlos Orozco</a>. Creé este proyecto para reunir el tiempo del mandato, las noticias y la participación ciudadana. Es un portal <a href="/acerca">independiente y sin ánimo de lucro</a>.</p>
         <span>Última revisión editorial: 21 sep 2026</span>
       </footer>
       <span className="sr-only" aria-live="polite">{sharedId ? "Enlace copiado o compartido" : ""}</span>
