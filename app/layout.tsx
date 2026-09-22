@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AnalyticsTracker from "./components/analytics-tracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site"),
@@ -39,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">{children}<AnalyticsTracker /></body>
     </html>
   );
 }
