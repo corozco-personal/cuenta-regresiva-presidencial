@@ -30,7 +30,7 @@ export default function PromiseExplorer() {
       <label><span>Estado</span><select value={status} onChange={(event) => setStatus(event.target.value as (typeof statuses)[number])}>{statuses.map((item) => <option key={item}>{item}</option>)}</select></label>
     </section>
     <section className="promise-catalog">
-      {filtered.map((promise) => <article key={promise.id} id={promise.id}>
+      {filtered.map((promise) => <article key={promise.id} id={`promesa-${promise.id}`}>
         <div className="promise-card-head"><span>{promise.category}</span><span className={`promise-status status-${promise.status.toLocaleLowerCase("es").replaceAll(" ", "-")}`}>{promise.status === "Cumplida" ? <CheckCircle2 size={15} /> : <Clock3 size={15} />}{promise.status}</span></div>
         <h2>{promise.title}</h2>
         <blockquote><span>Promesa original</span>{promise.originalPromise}</blockquote>

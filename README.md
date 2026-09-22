@@ -18,7 +18,7 @@ Es una iniciativa personal de **Carlos Eduardo Orozco**, sin financiación, prom
 - Barra temporal del mandato con porcentaje transcurrido e hitos anuales.
 - Seguimiento de promesas con estados, plazos, avance documental y evidencias.
 - Monitor de noticias nacionales e internacionales desde el inicio de la campaña.
-- Actualización de fuentes cada seis horas mediante caché del servidor.
+- Actualización de fuentes cada seis horas mediante caché del servidor y una ejecución programada pública.
 - Agrupación de coberturas similares para reducir duplicados.
 - Archivo cronológico con búsqueda y filtros por etapa y alcance.
 - Directorio mundial de medios e instituciones admitidas para monitoreo.
@@ -86,6 +86,7 @@ Aplica las migraciones D1 en orden:
 ```bash
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_flashy_iron_lad.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_stormy_justice.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_typical_silver_samurai.sql
 ```
 
 Inicia el entorno de desarrollo:
@@ -156,6 +157,7 @@ Para cambios de código:
 - Alertas RSS filtrables y generador local de tarjetas para redes sociales.
 - Comparador de coberturas con orientación, factualidad y propiedad documentadas; los medios sin evaluación externa permanecen explícitamente sin calificar.
 - Controles antiabuso y verificación automática con GitHub Actions.
+- Ejecución programada cada seis horas y respaldo de los conjuntos públicos durante 30 días mediante GitHub Actions.
 
 ### Datos abiertos y estado
 

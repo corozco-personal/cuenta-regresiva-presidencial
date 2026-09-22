@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Community from "./components/community";
 import SocialShare from "./components/social-share";
+import NavigationCatalog from "./components/navigation-catalog";
 import CompactPresence from "./components/compact-presence";
 import { campaignPromises } from "./data/campaign-promises";
 
@@ -380,9 +381,7 @@ export default function Home() {
           <a className="nav-priority nav-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
-            <div className="nav-more-panel">
-              <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a><a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/temas" onClick={() => setMenuOpen(false)}>Expedientes</a><a href="/comparador" onClick={() => setMenuOpen(false)}>Comparador</a><a href="/nombramientos" onClick={() => setMenuOpen(false)}>Nombramientos</a><a href="/promesas" onClick={() => setMenuOpen(false)}>Promesas</a><a href="/resumen" onClick={() => setMenuOpen(false)}>Resumen semanal</a><a href="/alertas" onClick={() => setMenuOpen(false)}>Alertas</a><a href="/cobertura" onClick={() => setMenuOpen(false)}>Cobertura y estado</a><a href="/datos" onClick={() => setMenuOpen(false)}>Datos abiertos</a><a href="/compartir" onClick={() => setMenuOpen(false)}>Compartir</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/correcciones" onClick={() => setMenuOpen(false)}>Correcciones y réplica</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
-            </div>
+            <NavigationCatalog onNavigate={() => setMenuOpen(false)} />
           </details>
         </nav>
         <div className="header-actions">

@@ -1,0 +1,45 @@
+name: Monitor y respaldo público
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monitor-and-backup
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-snapshot:
+    runs-on: ubuntu-latest
+    env:
+      SITE_URL: https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site
+    steps:
+      - name: Activar monitor mundial
+        run: |
+          curl --fail --show-error --silent --retry 3 --max-time 120 \
+            "$SITE_URL/api/noticias-v2?scheduled=${{ github.run_id }}" \
+            --output /tmp/noticias-v2.json
+          jq -e '.items | type == "array"' /tmp/noticias-v2.json >/dev/null
+
+      - name: Crear instantánea de datos públicos
+        run: |
+          mkdir -p snapshot
+          cp /tmp/noticias-v2.json snapshot/noticias-v2.json
+          curl --fail --show-error --silent --retry 3 "$SITE_URL/api/datos/noticias" --output snapshot/noticias.json
+          curl --fail --show-error --silent --retry 3 "$SITE_URL/api/datos/promesas" --output snapshot/promesas.json
+          curl --fail --show-error --silent --retry 3 "$SITE_URL/api/datos/correcciones" --output snapshot/correcciones.json
+          curl --fail --show-error --silent --retry 3 "$SITE_URL/api/estado" --output snapshot/estado.json
+          jq -e '.status == "operativo" or .status == "degradado"' snapshot/estado.json >/dev/null
+          date -u +%FT%TZ > snapshot/generado-en-utc.txt
+
+      - name: Conservar respaldo por 30 días
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuenta-publica-${{ github.run_id }}
+          path: snapshot/
+          retention-days: 30
+          if-no-files-found: error
