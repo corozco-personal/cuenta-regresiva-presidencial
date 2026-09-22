@@ -332,6 +332,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .community-streams > div { min-width: 0; }
 .stream-title { display: flex; align-items: end; justify-content: space-between; gap: 15px; padding: 0 0 16px; border-bottom: 3px solid var(--ink); }
 .stream-title > span { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.opinion-list, .submission-list { max-height: min(62vh, 620px); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding-right: 12px; scrollbar-color: var(--forest) rgba(20,58,50,.1); scrollbar-width: thin; }
+.opinion-list:focus-visible, .submission-list:focus-visible { outline: 2px solid var(--forest); outline-offset: 4px; }
 .opinion, .submission-list article { padding: 22px 0; border-bottom: 1px solid var(--line); }
 .opinion > div, .submission-list article > div { display: flex; justify-content: space-between; gap: 12px; }
 .opinion > div span, .submission-status { padding: 4px 6px; background: var(--forest); color: white; font-size: 9px; font-style: normal; font-weight: 800; text-transform: uppercase; }
@@ -810,6 +812,7 @@ footer > span { text-align: right; }
   .radar-stats > div { border-bottom: 1px solid rgba(255,255,255,.16); }
   .radar-grid { grid-template-columns: repeat(2, 1fr); }
   .community-streams { grid-template-columns: 1fr; gap: 55px; }
+  .opinion-list, .submission-list { max-height: min(58vh, 520px); }
   .policy-grid { grid-template-columns: repeat(2, 1fr); }
   .policy-grid > div:nth-child(2) { border-right: 0; }
   .glossary-grid { grid-template-columns: repeat(2, 1fr); }
