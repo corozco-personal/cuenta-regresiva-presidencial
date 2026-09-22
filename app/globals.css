@@ -655,7 +655,7 @@ footer > span { text-align: right; }
   .site-header { height: 66px; }
   .site-header .brand > span:last-child { display: none; }
   .compact-presence { padding: 0 8px; }
-  .compact-presence small { display: none; }
+  .compact-presence small { display: inline; font-size: 8px; }
   .menu-button { display: block; order: 3; }
   .eco-button { margin-left: auto; }
   .nav { display: none; position: absolute; top: 66px; left: 0; right: 0; padding: 24px; background: var(--forest); border-top: 1px solid rgba(255,255,255,.15); flex-direction: column; gap: 22px; }
