@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "../components/native-link";
 import FavorabilityDashboard from "../components/favorability-dashboard";
 
 export const metadata: Metadata = { title: "Favorabilidad e indicadores · Cuenta pública", description: "Indicadores transparentes basados en opiniones ciudadanas, tono de titulares y aportes de noticias.", alternates: { canonical: "/favorabilidad" } };

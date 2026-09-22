@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "../components/native-link";
 
 export const metadata: Metadata = { title: "Metodología · Cuenta pública", description: "Políticas de admisión, verificación, corrección, clasificación y moderación.", alternates: { canonical: "/metodologia" } };
 

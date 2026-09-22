@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "../components/native-link";
 import { ExternalLink } from "lucide-react";
 
 export const metadata: Metadata = { title: "Archivo documental · Cuenta pública", description: "Hechos documentados del periodo presidencial, con enlaces a sus fuentes originales.", alternates: { canonical: "/archivo" } };

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "../components/native-link";
 import SourceDirectory from "../components/source-directory";
 
 export const metadata: Metadata = { title: "Fuentes · Cuenta pública", description: "Directorio público de entidades oficiales y medios consultados por Cuenta pública.", alternates: { canonical: "/fuentes" } };

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "../components/native-link";
 
 export const metadata: Metadata = {
   title: "Carlos Orozco · Quién está detrás de Cuenta pública",
@@ -24,6 +24,7 @@ export default function AuthorPage() {
         <p>La información política suele aparecer dispersa entre comunicados oficiales, medios nacionales, coberturas internacionales y conversaciones en redes. Este sitio nace de una pregunta concreta: ¿cómo reunir todo eso en un lugar que permita ver el contexto, abrir la fuente original y entender qué está verificado y qué sigue en evaluación?</p>
         <p>Por eso el proyecto combina una cuenta regresiva, noticias separadas por alcance, aportes ciudadanos y reglas públicas de moderación. No busca decirle a nadie qué pensar. Busca hacer más fácil consultar, contrastar y participar con responsabilidad.</p>
         <p>Cuenta pública es un proyecto independiente. No representa a la Presidencia, a un partido político ni a un medio de comunicación.</p>
+        <a className="linkedin-profile" href="https://www.linkedin.com/search/results/people/?keywords=Carlos%20Orozco" target="_blank" rel="noreferrer"><b aria-hidden="true">in</b> Buscar a Carlos Orozco en LinkedIn</a>
       </section>
     </main>
   );
