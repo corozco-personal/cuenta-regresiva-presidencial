@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, Globe2, Search } from "lucide-react";
+import ShareOptions from "./share-options";
 
 type NewsItem = {
   id: string;
@@ -79,11 +80,14 @@ export default function PresidentNews() {
           {filtered.length ? (
             <div className="president-news-grid">
               {filtered.slice(0, limit).map((item) => (
-                <article key={item.id}>
+                <article key={item.id} id={`noticia-${item.id}`}>
                   <div className="president-news-meta"><span>{item.stage}</span><span>{item.scope}</span><time>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</time></div>
                   <h3>{item.title}</h3>
                   <div className="president-news-tags"><span>{item.category}</span><span>{item.evidenceLevel}</span><span>{item.processStatus}</span></div>
-                  <a href={item.url} target="_blank" rel="noreferrer"><span>{item.source}</span><ArrowUpRight size={16} /></a>
+                  <div className="president-news-actions">
+                    <a href={item.url} target="_blank" rel="noreferrer"><span>{item.source}</span><ArrowUpRight size={16} /></a>
+                    <ShareOptions title={item.title} url={`/presidente#noticia-${item.id}`} context="news" />
+                  </div>
                 </article>
               ))}
             </div>

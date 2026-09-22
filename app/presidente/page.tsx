@@ -44,9 +44,8 @@ export default function PresidentPage() {
     <main className="subpage president-page">
       <SubpageHeader />
 
-      <section className="president-hero">
+      <section className="president-hero president-hero-simple">
         <div><p className="section-kicker">SOBRE EL PRESIDENTE</p><h1>Abelardo Gabriel<br /><em>De La Espriella Otero</em></h1><p>Perfil público construido con documentos oficiales, biografías de referencia e investigaciones periodísticas. Los hechos, las versiones y las opiniones permanecen diferenciados.</p></div>
-        <div className="president-monogram" aria-hidden="true"><span>AD</span><strong>07</strong></div>
       </section>
 
       <section className="president-facts" aria-label="Datos básicos del presidente">

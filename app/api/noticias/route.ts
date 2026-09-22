@@ -17,9 +17,9 @@ type PublicNews = BaseNews & {
   stage: "Campaña" | "Transición" | "Presidencia";
   decision: "Admitido" | "Corregido";
   decisionReason: string;
-  evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
+  evidenceLevel: "Documento oficial" | "Reportado por varias fuentes" | "Reporte de una fuente";
   processStatus: "Alegación" | "Investigación" | "Imputación" | "Decisión judicial" | "Hecho documentado";
-  sources: Array<{ source: string; url: string; kind: BaseNews["kind"] }>;
+  sources: Array<{ source: string; title?: string; url: string; kind: BaseNews["kind"] }>;
   linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string; finalUrl?: string };
   country?: string;
   language?: string;
@@ -305,13 +305,14 @@ function reviewCandidate(candidate: CandidateNews) {
         : "Medio admitido, referencia directa y enlace verificable.",
     evidenceLevel: candidate.kind === "Fuente primaria" ? "Documento oficial" : "Reporte de una fuente",
     processStatus: processStatus(correctedTitle),
-    sources: [{ source: candidate.source, url: candidate.url, kind: candidate.kind }],
+    sources: [{ source: candidate.source, title: correctedTitle, url: candidate.url, kind: candidate.kind }],
   };
   return { decision: item.decision, reason: item.decisionReason, item };
 }
 
 function titleTokens(title: string) {
-  return new Set(title.toLocaleLowerCase("es").replace(/[^a-záéíóúñ0-9 ]/g, " ").split(/\s+/).filter((word) => word.length > 4));
+  const structural = new Set(["abelardo", "espriella", "presidente", "presidenta", "colombia", "colombiano", "colombiana", "gobierno", "nacional", "nuevo", "nueva", "sobre"]);
+  return new Set(title.toLocaleLowerCase("es").replace(/[^a-záéíóúñ0-9 ]/g, " ").split(/\s+/).filter((word) => word.length > 4 && !structural.has(word)));
 }
 
 function similarity(left: string, right: string) {
@@ -321,16 +322,23 @@ function similarity(left: string, right: string) {
   return shared / Math.max(1, new Set([...a, ...b]).size);
 }
 
+function sharedTitleTokens(left: string, right: string) {
+  const a = titleTokens(left);
+  const b = titleTokens(right);
+  return [...a].filter((token) => b.has(token)).length;
+}
+
 function groupCoverage(items: PublicNews[]) {
   return items.reduce<PublicNews[]>((groups, item) => {
     const match = groups.find((group) =>
       group.category === item.category &&
-      Math.abs(Date.parse(group.publishedAt) - Date.parse(item.publishedAt)) <= 7 * 86_400_000 &&
-      similarity(group.title, item.title) >= 0.55,
+      Math.abs(Date.parse(group.publishedAt) - Date.parse(item.publishedAt)) <= 3 * 86_400_000 &&
+      sharedTitleTokens(group.title, item.title) >= 2 &&
+      similarity(group.title, item.title) >= 0.25,
     );
     if (!match) return [...groups, item];
     if (!match.sources.some(({ source }) => source === item.source)) match.sources.push(...item.sources.filter((source) => !match.sources.some((existing) => existing.source === source.source)));
-    match.evidenceLevel = match.sources.length > 1 ? "Confirmado por varias fuentes" : match.evidenceLevel;
+    match.evidenceLevel = match.sources.length > 1 ? "Reportado por varias fuentes" : match.evidenceLevel;
     return groups;
   }, []);
 }
@@ -511,7 +519,8 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
   });
 }
 
-type StoredNewsRow = Omit<PublicNews, "sources" | "linkCheck"> & {
+type StoredNewsRow = Omit<PublicNews, "sources" | "linkCheck" | "evidenceLevel"> & {
+  evidenceLevel: string;
   sources_json: string; link_status: PublicNews["linkCheck"] extends { status: infer T } ? T : string;
   final_url?: string; last_seen_at: string;
 };
@@ -543,7 +552,7 @@ async function storeAndLoadNews(items: PublicNews[], monitor: {
       decision_reason AS decisionReason,evidence_level AS evidenceLevel,process_status AS processStatus,sources_json,country,language,
       link_status,final_url,last_seen_at FROM news_articles ORDER BY published_at DESC LIMIT 600`).all<StoredNewsRow>();
     return stored.results.flatMap((row) => {
-      try { return [{ ...row, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
+      try { return [{ ...row, evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
       catch { return []; }
     });
   } catch (error) {

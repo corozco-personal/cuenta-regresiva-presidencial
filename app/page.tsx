@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import Community from "./components/community";
-import SocialShare from "./components/social-share";
+import ShareOptions from "./components/share-options";
 import NavigationCatalog from "./components/navigation-catalog";
 import CompactPresence from "./components/compact-presence";
 import { campaignPromises } from "./data/campaign-promises";
@@ -41,7 +41,7 @@ type NewsItem = {
   stage: "Campaña" | "Transición" | "Presidencia";
   decision: "Admitido" | "Corregido";
   decisionReason: string;
-  evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
+  evidenceLevel: "Documento oficial" | "Reportado por varias fuentes" | "Reporte de una fuente";
   processStatus: string;
   sources: Array<{ source: string; url: string; kind: string }>;
   linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string; finalUrl?: string };
@@ -412,6 +412,7 @@ export default function Home() {
               <strong>7 de agosto de 2030</strong>
             </div>
             <a className="creator-byline" href="/autor"><span>CO</span><div><small>CREADO Y MANTENIDO POR</small><strong>Carlos Orozco</strong></div><ArrowUpRight size={16} /></a>
+            <div className="hero-share"><small>AYUDA A QUE MÁS PERSONAS CONOZCAN EL PROYECTO</small><ShareOptions mode="inline" context="site" /></div>
           </div>
         </div>
 
@@ -484,10 +485,10 @@ export default function Home() {
               <small>Revisión: 22 sep 2026</small>
             </div>
             <div className="promises-list">
-              {campaignPromises.slice(0, 4).map((promise) => (
+              {campaignPromises.slice(0, 3).map((promise) => (
                 <article className={`promise-item promise-${promise.status === "Cumplida" ? "done" : "pending"}`} key={promise.title}>
                   <span className="promise-icon" aria-hidden="true">{promise.status === "Cumplida" ? <CheckCircle2 size={20} /> : <Hourglass size={19} />}</span>
-                  <div><strong>{promise.title}</strong><p>{promise.assessment}</p><a href={`/promesas#${promise.id}`}>Ver evidencia <ExternalLink size={12} /></a></div>
+                  <div><strong>{promise.title}</strong><p>{promise.assessment}</p><a href={`/promesas#promesa-${promise.id}`}>Ver evidencia <ExternalLink size={12} /></a></div>
                   <small>{promise.status}</small>
                 </article>
               ))}
@@ -497,8 +498,6 @@ export default function Home() {
           </aside>
         </div>
       </section>
-
-      <SocialShare />
 
       <section className="archive section-shell" id="archivo" hidden>
         <div className="section-heading">
@@ -616,7 +615,7 @@ export default function Home() {
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
                   {item.sources.length > 1 && <details className="source-cluster"><summary>{item.sources.length} fuentes reunidas en este hecho</summary>{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.source}<ExternalLink size={12} /></a>)}</details>}
-                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><ShareOptions title={item.title} url={`/#noticia-${item.id}`} context="news" /><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>
@@ -634,7 +633,7 @@ export default function Home() {
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
                   {item.sources.length > 1 && <details className="source-cluster"><summary>{item.sources.length} fuentes reunidas en este hecho</summary>{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.source}<ExternalLink size={12} /></a>)}</details>}
-                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><ShareOptions title={item.title} url={`/#noticia-${item.id}`} context="news" /><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>

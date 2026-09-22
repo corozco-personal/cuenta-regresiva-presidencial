@@ -19,6 +19,18 @@ El archivo principal se edita en `app/page.tsx`. Para incorporar un registro deb
 
 No se publican rumores, capturas sin procedencia, titulares que excedan lo probado por la fuente ni resúmenes generados sin revisión humana.
 
+## Comparación de coberturas
+
+El comparador aplica una rúbrica general y reproducible en cinco capas:
+
+1. Agrupa publicaciones por tema, cercanía temporal y similitud léxica.
+2. Describe el encuadre observable del titular con las cuatro funciones de Robert Entman: definición del problema, atribución causal, evaluación y respuesta propuesta.
+3. Organiza la transparencia con indicadores de The Trust Project: tipo de contenido, referencias, propiedad y rendición de cuentas cuando están documentadas.
+4. Calcula amplitud de contraste mediante pluralidad de fuentes, diversidad de propietarios, presencia de una fuente primaria y distancia entre titulares.
+5. Añade orientación y factualidad únicamente desde evaluaciones externas trazables. No las infiere mediante inteligencia artificial.
+
+El análisis automático se limita al titular disponible y describe lenguaje, no intención. La amplitud de contraste no es una puntuación de verdad. Cuando faltan datos, el sistema se abstiene de calificar.
+
 ## Actualización
 
 El endpoint envía una política de caché de seis horas, con disponibilidad de la respuesta anterior durante una actualización. Para usar NewsAPI en el despliegue, configure `NEWS_API_KEY` como secreto del sitio. La clave nunca debe añadirse al repositorio ni al código del navegador.

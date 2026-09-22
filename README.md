@@ -155,7 +155,7 @@ Para cambios de código:
 - Expedientes temáticos, estado de cobertura y API de datos abiertos en JSON/CSV.
 - Solicitudes públicas de corrección, actualización y derecho de réplica.
 - Alertas RSS filtrables y generador local de tarjetas para redes sociales.
-- Comparador de coberturas con orientación, factualidad y propiedad documentadas; los medios sin evaluación externa permanecen explícitamente sin calificar.
+- Comparador de coberturas con rúbrica de encuadre de Entman, indicadores de transparencia de The Trust Project y contexto externo documentado; los medios sin evaluación permanecen explícitamente sin calificar.
 - Controles antiabuso y verificación automática con GitHub Actions.
 - Ejecución programada cada seis horas y respaldo de los conjuntos públicos durante 30 días mediante GitHub Actions.
 
