@@ -7,12 +7,17 @@ import {
   ChevronDown,
   CircleX,
   Clock3,
+  ExternalLink,
   FileCheck2,
   Flag,
+  History,
   Landmark,
+  Leaf,
+  Link2,
   Menu,
   PencilLine,
   Search,
+  Share2,
   ShieldCheck,
   Tags,
   X,
@@ -28,10 +33,15 @@ type NewsItem = {
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: "Nacional" | "Internacional";
   category: string;
-  decision: "Aprobado" | "Corregido";
+  decision: "Admitido" | "Corregido";
   decisionReason: string;
+  evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
+  processStatus: string;
+  sources: Array<{ source: string; url: string; kind: string }>;
+  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
 };
-type ReviewStats = { approved: number; corrected: number; rejected: number; policyVersion: string };
+type ReviewStats = { admitted: number; corrected: number; rejected: number; policyVersion: string };
+type SourceEntry = { domain: string; label: string; scope: string; kind: string; criterion: string };
 
 const START = new Date("2026-08-07T00:00:00-05:00").getTime();
 const TARGET = new Date("2030-08-07T00:00:00-05:00").getTime();
@@ -45,6 +55,8 @@ const milestones = [
 
 const records = [
   {
+    id: "pronunciamiento-tutela",
+    isoDate: "2026-08-30",
     date: "30 AGO 2026",
     category: "Instituciones",
     title: "La Presidencia publicó un pronunciamiento en cumplimiento de un fallo de tutela",
@@ -54,8 +66,15 @@ const records = [
     source: "Presidencia de la República",
     url: "https://www.presidencia.gov.co/prensa/Paginas/Alocucion-del-Presidente-Abelardo-De-la-Espriella-desde-la-sede-alterna-260830.aspx",
     scope: "Nacional",
+    evidenceLevel: "Documento oficial",
+    processStatus: "Decisión judicial",
+    reviewedAt: "21 sep 2026",
+    responseLabel: "Pronunciamiento oficial de la Presidencia",
+    responseUrl: "https://www.presidencia.gov.co/prensa/Paginas/Alocucion-del-Presidente-Abelardo-De-la-Espriella-desde-la-sede-alterna-260830.aspx",
   },
   {
+    id: "cne-revocatoria",
+    isoDate: "2026-06-17",
     date: "17 JUN 2026",
     category: "Control electoral",
     title: "El CNE publicó la resolución sobre la solicitud de revocatoria de la inscripción presidencial",
@@ -65,8 +84,13 @@ const records = [
     source: "Consejo Nacional Electoral",
     url: "https://www.cne.gov.co/resoluciones-cne-2026/13792?layout=print&print=1&tmpl=component",
     scope: "Nacional",
+    evidenceLevel: "Documento oficial",
+    processStatus: "Hecho documentado",
+    reviewedAt: "21 sep 2026",
   },
   {
+    id: "registraduria-firmas",
+    isoDate: "2026-01-30",
     date: "30 ENE 2026",
     category: "Registro electoral",
     title: "La Registraduría documentó las firmas recibidas por el comité de la candidatura",
@@ -76,8 +100,13 @@ const records = [
     source: "Registraduría Nacional",
     url: "https://www.registraduria.gov.co/IMG/pdf/20260130_informe_de_gestion_institucional_2025.pdf",
     scope: "Nacional",
+    evidenceLevel: "Documento oficial",
+    processStatus: "Hecho documentado",
+    reviewedAt: "21 sep 2026",
   },
   {
+    id: "alocucion-justicia",
+    isoDate: "2026-09-13",
     date: "13 SEP 2026",
     category: "Justicia",
     title: "El presidente se pronunció sobre decisiones judiciales durante una alocución",
@@ -87,8 +116,13 @@ const records = [
     source: "Noticias Caracol",
     url: "https://www.noticiascaracol.com/politica/respeto-a-la-justicia-dice-de-la-espriella-al-controvertir-fallos-contra-decisiones-del-gobierno-rg10?_amp=true",
     scope: "Nacional",
+    evidenceLevel: "Reporte de una fuente",
+    processStatus: "Decisión judicial",
+    reviewedAt: "21 sep 2026",
   },
   {
+    id: "orden-publicaciones",
+    isoDate: "2026-09-10",
     date: "10 SEP 2026",
     category: "Derechos",
     title: "Un medio internacional informó sobre una orden judicial relacionada con publicaciones oficiales",
@@ -98,8 +132,13 @@ const records = [
     source: "DW Español · Alemania",
     url: "https://amp.dw.com/es/de-la-espriella-tendr%C3%A1-que-retirar-sus-publicaciones-mostrando-cad%C3%A1veres-en-redes/a-79210565",
     scope: "Internacional",
+    evidenceLevel: "Reporte de una fuente",
+    processStatus: "Decisión judicial",
+    reviewedAt: "21 sep 2026",
   },
   {
+    id: "giro-politica-exterior",
+    isoDate: "2026-09-07",
     date: "07 SEP 2026",
     category: "Relaciones exteriores",
     title: "La prensa extranjera examinó el giro de la política exterior colombiana",
@@ -109,8 +148,13 @@ const records = [
     source: "El País · España",
     url: "https://elpais.com/america-colombia/2026-09-07/del-escudo-de-las-americas-a-los-altos-del-golan-de-la-espriella-cumple-la-promesa-de-alinearse-con-trump-y-netanyahu.html",
     scope: "Internacional",
+    evidenceLevel: "Reporte de una fuente",
+    processStatus: "Hecho documentado",
+    reviewedAt: "21 sep 2026",
   },
   {
+    id: "proclamacion-cne",
+    isoDate: "2026-06-25",
     date: "25 JUN 2026",
     category: "Elecciones",
     title: "DW informó sobre la proclamación del presidente electo por el CNE",
@@ -120,7 +164,23 @@ const records = [
     source: "DW Español · Alemania",
     url: "https://amp.dw.com/es/abelardo-de-la-espriella-es-proclamado-presidente-electo-de-colombia/a-77698790",
     scope: "Internacional",
+    evidenceLevel: "Reporte de una fuente",
+    processStatus: "Hecho documentado",
+    reviewedAt: "21 sep 2026",
   },
+];
+
+const processGlossary = [
+  ["Alegación", "Afirmación atribuida a una fuente; no equivale a un hecho probado."],
+  ["Investigación", "Actuación abierta para establecer hechos y posibles responsabilidades."],
+  ["Imputación", "Comunicación formal de cargos; mantiene la presunción de inocencia."],
+  ["Decisión judicial", "Providencia de un juez o tribunal; se aclara si admite recursos."],
+  ["Hecho documentado", "Acto, declaración o documento cuya existencia puede consultarse."],
+];
+
+const corrections = [
+  { date: "22 sep 2026", item: "Etiqueta editorial", before: "Aprobado", after: "Admitido para monitoreo", reason: "Evitar que la admisión de una fuente se interprete como certificación de todas sus afirmaciones." },
+  { date: "21 sep 2026", item: "Política de correcciones", before: "Sin registro público", after: "Bitácora pública incorporada", reason: "Hacer visibles los cambios editoriales y su justificación." },
 ];
 
 function getCountdown(): Countdown {
@@ -144,11 +204,22 @@ export default function Home() {
   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [progress, setProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ecoMode, setEcoMode] = useState(false);
+  const [sharedId, setSharedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("Todos");
+  const [year, setYear] = useState("Todos");
+  const [categoryFilter, setCategoryFilter] = useState("Todos");
+  const [processFilter, setProcessFilter] = useState("Todos");
   const [news, setNews] = useState<NewsItem[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [sourceDirectory, setSourceDirectory] = useState<SourceEntry[]>([]);
+  const [monitorUpdatedAt, setMonitorUpdatedAt] = useState<string | null>(null);
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    setEcoMode(window.localStorage.getItem("cuenta-publica-eco") === "true");
+  }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -156,12 +227,12 @@ export default function Home() {
       setProgress(getProgress());
     };
     const initial = window.setTimeout(tick, 0);
-    const timer = window.setInterval(tick, 1000);
+    const timer = window.setInterval(tick, ecoMode ? 60_000 : 1_000);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(timer);
     };
-  }, []);
+  }, [ecoMode]);
 
   useEffect(() => {
     fetch("/api/noticias")
@@ -172,6 +243,8 @@ export default function Home() {
       .then((data) => {
         setNews(Array.isArray(data.items) ? data.items : []);
         setReviewStats(data.review ?? null);
+        setSourceDirectory(Array.isArray(data.sourceDirectory) ? data.sourceDirectory : []);
+        setMonitorUpdatedAt(data.updatedAt ?? null);
         setNewsState("ready");
       })
       .catch(() => setNewsState("error"));
@@ -181,16 +254,42 @@ export default function Home() {
     const normalized = query.trim().toLocaleLowerCase("es");
     return records.filter((item) => {
       const scopeMatches = scope === "Todos" || item.scope === scope;
+      const yearMatches = year === "Todos" || item.isoDate.startsWith(year);
+      const categoryMatches = categoryFilter === "Todos" || item.category === categoryFilter;
+      const processMatches = processFilter === "Todos" || item.processStatus === processFilter;
       const textMatches =
         !normalized || `${item.title} ${item.summary} ${item.source}`.toLocaleLowerCase("es").includes(normalized);
-      return scopeMatches && textMatches;
+      return scopeMatches && yearMatches && categoryMatches && processMatches && textMatches;
     });
-  }, [scope, query]);
+  }, [scope, year, categoryFilter, processFilter, query]);
 
   const nationalRecords = filtered.filter((item) => item.scope === "Nacional");
   const internationalRecords = filtered.filter((item) => item.scope === "Internacional");
   const nationalNews = news.filter((item) => item.scope === "Nacional").slice(0, 6);
   const internationalNews = news.filter((item) => item.scope === "Internacional").slice(0, 6);
+  const categories = Array.from(new Set(records.map((item) => item.category)));
+  const processStatuses = Array.from(new Set(records.map((item) => item.processStatus)));
+  const officialRecords = records.filter((item) => item.evidenceLevel === "Documento oficial").length;
+
+  const toggleEcoMode = () => {
+    setEcoMode((current) => {
+      const next = !current;
+      window.localStorage.setItem("cuenta-publica-eco", String(next));
+      return next;
+    });
+  };
+
+  const shareRecord = async (id: string, title: string) => {
+    const url = `${window.location.origin}${window.location.pathname}#${id}`;
+    try {
+      if (navigator.share) await navigator.share({ title, url });
+      else await navigator.clipboard.writeText(url);
+      setSharedId(id);
+      window.setTimeout(() => setSharedId(null), 1800);
+    } catch {
+      setSharedId(null);
+    }
+  };
 
   const timeUnits = [
     [countdown.days.toLocaleString("es-CO"), "días"],
@@ -200,7 +299,8 @@ export default function Home() {
   ];
 
   return (
-    <main>
+    <main className={ecoMode ? "eco-mode" : ""}>
+      <a className="skip-link" href="#archivo">Saltar al archivo</a>
       <header className="site-header">
         <a className="brand" href="#inicio" aria-label="Ir al inicio">
           <span className="brand-mark">07</span>
@@ -209,8 +309,12 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Monitoreo</a>
+          <a href="#fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
           <a href="#metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
         </nav>
+        <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
+          <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
+        </button>
         <button className="menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="Abrir menú">
           {menuOpen ? <X size={21} /> : <Menu size={21} />}
         </button>
@@ -236,7 +340,7 @@ export default function Home() {
         <div className="countdown-panel" aria-live="polite" aria-label="Tiempo restante">
           <div className="panel-topline">
             <span>TIEMPO RESTANTE</span>
-            <span className="live-dot"><i /> EN VIVO</span>
+            <span className="live-dot"><i /> {ecoMode ? "CADA MINUTO" : "EN VIVO"}</span>
           </div>
           <div className="countdown-grid">
             {timeUnits.map(([value, label], index) => (
@@ -309,20 +413,27 @@ export default function Home() {
             ))}
           </div>
         </div>
+        <div className="timeline-filters" aria-label="Filtros de la cronología">
+          <label>Año<select value={year} onChange={(event) => setYear(event.target.value)}><option>Todos</option>{["2026", "2027", "2028", "2029", "2030"].map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Tema<select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>Todos</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Estado procesal<select value={processFilter} onChange={(event) => setProcessFilter(event.target.value)}><option>Todos</option>{processStatuses.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <span>{filtered.length} {filtered.length === 1 ? "hecho" : "hechos"}</span>
+        </div>
 
         <div className="records-list">
           {nationalRecords.length > 0 && (
             <div className="record-group">
               <div className="scope-heading"><span>CO</span><div><strong>Nacionales</strong><p>Instituciones públicas y medios colombianos.</p></div></div>
               {nationalRecords.map((item, index) => (
-                <article className="record" key={item.url}>
+                <article className="record" id={`hecho-${item.id}`} key={item.url}>
                   <div className="record-index">{String(index + 1).padStart(2, "0")}</div>
                   <div className="record-date">{item.date}</div>
                   <div className="record-body">
-                    <div className="record-meta"><span>{item.category}</span><span className="status"><CheckCircle2 size={13} /> {item.status}</span></div>
+                    <div className="record-meta"><span>{item.category}</span><span className="status"><CheckCircle2 size={13} /> {item.evidenceLevel}</span><span>{item.processStatus}</span></div>
                     <h3>{item.title}</h3>
                     <p>{item.summary}</p>
-                    <a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={15} /></a>
+                    <div className="record-links"><a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={15} /></a>{item.responseUrl && <a href={item.responseUrl} target="_blank" rel="noreferrer">{item.responseLabel}<ExternalLink size={14} /></a>}<button onClick={() => shareRecord(`hecho-${item.id}`, item.title)}><Share2 size={14} /> {sharedId === `hecho-${item.id}` ? "Enlace copiado" : "Compartir"}</button></div>
+                    <small className="record-check">Revisado el {item.reviewedAt}</small>
                   </div>
                 </article>
               ))}
@@ -332,14 +443,15 @@ export default function Home() {
             <div className="record-group">
               <div className="scope-heading"><span>INT</span><div><strong>Internacionales</strong><p>Medios y canales informativos con sede fuera de Colombia.</p></div></div>
               {internationalRecords.map((item, index) => (
-                <article className="record" key={item.url}>
+                <article className="record" id={`hecho-${item.id}`} key={item.url}>
                   <div className="record-index">{String(index + 1).padStart(2, "0")}</div>
                   <div className="record-date">{item.date}</div>
                   <div className="record-body">
-                    <div className="record-meta"><span>{item.category}</span><span className="status"><CheckCircle2 size={13} /> {item.status}</span></div>
+                    <div className="record-meta"><span>{item.category}</span><span className="status"><CheckCircle2 size={13} /> {item.evidenceLevel}</span><span>{item.processStatus}</span></div>
                     <h3>{item.title}</h3>
                     <p>{item.summary}</p>
-                    <a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={15} /></a>
+                    <div className="record-links"><a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={15} /></a>{item.responseUrl && <a href={item.responseUrl} target="_blank" rel="noreferrer">{item.responseLabel}<ExternalLink size={14} /></a>}<button onClick={() => shareRecord(`hecho-${item.id}`, item.title)}><Share2 size={14} /> {sharedId === `hecho-${item.id}` ? "Enlace copiado" : "Compartir"}</button></div>
+                    <small className="record-check">Revisado el {item.reviewedAt}</small>
                   </div>
                 </article>
               ))}
@@ -347,6 +459,13 @@ export default function Home() {
           )}
           {filtered.length === 0 && <p className="empty-state">No hay registros que coincidan con la búsqueda.</p>}
         </div>
+      </section>
+
+      <section className="evidence-dashboard" aria-label="Estadísticas del archivo">
+        <div><strong>{records.length}</strong><span>hechos documentados</span></div>
+        <div><strong>{officialRecords}</strong><span>documentos oficiales</span></div>
+        <div><strong>{records.length - officialRecords}</strong><span>coberturas periodísticas</span></div>
+        <div><strong>{new Set(records.map((item) => item.source)).size}</strong><span>fuentes citadas</span></div>
       </section>
 
       <section className="monitoring section-shell" id="monitoreo">
@@ -360,7 +479,7 @@ export default function Home() {
         </div>
         {reviewStats && (
           <div className="review-summary" aria-label="Resultado de la revisión automática">
-            <div><CheckCircle2 size={18} /><span>Aprobados</span><strong>{reviewStats.approved}</strong></div>
+            <div><CheckCircle2 size={18} /><span>Admitidos</span><strong>{reviewStats.admitted}</strong></div>
             <div><PencilLine size={18} /><span>Corregidos</span><strong>{reviewStats.corrected}</strong></div>
             <div><CircleX size={18} /><span>Rechazados</span><strong>{reviewStats.rejected}</strong></div>
             <p>Política editorial v{reviewStats.policyVersion} · Los rechazados no se publican.</p>
@@ -374,12 +493,14 @@ export default function Home() {
             <div className="monitor-scope"><span>CO</span><div><strong>Noticias nacionales</strong><p>Entidades oficiales y medios colombianos</p></div></div>
             <div className="news-grid">
               {nationalNews.map((item) => (
-                <article className="news-card" key={item.id}>
+                <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
                   <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
-                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision}</span><span>{item.category}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
-                  <div className="news-card-bottom"><span>{item.kind}</span><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div>
+                  <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
+                  {item.sources.length > 1 && <p className="source-count">{item.sources.length} fuentes reunidas en este hecho.</p>}
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>
@@ -390,22 +511,77 @@ export default function Home() {
             <div className="monitor-scope"><span>INT</span><div><strong>Noticias internacionales</strong><p>Canales y medios con sede fuera de Colombia</p></div></div>
             <div className="news-grid">
               {internationalNews.map((item) => (
-                <article className="news-card" key={item.id}>
+                <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
                   <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</span></div>
-                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision}</span><span>{item.category}</span></div>
+                  <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
-                  <div className="news-card-bottom"><span>{item.kind}</span><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div>
+                  <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
+                  {item.sources.length > 1 && <p className="source-count">{item.sources.length} fuentes reunidas en este hecho.</p>}
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>
           </div>
         )}
+        {monitorUpdatedAt && <p className="monitor-check"><Link2 size={14} /> Enlaces comprobados el {new Date(monitorUpdatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}. “No comprobado” indica que el sitio externo no respondió; no implica que el contenido sea falso.</p>}
+      </section>
+
+      <section className="transparency section-shell" id="fuentes">
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">03 / TRANSPARENCIA</p>
+            <h2>Cómo leer el archivo</h2>
+            <p>Fuentes admitidas, estados procesales y cambios editoriales en un solo lugar.</p>
+          </div>
+          <History size={38} aria-hidden="true" />
+        </div>
+
+        <div className="context-block">
+          <h3>Niveles de evidencia</h3>
+          <div className="evidence-levels">
+            <div><strong>01</strong><span>Documento oficial</span><p>Acto, resolución, sentencia o comunicación publicada por la entidad competente.</p></div>
+            <div><strong>02</strong><span>Varias fuentes</span><p>Dos o más fuentes admitidas describen el mismo hecho; el sistema reúne sus enlaces.</p></div>
+            <div><strong>03</strong><span>Una fuente</span><p>Reporte trazable aún no corroborado de forma independiente. Se presenta con esa limitación.</p></div>
+          </div>
+        </div>
+
+        <div className="context-block">
+          <h3>Estados procesales</h3>
+          <div className="glossary-grid">
+            {processGlossary.map(([label, description]) => <div key={label}><strong>{label}</strong><p>{description}</p></div>)}
+          </div>
+        </div>
+
+        <details className="sources-directory">
+          <summary>Consultar las {sourceDirectory.length || 39} fuentes admitidas <ChevronDown size={17} /></summary>
+          <div className="source-grid">
+            {sourceDirectory.map((source) => (
+              <article key={source.domain}>
+                <span>{source.scope} · {source.kind}</span>
+                <strong>{source.label}</strong>
+                <a href={`https://${source.domain}`} target="_blank" rel="noreferrer">{source.domain}<ExternalLink size={13} /></a>
+                <p>{source.criterion}</p>
+              </article>
+            ))}
+          </div>
+        </details>
+
+        <div className="corrections-log" id="correcciones">
+          <div className="corrections-heading"><div><p className="section-kicker">BITÁCORA PÚBLICA</p><h3>Correcciones y cambios</h3></div><span>{corrections.length} registros</span></div>
+          <div className="corrections-table" role="table" aria-label="Bitácora de correcciones">
+            {corrections.map((correction) => (
+              <div className="correction-row" role="row" key={`${correction.date}-${correction.item}`}>
+                <time>{correction.date}</time><strong>{correction.item}</strong><p><s>{correction.before}</s><br />{correction.after}</p><p>{correction.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="method section-shell" id="metodologia">
         <div className="method-title">
-          <p className="section-kicker">03 / CRITERIO EDITORIAL</p>
+          <p className="section-kicker">04 / CRITERIO EDITORIAL</p>
           <h2>Una regla para cada hallazgo.</h2>
         </div>
         <div className="policy-intro">
@@ -426,7 +602,8 @@ export default function Home() {
             <p><strong>3. Lenguaje.</strong> Denuncia, investigación, imputación, sanción y sentencia se tratan como estados distintos. Una acusación no se presenta como hecho probado.</p>
             <p><strong>4. Correcciones.</strong> La automatización solo corrige forma —espacios y puntuación repetida—. Cambios de fondo requieren nueva evidencia y deben reflejarse en el archivo.</p>
             <p><strong>5. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
-            <p><strong>6. Alcance.</strong> “Aprobado” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
+            <p><strong>6. Derecho de respuesta.</strong> Cuando existe una respuesta pública de la persona o institución señalada, se incorpora junto al hecho con su enlace original.</p>
+            <p><strong>7. Alcance.</strong> “Admitido para monitoreo” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
           </div>
         </details>
       </section>
@@ -436,6 +613,7 @@ export default function Home() {
         <p>Proyecto independiente de seguimiento documental. No está afiliado a la Presidencia de la República.</p>
         <span>Última revisión editorial: 21 sep 2026</span>
       </footer>
+      <span className="sr-only" aria-live="polite">{sharedId ? "Enlace copiado o compartido" : ""}</span>
     </main>
   );
 }

@@ -13,8 +13,12 @@ type BaseNews = {
 type CandidateNews = BaseNews & { trustedSource: boolean; curated?: boolean };
 type PublicNews = BaseNews & {
   category: string;
-  decision: "Aprobado" | "Corregido";
+  decision: "Admitido" | "Corregido";
   decisionReason: string;
+  evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
+  processStatus: "Alegación" | "Investigación" | "Imputación" | "Decisión judicial" | "Hecho documentado";
+  sources: Array<{ source: string; url: string; kind: BaseNews["kind"] }>;
+  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
 };
 
 type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string };
@@ -137,6 +141,14 @@ function normalizeTitle(title: string) {
   return title.trim().replace(/\s+/g, " ").replace(/([!?])\1+/g, "$1");
 }
 
+function processStatus(title: string): PublicNews["processStatus"] {
+  if (/sentencia|condena|absoluci|fallo definitivo/i.test(title)) return "Decisión judicial";
+  if (/imputa|imputación/i.test(title)) return "Imputación";
+  if (/investiga|investigación|indaga/i.test(title)) return "Investigación";
+  if (/denuncia|acusa|señala/i.test(title)) return "Alegación";
+  return "Hecho documentado";
+}
+
 function reviewCandidate(candidate: CandidateNews) {
   if (!candidate.trustedSource) {
     return { decision: "Rechazado" as const, reason: "La fuente no está en la lista pública de canales admitidos." };
@@ -155,14 +167,73 @@ function reviewCandidate(candidate: CandidateNews) {
     ...publishable,
     title: correctedTitle,
     category: classify(correctedTitle),
-    decision: corrected ? "Corregido" : "Aprobado",
+    decision: corrected ? "Corregido" : "Admitido",
     decisionReason: corrected
       ? "Se normalizó únicamente la forma del titular; el enlace original permanece disponible."
       : candidate.kind === "Fuente primaria"
         ? "Fuente oficial admitida y referencia directa al asunto monitoreado."
         : "Medio admitido, referencia directa y enlace verificable.",
+    evidenceLevel: candidate.kind === "Fuente primaria" ? "Documento oficial" : "Reporte de una fuente",
+    processStatus: processStatus(correctedTitle),
+    sources: [{ source: candidate.source, url: candidate.url, kind: candidate.kind }],
   };
   return { decision: item.decision, reason: item.decisionReason, item };
+}
+
+function titleTokens(title: string) {
+  return new Set(title.toLocaleLowerCase("es").replace(/[^a-záéíóúñ0-9 ]/g, " ").split(/\s+/).filter((word) => word.length > 4));
+}
+
+function similarity(left: string, right: string) {
+  const a = titleTokens(left);
+  const b = titleTokens(right);
+  const shared = [...a].filter((token) => b.has(token)).length;
+  return shared / Math.max(1, new Set([...a, ...b]).size);
+}
+
+function groupCoverage(items: PublicNews[]) {
+  return items.reduce<PublicNews[]>((groups, item) => {
+    const match = groups.find((group) =>
+      group.category === item.category &&
+      Math.abs(Date.parse(group.publishedAt) - Date.parse(item.publishedAt)) <= 7 * 86_400_000 &&
+      similarity(group.title, item.title) >= 0.55,
+    );
+    if (!match) return [...groups, item];
+    if (!match.sources.some(({ url }) => url === item.url)) match.sources.push(...item.sources);
+    match.evidenceLevel = match.sources.length > 1 ? "Confirmado por varias fuentes" : match.evidenceLevel;
+    return groups;
+  }, []);
+}
+
+async function checkLink(item: PublicNews): Promise<PublicNews> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3500);
+  const checkedAt = new Date().toISOString();
+  try {
+    const response = await fetch(item.url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "User-Agent": "CuentaPublica/1.2 (link verification)" },
+    });
+    const status = response.status === 404 || response.status === 410
+      ? "Retirado" as const
+      : response.ok
+        ? "Disponible" as const
+        : "No comprobado" as const;
+    return {
+      ...item,
+      linkCheck: {
+        status,
+        checkedAt,
+        lastModified: response.headers.get("last-modified") ?? undefined,
+      },
+    };
+  } catch {
+    return { ...item, linkCheck: { status: "No comprobado", checkedAt } };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
@@ -250,19 +321,29 @@ export async function GET() {
     ].map((item) => [item.url, item])).values(),
   );
   const reviewed = candidates.map(reviewCandidate);
-  const items = reviewed
+  const publishable = reviewed
     .flatMap((result) => result.item ? [result.item] : [])
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
     .slice(0, 24);
+  const items = await Promise.all(groupCoverage(publishable).slice(0, 12).map(checkLink));
   const review = {
-    approved: reviewed.filter(({ decision }) => decision === "Aprobado").length,
+    admitted: reviewed.filter(({ decision }) => decision === "Admitido").length,
     corrected: reviewed.filter(({ decision }) => decision === "Corregido").length,
     rejected: reviewed.filter(({ decision }) => decision === "Rechazado").length,
-    policyVersion: "1.0",
+    policyVersion: "1.1",
   };
+  const sourceDirectory = SOURCE_PROFILES.map((profile) => ({
+    domain: profile.domain,
+    label: profile.label ?? profile.domain,
+    scope: profile.scope,
+    kind: profile.official ? "Institución oficial" : "Medio periodístico",
+    criterion: profile.official
+      ? "Publica documentos o comunicaciones institucionales de primera mano."
+      : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
+  }));
 
   return NextResponse.json(
-    { items, review, updatedAt: new Date().toISOString(), provider },
+    { items, review, sourceDirectory, updatedAt: new Date().toISOString(), provider },
     { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } },
   );
 }
