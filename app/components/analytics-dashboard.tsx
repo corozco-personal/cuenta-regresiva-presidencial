@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, Download, Eye, MousePointerClick, RefreshCw, Users } from "lucide-react";
+import ActivityChart from "./activity-chart";
 
 type Row = { day: string; users: number; pageviews: number; interactions: number };
 type Ranked = { page?: string; name?: string; value: number };
@@ -43,8 +44,6 @@ export default function AnalyticsDashboard() {
     pageviews: sum.pageviews + Number(row.pageviews),
     interactions: sum.interactions + Number(row.interactions),
   }), { users: 0, pageviews: 0, interactions: 0 }) ?? { users: 0, pageviews: 0, interactions: 0 }, [data]);
-  const peak = Math.max(1, ...(data?.daily.flatMap((row) => [Number(row.users), Number(row.interactions), Number(row.pageviews)]) ?? [1]));
-
   function changeRange(value: number) {
     setRange(value);
     setState("loading");
@@ -91,12 +90,12 @@ export default function AnalyticsDashboard() {
           </section>
 
           <section className="analytics-chart" aria-labelledby="activity-chart-title">
-            <div className="analytics-section-title"><div><p className="section-kicker">TENDENCIA</p><h2 id="activity-chart-title">Actividad por día</h2></div><div className="chart-legend"><span><i className="users" /> Visitantes</span><span><i className="views" /> Vistas</span><span><i className="actions" /> Interacciones</span></div></div>
-            {data.daily.length ? <div className="daily-chart">{data.daily.map((row) => <div className="daily-column" key={row.day}><div className="daily-bars" aria-label={`${row.day}: ${row.users} visitantes, ${row.pageviews} vistas, ${row.interactions} interacciones`}><i className="users" style={{ height: `${Math.max(3, Number(row.users) / peak * 100)}%` }} /><i className="views" style={{ height: `${Math.max(3, Number(row.pageviews) / peak * 100)}%` }} /><i className="actions" style={{ height: `${Math.max(3, Number(row.interactions) / peak * 100)}%` }} /></div><time>{new Date(`${row.day}T12:00:00`).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}</time></div>)}</div> : <p className="analytics-empty">La medición comienza con esta versión. Los primeros datos aparecerán a medida que lleguen visitas.</p>}
+            <div className="analytics-section-title"><div><p className="section-kicker">TENDENCIA</p><h2 id="activity-chart-title">Actividad por día</h2></div></div>
+            {data.daily.length ? <ActivityChart rows={data.daily} /> : <p className="analytics-empty">La medición comienza con esta versión. Los primeros datos aparecerán a medida que lleguen visitas.</p>}
           </section>
 
           <section className="analytics-rankings">
-            <div><div className="analytics-section-title"><div><p className="section-kicker">CONTENIDO</p><h2>Páginas más vistas</h2></div></div>{data.topPages.length ? <ol>{data.topPages.map((row) => <li key={row.page}><span>{row.page === "/" ? "Inicio" : row.page}</span><strong>{number.format(row.value)}</strong></li>)}</ol> : <p className="analytics-empty">Aún no hay suficientes vistas.</p>}</div>
+            <div><div className="analytics-section-title"><div><p className="section-kicker">CONTENIDO</p><h2>Páginas más vistas</h2></div></div>{data.topPages.length ? <ol>{data.topPages.map((row) => <li key={row.page}><span>{pageLabel(row.page)}</span><strong>{number.format(row.value)}</strong></li>)}</ol> : <p className="analytics-empty">Aún no hay suficientes vistas.</p>}</div>
             <div><div className="analytics-section-title"><div><p className="section-kicker">ACCIONES</p><h2>Interacciones frecuentes</h2></div></div>{data.topInteractions.length ? <ol>{data.topInteractions.map((row) => <li key={row.name}><span>{row.name}</span><strong>{number.format(row.value)}</strong></li>)}</ol> : <p className="analytics-empty">Aún no hay suficientes interacciones.</p>}</div>
           </section>
 
@@ -105,4 +104,19 @@ export default function AnalyticsDashboard() {
       )}
     </div>
   );
+}
+
+function pageLabel(path?: string) {
+  const clean = (path ?? "").split(/[?#]/)[0].replace(/^\/+|\/+$/g, "");
+  if (!clean) return "Inicio";
+  const labels: Record<string, string> = {
+    presidente: "Sobre el presidente",
+    reportes: "Reportes",
+    favorabilidad: "Indicadores",
+    archivo: "Archivo",
+    fuentes: "Fuentes",
+    metodologia: "Metodología",
+    autor: "Quién soy",
+  };
+  return labels[clean] ?? clean.split("/").filter(Boolean).map((part) => part.replace(/-/g, " ")).join(" · ").replace(/^./, (letter) => letter.toUpperCase());
 }
