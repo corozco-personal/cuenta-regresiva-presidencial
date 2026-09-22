@@ -2,7 +2,9 @@
 
 ## Qué se actualiza automáticamente
 
-`/api/noticias` consulta cada 24 horas menciones recientes de “Abelardo de la Espriella”. Si existe la variable secreta `NEWS_API_KEY`, utiliza NewsAPI. Sin ella, usa GDELT. Los resultados se limitan a una lista explícita de dominios y aparecen únicamente en **En observación**.
+`/api/noticias` consulta cada 24 horas menciones recientes de “Abelardo de la Espriella”. Si existe la variable secreta `NEWS_API_KEY`, utiliza NewsAPI. Sin ella, usa GDELT. Los resultados se limitan a una lista explícita de dominios y aparecen únicamente en **En observación**, separados entre fuentes nacionales e internacionales.
+
+Las fuentes nacionales incluyen Presidencia, CNE, Registraduría, altas cortes, órganos de control, Congreso, Cancillería, fuerza pública y medios colombianos identificados. Las internacionales incluyen organismos multilaterales, portales oficiales extranjeros y canales como DW, Reuters, AP, BBC, France 24, CNN en Español y El País.
 
 La presencia de un artículo en el monitor no significa que sus afirmaciones estén verificadas. El monitor es una bandeja de descubrimiento pública.
 
