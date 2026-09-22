@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ExternalLink, FileCheck2, Landmark, Scale, ShieldCheck } from "lucide-react";
-import Link from "../components/native-link";
 import PresidentNews from "../components/president-news";
+import SubpageHeader from "../components/subpage-header";
 
 export const metadata: Metadata = {
   title: "Sobre el presidente Abelardo de la Espriella · Cuenta pública",
@@ -42,10 +42,7 @@ const sources = [
 export default function PresidentPage() {
   return (
     <main className="subpage president-page">
-      <header className="subpage-header">
-        <Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link>
-        <nav><Link href="/">Inicio</Link><Link href="/#monitoreo">Noticias</Link><Link href="/favorabilidad">Indicadores</Link><Link href="/archivo">Archivo</Link><Link href="/fuentes">Fuentes</Link><Link href="/autor">Quién soy</Link></nav>
-      </header>
+      <SubpageHeader />
 
       <section className="president-hero">
         <div><p className="section-kicker">SOBRE EL PRESIDENTE</p><h1>Abelardo Gabriel<br /><em>De La Espriella Otero</em></h1><p>Perfil público construido con documentos oficiales, biografías de referencia e investigaciones periodísticas. Los hechos, las versiones y las opiniones permanecen diferenciados.</p></div>

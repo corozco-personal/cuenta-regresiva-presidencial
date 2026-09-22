@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "../components/native-link";
+import SubpageHeader from "../components/subpage-header";
 
 export const metadata: Metadata = { title: "Metodología · Cuenta pública", description: "Políticas de admisión, verificación, corrección, clasificación y moderación.", alternates: { canonical: "/metodologia" } };
 
@@ -16,5 +16,5 @@ const policies = [
 ];
 
 export default function MethodPage() {
-  return <main className="subpage"><header className="subpage-header"><Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link><nav><Link href="/">Inicio</Link><Link href="/presidente">Presidente</Link><Link href="/archivo">Archivo</Link><Link href="/fuentes">Fuentes</Link><Link href="/autor">Quién soy</Link></nav></header><section className="subpage-hero"><p className="section-kicker">METODOLOGÍA</p><h1>Reglas públicas para cada hallazgo.</h1><p>Estas políticas explican qué puede publicarse, qué queda en evaluación y cómo se moderan los aportes sin convertir una opinión en un hecho.</p></section><section className="subpage-content"><div className="policy-list">{policies.map(([title, body]) => <article key={title}><div><h2>{title}</h2><p>{body}</p></div></article>)}</div></section></main>;
+  return <main className="subpage"><SubpageHeader /><section className="subpage-hero"><p className="section-kicker">METODOLOGÍA</p><h1>Reglas públicas para cada hallazgo.</h1><p>Estas políticas explican qué puede publicarse, qué queda en evaluación y cómo se moderan los aportes sin convertir una opinión en un hecho.</p></section><section className="subpage-content"><div className="policy-list">{policies.map(([title, body]) => <article key={title}><div><h2>{title}</h2><p>{body}</p></div></article>)}</div></section></main>;
 }

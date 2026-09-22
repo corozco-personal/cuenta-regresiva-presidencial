@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Community from "./components/community";
 import SocialShare from "./components/social-share";
-import AudienceStrip from "./components/audience-strip";
+import CompactPresence from "./components/compact-presence";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -360,14 +360,14 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
           <a href="#participa" onClick={() => setMenuOpen(false)}>Participa</a>
-          <a href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a>
-          <a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a>
-          <a href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a>
-          <a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
-          <a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a>
-          <a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a>
-          <a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+          <details className="nav-more">
+            <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
+            <div className="nav-more-panel">
+              <a href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+            </div>
+          </details>
         </nav>
+        <CompactPresence />
         <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
           <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
         </button>
@@ -449,7 +449,6 @@ export default function Home() {
       </section>
 
       <SocialShare />
-      <AudienceStrip />
 
       <section className="archive section-shell" id="archivo" hidden>
         <div className="section-heading">
