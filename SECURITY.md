@@ -7,3 +7,11 @@ El portal aplica validación de enlaces HTTPS, consultas parametrizadas, límite
 Turnstile requiere `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY` de un widget real restringido al dominio del portal. No se deben utilizar claves de prueba en producción. El límite de frecuencia utiliza `RATE_LIMIT_SALT`, que debe mantenerse como secreto y rotarse si se sospecha exposición.
 
 Estas medidas reducen abuso, pero no sustituyen una revisión de seguridad independiente ni las reglas WAF administradas por quien controle el dominio perimetral.
+
+## Cola, cuarentena y trazabilidad
+
+Ningún envío de opinión, noticia o solicitud de corrección se publica en la misma petición que lo recibe. El flujo almacena primero el registro como pendiente o en cuarentena. La vista pública consulta exclusivamente estados aprobados; los aportes con señales de automatización, inyección, burla, spam, lenguaje ofensivo o enlaces inseguros no se amplifican.
+
+Cada cambio de estado se guarda en `moderation_actions`. Los eventos de seguridad se agregan en `security_events` con categoría, severidad, ruta lógica y huellas irreversibles del origen y de la carga. El contenido hostil, la dirección de red y el agente de usuario no se guardan en ese registro ni se muestran en `/reportes`.
+
+La aprobación automática conservadora ocurre después de una espera mínima y solo para opiniones pertinentes y enlaces de fuentes ya incluidas en el directorio. Las fuentes nuevas permanecen pendientes hasta disponer de una corroboración suficiente.

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ne } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { newsSubmissions } from "../../../db/schema";
@@ -6,6 +6,7 @@ import { profileFor } from "../noticias/route";
 import { countryNames } from "../../data/countries";
 import { httpsUrl, plainText } from "../../data/input-security";
 import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
+import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -27,10 +28,27 @@ function normalizeUrl(raw: string) {
   return { normalized: url.toString(), host };
 }
 
+async function reviewPendingSubmissions() {
+  const db = getDb();
+  const reviewBefore = new Date(Date.now() - 10 * 60_000).toISOString();
+  const rows = await db.select().from(newsSubmissions)
+    .where(and(eq(newsSubmissions.status, "pending"), lte(newsSubmissions.createdAt, reviewBefore)))
+    .orderBy(newsSubmissions.createdAt).limit(30);
+  for (const row of rows) {
+    if (!profileFor(row.domain)) continue;
+    const reason = row.reliability === "official"
+      ? "Fuente oficial accesible, relacionada y aprobada tras la espera de moderación."
+      : "Medio registrado, enlace accesible y relación temática confirmada; aprobado para mostrarse como aporte periodístico.";
+    await db.update(newsSubmissions).set({ status: "approved", reason }).where(eq(newsSubmissions.id, row.id));
+    await recordModerationAction({ itemType: "news", itemId: row.id, fromStatus: "pending", toStatus: "approved", reason });
+  }
+}
+
 export async function GET() {
   try {
+    await reviewPendingSubmissions();
     const rows = await getDb().select().from(newsSubmissions)
-      .where(ne(newsSubmissions.status, "rejected"))
+      .where(inArray(newsSubmissions.status, ["approved", "publishable", "review"]))
       .orderBy(desc(newsSubmissions.createdAt)).limit(30);
     return Response.json({ submissions: rows.map(publicSubmission) });
   } catch {
@@ -39,13 +57,24 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let auditPayload: unknown;
   try {
     const limited = await enforceRateLimit(request, "aportes", 6, 900);
-    if (limited) return limited;
+    if (limited) {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "rate_limit", severity: "medium", reason: "Límite de solicitudes excedido" });
+      return limited;
+    }
     const payload = await request.json() as Record<string, unknown>;
-    if (payload.website) return Response.json({ ok: true }, { status: 201 });
+    auditPayload = payload;
+    if (payload.website) {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "bot", severity: "medium", reason: "Campo trampa completado", payload });
+      return Response.json({ ok: true }, { status: 202 });
+    }
     const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-news");
-    if (!challenge.ok) return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
+    if (!challenge.ok) {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "bot", severity: "medium", reason: "Desafío Turnstile inválido" });
+      return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
+    }
     const rawUrl = httpsUrl(payload.url);
     const country = plainText(payload.country, { max: 80 });
     const department = country === "Colombia" ? plainText(payload.department, { max: 100, optional: true }) : "";
@@ -82,22 +111,28 @@ export async function POST(request: Request) {
 
     const profile = profileFor(host);
     const reliability = profile?.official ? "official" : profile ? "known_media" : "unknown";
-    let status = "rejected";
+    let status = "quarantined";
     let reason = "El enlace no pudo verificarse o no se refiere directamente al mandatario.";
-    if (accessible && relevant && profile?.official) { status = "publishable"; reason = "Fuente oficial accesible y relacionada; puede considerarse como fuente primaria."; }
-    else if (accessible && relevant && profile) { status = "review"; reason = "Medio incluido en el directorio. Se conserva como aporte periodístico pendiente de corroboración independiente."; }
-    else if (accessible && relevant) { status = "review"; reason = "Fuente nueva: el enlace es accesible y relevante, pero su confiabilidad aún debe evaluarse."; }
-
-    if (status === "rejected") {
-      return Response.json({ error: `${reason} El intento no se guardó ni se publicó.` }, { status: 422 });
-    }
+    if (accessible && relevant && profile?.official) { status = "pending"; reason = "Fuente oficial accesible y relacionada; pendiente de aprobación."; }
+    else if (accessible && relevant && profile) { status = "pending"; reason = "Medio incluido en el directorio; pendiente de corroboración y aprobación."; }
+    else if (accessible && relevant) { status = "pending"; reason = "Fuente nueva accesible y relevante; requiere revisión adicional antes de mostrarse."; }
 
     const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
-    return Response.json({ submission: publicSubmission(row as typeof newsSubmissions.$inferSelect) }, { status: 201 });
+    await recordModerationAction({ itemType: "news", itemId: row.id, fromStatus: "received", toStatus: status, reason });
+    if (status === "quarantined") {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "spam", severity: "medium", reason, payload: { url: normalized, country } });
+    }
+    return Response.json({ queued: true, status: "pending_review" }, { status: 202 });
   } catch (error) {
-    if (error instanceof Error && error.message === "unsafe") return Response.json({ error: "Solo se aceptan enlaces HTTPS públicos y seguros." }, { status: 400 });
-    if (error instanceof Error && error.message === "invalid-text") return Response.json({ error: "Uno de los campos contiene formato no permitido. Escribe únicamente texto plano." }, { status: 400 });
+    if (error instanceof Error && error.message === "unsafe") {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "unsafe_url", severity: "high", reason: "URL privada, no HTTPS o con credenciales", payload: auditPayload });
+      return Response.json({ error: "Solo se aceptan enlaces HTTPS públicos y seguros." }, { status: 400 });
+    }
+    if (error instanceof Error && error.message === "invalid-text") {
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "injection", severity: "high", reason: "Patrón activo o formato no permitido", payload: auditPayload });
+      return Response.json({ error: "Uno de los campos contiene formato no permitido. Escribe únicamente texto plano." }, { status: 400 });
+    }
     if (error instanceof Error && error.name === "AbortError") return Response.json({ error: "La fuente tardó demasiado en responder. No se guardó el envío." }, { status: 408 });
     const message = error instanceof Error ? error.message : "";
     if (message.includes("UNIQUE")) return Response.json({ error: "Este enlace ya fue enviado.", duplicate: true }, { status: 409 });

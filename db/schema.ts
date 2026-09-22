@@ -136,3 +136,32 @@ export const edgeRateLimits = sqliteTable("edge_rate_limits", {
 }, (table) => [
   index("edge_rate_limits_updated_idx").on(table.updatedAt),
 ]);
+
+export const moderationActions = sqliteTable("moderation_actions", {
+  id: text("id").primaryKey(),
+  itemType: text("item_type").notNull(),
+  itemId: text("item_id").notNull(),
+  fromStatus: text("from_status").notNull(),
+  toStatus: text("to_status").notNull(),
+  reason: text("reason").notNull(),
+  reviewer: text("reviewer").notNull().default("automatic-policy"),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  index("moderation_actions_item_idx").on(table.itemType, table.itemId),
+  index("moderation_actions_created_idx").on(table.createdAt),
+]);
+
+export const securityEvents = sqliteTable("security_events", {
+  id: text("id").primaryKey(),
+  endpoint: text("endpoint").notNull(),
+  category: text("category").notNull(),
+  severity: text("severity").notNull(),
+  reason: text("reason").notNull(),
+  fingerprintHash: text("fingerprint_hash").notNull(),
+  payloadDigest: text("payload_digest"),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  index("security_events_created_idx").on(table.createdAt),
+  index("security_events_category_created_idx").on(table.category, table.createdAt),
+  index("security_events_endpoint_created_idx").on(table.endpoint, table.createdAt),
+]);

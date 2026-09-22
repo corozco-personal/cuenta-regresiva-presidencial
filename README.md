@@ -22,7 +22,8 @@ Es una iniciativa personal de **Carlos Eduardo Orozco**, sin financiación, prom
 - Agrupación de coberturas similares para reducir duplicados.
 - Archivo cronológico con búsqueda y filtros por etapa y alcance.
 - Directorio mundial de medios e instituciones admitidas para monitoreo.
-- Muro de opiniones con anonimato opcional, moderación y detección de duplicados.
+- Muro de opiniones con anonimato opcional, cola previa, moderación, cuarentena y detección de duplicados.
+- Reporte agregado de intentos de automatización, spam, enlaces inseguros e inyección, sin exponer las cargas ni datos del visitante.
 - Formulario para proponer noticias con evaluación de enlace, fuente y relevancia.
 - Indicadores de favorabilidad, audiencia agregada y usuarios activos.
 - Resumen semanal descargable y canal RSS público.

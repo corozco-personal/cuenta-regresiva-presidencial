@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Menu, MessageCircleMore, Share2 } from "lucide-react";
+import { Check, MessageCircleMore, Share2 } from "lucide-react";
 import LinkedInIcon from "./linkedin-icon";
 
 const SITE_URL = "https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/";
@@ -40,7 +40,7 @@ export default function ShareOptions({ title = "Cuenta pública", url = SITE_URL
     <button aria-label="Compartir en WhatsApp" title="WhatsApp" onClick={() => open(`https://wa.me/?text=${encodeURIComponent(`${message()}\n\n${absoluteUrl()}`)}`)}><MessageCircleMore size={17} /><span>WhatsApp</span></button>
     <button aria-label="Compartir en Facebook" title="Facebook" onClick={() => copyAndOpen(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl())}`, "Texto copiado para Facebook")}><FacebookIcon /><span>Facebook</span></button>
     <button aria-label="Compartir en X" title="X" onClick={() => open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message())}&url=${encodeURIComponent(absoluteUrl())}`)}><XIcon /><span>X</span></button>
-    <button aria-label="Más opciones para compartir" title="Más opciones" onClick={more}><Menu size={18} /><span>Más opciones</span></button>
+    <button aria-label="Más opciones para compartir" title="Más opciones" onClick={more}><Share2 size={18} /><span>Más opciones</span></button>
   </div>;
 
   if (mode === "inline") return <div className="share-options share-options-inline">{actions}{notice && <small className="share-option-notice"><Check size={12} />{notice}</small>}</div>;

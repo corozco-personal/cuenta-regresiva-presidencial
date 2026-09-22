@@ -1,14 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ExternalLink, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
 import CountrySelect from "./country-select";
 import TurnstileWidget from "./turnstile-widget";
 
 type Opinion = { id: string; displayName: string; country: string; department?: string; municipality?: string; stance: string; status: string; comment: string; createdAt: string };
 type Submission = { id: string; url: string; domain: string; title?: string; status: string; reliability: string; reason: string; country: string; department?: string; municipality?: string; createdAt: string };
 
-const statusLabel: Record<string, string> = { publishable: "Fuente primaria publicable", review: "En evaluación", rejected: "No incorporado" };
+const statusLabel: Record<string, string> = { approved: "Aprobado", publishable: "Fuente primaria publicable", review: "En evaluación" };
 
 async function readJson(response: Response) {
   return response.json().catch(() => ({ error: "Respuesta inesperada del servidor." }));
@@ -32,12 +32,6 @@ export default function Community() {
   const [newsTurnstileReset, setNewsTurnstileReset] = useState(0);
   const [opinionTurnstileReset, setOpinionTurnstileReset] = useState(0);
 
-  async function refresh() {
-    const [opinionResponse, newsResponse] = await Promise.all([fetch("/api/opiniones", { cache: "no-store" }), fetch("/api/aportes")]);
-    if (opinionResponse.ok) setOpinions((await opinionResponse.json()).opinions ?? []);
-    if (newsResponse.ok) setSubmissions((await newsResponse.json()).submissions ?? []);
-  }
-
   useEffect(() => {
     void Promise.all([fetch("/api/opiniones", { cache: "no-store" }), fetch("/api/aportes")]).then(async ([opinionResponse, newsResponse]) => {
       if (opinionResponse.ok) setOpinions((await opinionResponse.json()).opinions ?? []);
@@ -57,8 +51,8 @@ export default function Community() {
     if (opinionTurnstileEnabled) setOpinionTurnstileReset((value) => value + 1);
     if (!response.ok) setOpinionMessage(result.error);
     else {
-      setOpinionMessage(result.filtered ? "La opinión se conservó, pero su texto quedó oculto por la política de convivencia." : "Tu opinión ya forma parte del muro.");
-      form.reset(); setOpinionAnonymous(true); setOpinionCountry("Colombia"); await refresh();
+      setOpinionMessage("Recibimos tu opinión. Quedó en la cola y solo aparecerá después de superar la revisión de seguridad, pertinencia y duplicidad.");
+      form.reset(); setOpinionAnonymous(true); setOpinionCountry("Colombia");
     }
     setSendingOpinion(false);
   }
@@ -72,7 +66,7 @@ export default function Community() {
     const result = await readJson(response);
     if (newsTurnstileEnabled) setNewsTurnstileReset((value) => value + 1);
     if (!response.ok) setNewsMessage(result.error);
-    else { setNewsMessage(`${statusLabel[result.submission.status]}. ${result.submission.reason}`); form.reset(); setNewsAnonymous(true); setNewsCountry("Colombia"); await refresh(); }
+    else { setNewsMessage("Recibimos el enlace. Quedó en la cola y no se mostrará hasta completar la revisión de seguridad, fuente, pertinencia y duplicidad."); form.reset(); setNewsAnonymous(true); setNewsCountry("Colombia"); }
     setSendingNews(false);
   }
 
@@ -88,12 +82,12 @@ export default function Community() {
           <div className="form-title"><Newspaper /><div><h3>Enviar una noticia</h3><p>Pega el enlace original. El sistema revisa seguridad, acceso, fuente, relevancia y duplicidad.</p></div></div>
           <label>Enlace HTTPS<input name="url" type="url" required maxLength={2048} inputMode="url" autoComplete="url" placeholder="https://medio.com/noticia" /></label>
           <CountrySelect id="news-country" label="País desde donde aportas" value={newsCountry} onChange={setNewsCountry} />
-          {newsCountry === "Colombia" && <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>}
           <div className="anonymous-field anonymous-field-full"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={newsAnonymous} onChange={(e) => setNewsAnonymous(e.target.checked)} />Publicar de forma anónima</label></div>
+          {newsCountry === "Colombia" && <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>}
           {!newsAnonymous && <label>Tu nombre<input name="submitterName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
           <TurnstileWidget action="submit-news" resetSignal={newsTurnstileReset} onToken={setNewsTurnstileToken} onEnabled={setNewsTurnstileEnabled} />
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingNews || (newsTurnstileEnabled && !newsTurnstileToken)}><Send size={16} />{sendingNews ? "Evaluando…" : "Evaluar y enviar enlace"}</button>
+          <button disabled={sendingNews || (newsTurnstileEnabled && !newsTurnstileToken)}><Send size={16} />{sendingNews ? "Enviando…" : "Enviar a revisión"}</button>
           {newsMessage && <p className="form-message" aria-live="polite">{newsMessage}</p>}
           <p className="form-note"><ShieldCheck size={15} /> Un medio confiable no convierte automáticamente una afirmación en un hecho probado.</p>
         </form>
@@ -102,19 +96,19 @@ export default function Community() {
           <div className="form-title"><MessageSquareText /><div><h3>Publicar una opinión</h3><p>Un aporte por navegador cada 24 horas. Las coincidencias exactas o sustancialmente similares no se vuelven a publicar.</p></div></div>
           <label>Tu opinión<textarea name="comment" required minLength={20} maxLength={1200} rows={5} placeholder="Comparte un argumento concreto…" /></label>
           <div className="form-row"><label>Posición<select name="stance" defaultValue="Neutral"><option>A favor</option><option>En contra</option><option>Neutral</option><option>Mixta</option></select></label><CountrySelect id="opinion-country" value={opinionCountry} onChange={setOpinionCountry} /></div>
-          {opinionCountry === "Colombia" && <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>}
           <div className="anonymous-field anonymous-field-full"><span>Privacidad</span><label className="check-label"><input type="checkbox" checked={opinionAnonymous} onChange={(e) => setOpinionAnonymous(e.target.checked)} />Publicar de forma anónima</label></div>
+          {opinionCountry === "Colombia" && <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} autoComplete="address-level1" /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} autoComplete="address-level2" /></label></div>}
           {!opinionAnonymous && <label>Tu nombre<input name="displayName" required minLength={2} maxLength={80} autoComplete="name" /></label>}
           <TurnstileWidget action="submit-opinion" resetSignal={opinionTurnstileReset} onToken={setOpinionTurnstileToken} onEnabled={setOpinionTurnstileEnabled} />
           <input className="honey" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-          <button disabled={sendingOpinion || (opinionTurnstileEnabled && !opinionTurnstileToken)}><MessageSquarePlus size={16} />{sendingOpinion ? "Revisando…" : "Publicar opinión"}</button>
+          <button disabled={sendingOpinion || (opinionTurnstileEnabled && !opinionTurnstileToken)}><MessageSquarePlus size={16} />{sendingOpinion ? "Enviando…" : "Enviar a revisión"}</button>
           {opinionMessage && <p className="form-message" aria-live="polite">{opinionMessage}</p>}
         </form>
       </div>
 
       <div className="community-streams">
-        <div><div className="stream-title"><h3>Muro de opiniones</h3><span>{opinions.length} recientes</span></div>{opinions.length ? <div className="opinion-list" role="region" aria-label="Opiniones recientes, lista desplazable" tabIndex={0}>{opinions.map((item) => <article className={item.status === "filtered" ? "opinion filtered" : "opinion"} key={item.id}><div><strong>{item.displayName}</strong><span>{item.stance}</span></div><p>{item.comment}</p><small>{[item.municipality, item.department, item.country].filter(Boolean).join(" · ")} · {new Date(item.createdAt).toLocaleDateString("es-CO")}</small>{item.status === "filtered" && <em><AlertTriangle size={13} /> Filtrado, no eliminado</em>}</article>)}</div> : <p className="empty-stream">Aún no hay opiniones. La primera puede ser la tuya.</p>}</div>
         <div><div className="stream-title"><h3>Enlaces aportados</h3><span>{submissions.length} recientes</span></div>{submissions.length ? <div className="submission-list" role="region" aria-label="Enlaces aportados recientemente, lista desplazable" tabIndex={0}>{submissions.map((item) => <article key={item.id}><div><span className={`submission-status status-${item.status}`}>{statusLabel[item.status]}</span><small>{[item.municipality, item.department, item.country].filter(Boolean).join(" · ")}</small></div><strong>{item.title || item.domain}</strong><p>{item.reason}</p><a href={item.url} target="_blank" rel="noreferrer">{item.domain}<ExternalLink size={13} /></a></article>)}</div> : <p className="empty-stream">Aún no hay enlaces ciudadanos evaluados.</p>}</div>
+        <div><div className="stream-title"><h3>Muro de opiniones</h3><span>{opinions.length} recientes</span></div>{opinions.length ? <div className="opinion-list" role="region" aria-label="Opiniones recientes, lista desplazable" tabIndex={0}>{opinions.map((item) => <article className="opinion" key={item.id}><div><strong>{item.displayName}</strong><span>{item.stance}</span></div><p>{item.comment}</p><small>{[item.municipality, item.department, item.country].filter(Boolean).join(" · ")} · {new Date(item.createdAt).toLocaleDateString("es-CO")}</small></article>)}</div> : <p className="empty-stream">Aún no hay opiniones aprobadas.</p>}</div>
       </div>
       <div className="community-policy"><CheckCircle2 /><p><strong>Conservar no significa amplificar.</strong> Los insultos y mensajes de odio permanecen almacenados para trazabilidad, pero el texto ofensivo se oculta públicamente. Las opiniones legítimas no se filtran por su postura.</p></div>
     </section>
