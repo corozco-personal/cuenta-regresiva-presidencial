@@ -23,13 +23,13 @@ export default function Community() {
   const [newsAnonymous, setNewsAnonymous] = useState(true);
 
   async function refresh() {
-    const [opinionResponse, newsResponse] = await Promise.all([fetch("/api/opiniones"), fetch("/api/aportes")]);
+    const [opinionResponse, newsResponse] = await Promise.all([fetch("/api/opiniones", { cache: "no-store" }), fetch("/api/aportes")]);
     if (opinionResponse.ok) setOpinions((await opinionResponse.json()).opinions ?? []);
     if (newsResponse.ok) setSubmissions((await newsResponse.json()).submissions ?? []);
   }
 
   useEffect(() => {
-    void Promise.all([fetch("/api/opiniones"), fetch("/api/aportes")]).then(async ([opinionResponse, newsResponse]) => {
+    void Promise.all([fetch("/api/opiniones", { cache: "no-store" }), fetch("/api/aportes")]).then(async ([opinionResponse, newsResponse]) => {
       if (opinionResponse.ok) setOpinions((await opinionResponse.json()).opinions ?? []);
       if (newsResponse.ok) setSubmissions((await newsResponse.json()).submissions ?? []);
     }).catch(() => undefined);

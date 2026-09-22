@@ -25,6 +25,7 @@ function similarity(left: string, right: string) {
 }
 
 function publicOpinion(row: typeof opinions.$inferSelect) {
+  const mustHideText = row.status === "filtered" || looksAutomatedOpinion(row.comment);
   return {
     id: row.id,
     displayName: row.isAnonymous === "1" ? "Anónimo" : row.displayName,
@@ -33,7 +34,7 @@ function publicOpinion(row: typeof opinions.$inferSelect) {
     municipality: row.municipality,
     stance: row.stance,
     status: row.status,
-    comment: row.status === "filtered" ? "Contenido conservado, pero oculto por lenguaje ofensivo o de odio." : row.comment,
+    comment: mustHideText ? "Contenido oculto por las políticas de privacidad y moderación." : row.comment,
     createdAt: row.createdAt,
   };
 }
@@ -43,7 +44,10 @@ export async function GET() {
     const rows = await getDb().select().from(opinions)
       .where(notLike(opinions.comment, "Opinión generada por%"))
       .orderBy(desc(opinions.createdAt)).limit(100);
-    return Response.json({ opinions: rows.filter((row) => !looksAutomatedOpinion(row.comment)).slice(0, 50).map(publicOpinion) });
+    return Response.json(
+      { opinions: rows.filter((row) => !looksAutomatedOpinion(row.comment)).slice(0, 50).map(publicOpinion) },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   } catch {
     return Response.json({ error: "El muro no está disponible temporalmente." }, { status: 503 });
   }
