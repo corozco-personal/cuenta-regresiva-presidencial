@@ -25,6 +25,7 @@ import {
 import Community from "./components/community";
 import SocialShare from "./components/social-share";
 import CompactPresence from "./components/compact-presence";
+import { campaignPromises } from "./data/campaign-promises";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -42,7 +43,7 @@ type NewsItem = {
   evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
   processStatus: string;
   sources: Array<{ source: string; url: string; kind: string }>;
-  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
+  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string; finalUrl?: string };
 };
 type ReviewStats = { admitted: number; corrected: number; rejected: number; policyVersion: string };
 type SourceEntry = { domain: string; label: string; scope: string; kind: string; criterion: string; country: string; region: string };
@@ -188,37 +189,6 @@ const corrections = [
   { date: "22 sep 2026", item: "Etiqueta editorial", before: "Aprobado", after: "Admitido para monitoreo", reason: "Evitar que la admisión de una fuente se interprete como certificación de todas sus afirmaciones." },
   { date: "21 sep 2026", item: "Política de correcciones", before: "Sin registro público", after: "Bitácora pública incorporada", reason: "Hacer visibles los cambios editoriales y su justificación." },
 ];
-
-const campaignPromises = [
-  {
-    title: "Donar el salario presidencial",
-    status: "Cumplida",
-    detail: "El primer salario fue destinado a dos centros geriátricos afectados por el terremoto del Quindío.",
-    source: "Europa Press",
-    url: "https://www.europapress.es/internacional/noticia-espriella-cumple-promesa-renuncia-primer-sueldo-favor-dos-geriatricos-afectados-terremoto-20260913014550.html",
-  },
-  {
-    title: "Poner en marcha un plan de choque en salud",
-    status: "Pendiente",
-    detail: "La Presidencia anunció el inicio del plan; su resultado todavía requiere seguimiento verificable.",
-    source: "Presidencia de la República",
-    url: "https://www.presidencia.gov.co/prensa/Paginas/Declaracion-del-Presidente-de-la-Republica-Abelardo-De-La-Espriella-al-termino-260921.aspx",
-  },
-  {
-    title: "Recuperar territorios en los primeros 90 días",
-    status: "Pendiente",
-    detail: "El plazo de la promesa continúa abierto y no permite declarar un cumplimiento definitivo.",
-    source: "Programa de gobierno",
-    url: "https://defensoresdelapatria.com/wp-content/uploads/2026/04/PROPUESTAS-ABELARDO-DE-LA-ESPRIELLA-EL-TIGRE.pdf",
-  },
-  {
-    title: "Reducir la burocracia estatal en 40 %",
-    status: "Pendiente",
-    detail: "No existe todavía evidencia pública suficiente para marcar la meta como cumplida.",
-    source: "Programa de gobierno",
-    url: "https://propuestas.abelardopresidente.com.co/",
-  },
-] as const;
 
 const websiteJsonLd = {
   "@context": "https://schema.org",
@@ -399,7 +369,7 @@ export default function Home() {
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
             <div className="nav-more-panel">
-              <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a><a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+              <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a><a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/promesas" onClick={() => setMenuOpen(false)}>Promesas</a><a href="/resumen" onClick={() => setMenuOpen(false)}>Resumen semanal</a><a href="/alertas" onClick={() => setMenuOpen(false)}>Alertas</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/correcciones" onClick={() => setMenuOpen(false)}>Correcciones</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
             </div>
           </details>
         </nav>
@@ -494,15 +464,16 @@ export default function Home() {
               <small>Revisión: 22 sep 2026</small>
             </div>
             <div className="promises-list">
-              {campaignPromises.map((promise) => (
+              {campaignPromises.slice(0, 4).map((promise) => (
                 <article className={`promise-item promise-${promise.status === "Cumplida" ? "done" : "pending"}`} key={promise.title}>
                   <span className="promise-icon" aria-hidden="true">{promise.status === "Cumplida" ? <CheckCircle2 size={20} /> : <Hourglass size={19} />}</span>
-                  <div><strong>{promise.title}</strong><p>{promise.detail}</p><a href={promise.url} target="_blank" rel="noreferrer">{promise.source} <ExternalLink size={12} /></a></div>
+                  <div><strong>{promise.title}</strong><p>{promise.assessment}</p><a href={`/promesas#${promise.id}`}>Ver evidencia <ExternalLink size={12} /></a></div>
                   <small>{promise.status}</small>
                 </article>
               ))}
             </div>
-            <p className="promises-note">“Pendiente” también incluye metas cuyo plazo sigue abierto. El inicio de una acción no equivale a su cumplimiento.</p>
+            <a className="promises-all" href="/promesas">Ver todas, comparar plazos y fuentes <ArrowUpRight size={14} /></a>
+            <p className="promises-note">El inicio de una acción no equivale a su cumplimiento. Consulta la metodología de cada estado.</p>
           </aside>
         </div>
       </section>
@@ -624,8 +595,8 @@ export default function Home() {
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
-                  {item.sources.length > 1 && <p className="source-count">{item.sources.length} fuentes reunidas en este hecho.</p>}
-                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
+                  {item.sources.length > 1 && <details className="source-cluster"><summary>{item.sources.length} fuentes reunidas en este hecho</summary>{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.source}<ExternalLink size={12} /></a>)}</details>}
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>
@@ -642,8 +613,8 @@ export default function Home() {
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
                   <div className="news-evidence"><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span className={`link-${item.linkCheck?.status.toLocaleLowerCase("es").replace(" ", "-")}`}>{item.linkCheck?.status ?? "No comprobado"}</span>{item.linkCheck?.lastModified && <span title="Fecha de modificación informada por la fuente">Actualizado: {new Date(item.linkCheck.lastModified).toLocaleDateString("es-CO")}</span>}</div>
-                  {item.sources.length > 1 && <p className="source-count">{item.sources.length} fuentes reunidas en este hecho.</p>}
-                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
+                  {item.sources.length > 1 && <details className="source-cluster"><summary>{item.sources.length} fuentes reunidas en este hecho</summary>{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.source}<ExternalLink size={12} /></a>)}</details>}
+                  <div className="news-card-bottom"><span>{item.kind}</span><div><button onClick={() => shareRecord(`noticia-${item.id}`, item.title)} aria-label={`Compartir ${item.title}`}><Share2 size={16} /></button><a href={item.linkCheck?.finalUrl ?? item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
                 </article>
               ))}
             </div>
@@ -794,7 +765,7 @@ export default function Home() {
 
       <footer>
         <a className="brand" href="#inicio"><span className="brand-mark">07</span><span>Cuenta pública</span></a>
-        <p>Soy <a href="/autor">Carlos Orozco</a>. Creé este proyecto para reunir el tiempo del mandato, las noticias y la participación ciudadana. Es un portal <a href="/acerca">independiente y sin ánimo de lucro</a>.</p>
+        <p>Soy <a href="/autor">Carlos Orozco</a>. Creé este proyecto para reunir el tiempo del mandato, las noticias y la participación ciudadana. Es un portal <a href="/acerca">independiente y sin ánimo de lucro</a>. <a href="/privacidad">Privacidad</a>.</p>
         <span>Última revisión editorial: 21 sep 2026</span>
       </footer>
       <span className="sr-only" aria-live="polite">{sharedId ? "Enlace copiado o compartido" : ""}</span>

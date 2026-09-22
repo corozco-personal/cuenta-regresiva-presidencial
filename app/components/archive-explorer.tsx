@@ -1,0 +1,23 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { ExternalLink, Search } from "lucide-react";
+
+const records = [
+  ["2026-08-30", "Nacional", "Instituciones", "Presidencia", "Pronunciamiento publicado por la Presidencia en cumplimiento de un fallo de tutela", "Presidencia de la República", "https://www.presidencia.gov.co/prensa/Paginas/Alocucion-del-Presidente-Abelardo-De-la-Espriella-desde-la-sede-alterna-260830.aspx"],
+  ["2026-06-17", "Nacional", "Control electoral", "Transición", "Resolución del CNE sobre la solicitud de revocatoria de la inscripción presidencial", "Consejo Nacional Electoral", "https://www.cne.gov.co/resoluciones-cne-2026/13792?layout=print&print=1&tmpl=component"],
+  ["2026-01-30", "Nacional", "Registro electoral", "Campaña", "Informe de la Registraduría sobre los apoyos recibidos por la candidatura", "Registraduría Nacional", "https://www.registraduria.gov.co/IMG/pdf/20260130_informe_de_gestion_institucional_2025.pdf"],
+  ["2026-09-13", "Nacional", "Justicia", "Presidencia", "Declaraciones del presidente sobre decisiones judiciales", "Noticias Caracol", "https://www.noticiascaracol.com/politica/respeto-a-la-justicia-dice-de-la-espriella-al-controvertir-fallos-contra-decisiones-del-gobierno-rg10?_amp=true"],
+  ["2026-09-10", "Internacional", "Derechos", "Presidencia", "Orden judicial relacionada con publicaciones oficiales en redes", "DW Español", "https://amp.dw.com/es/de-la-espriella-tendr%C3%A1-que-retirar-sus-publicaciones-mostrando-cad%C3%A1veres-en-redes/a-79210565"],
+  ["2026-09-07", "Internacional", "Relaciones exteriores", "Presidencia", "Análisis internacional sobre el giro de la política exterior colombiana", "El País", "https://elpais.com/america-colombia/2026-09-07/del-escudo-de-las-americas-a-los-altos-del-golan-de-la-espriella-cumple-la-promesa-de-alinearse-con-trump-y-netanyahu.html"],
+  ["2026-06-25", "Internacional", "Elecciones", "Transición", "Cobertura de la proclamación del presidente electo por el CNE", "DW Español", "https://amp.dw.com/es/abelardo-de-la-espriella-es-proclamado-presidente-electo-de-colombia/a-77698790"],
+  ["2025-12-04", "Internacional", "Campaña", "Campaña", "Entrega de firmas para avalar la candidatura presidencial", "Agencia EFE", "https://efe.com/mundo/2025-12-04/candidato-abelardo-de-la-espriella-colombia-presidencia-campana/"],
+  ["2025-11-04", "Internacional", "Campaña", "Campaña", "Cobertura de la convención nacional de Defensores de la Patria", "El País", "https://elpais.com/america-colombia/2025-11-04/el-candidato-ultra-abelardo-de-la-espriella-se-da-un-bano-de-masas-en-un-congreso-en-bogota-el-tigre-ha-despertado.html"],
+  ["2025-07-17", "Nacional", "Campaña", "Campaña", "Confirmación de la candidatura presidencial y apertura de la recolección de firmas", "Caracol Radio", "https://caracol.com.co/2025/07/17/no-me-arrodillo-peleo-abelardo-de-la-espriella-confirma-su-candidatura-presidencial-para-2026/?outputType=amp"],
+] as const;
+
+export default function ArchiveExplorer() {
+  const [query, setQuery] = useState(""); const [scope, setScope] = useState("Todos"); const [stage, setStage] = useState("Todas");
+  const filtered = useMemo(() => { const needle = query.trim().toLocaleLowerCase("es"); return records.filter((record) => (scope === "Todos" || record[1] === scope) && (stage === "Todas" || record[3] === stage) && (!needle || `${record[2]} ${record[4]} ${record[5]}`.toLocaleLowerCase("es").includes(needle))); }, [query, scope, stage]);
+  return <><div className="archive-toolbar"><label><Search size={17} /><span className="sr-only">Buscar en el archivo</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar hecho, fuente o tema" /></label><label><span>Alcance</span><select value={scope} onChange={(event) => setScope(event.target.value)}><option>Todos</option><option>Nacional</option><option>Internacional</option></select></label><label><span>Etapa</span><select value={stage} onChange={(event) => setStage(event.target.value)}><option>Todas</option><option>Campaña</option><option>Transición</option><option>Presidencia</option></select></label></div><div className="archive-result-count"><strong>{filtered.length}</strong> hechos en la cronología</div><div className="archive-timeline">{filtered.map(([date, scopeValue, category, stageValue, title, source, url]) => <article key={url}><time>{new Date(`${date}T12:00:00-05:00`).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</time><span className="archive-node" /><div><small>{stageValue} · {scopeValue} · {category}</small><h2>{title}</h2><a href={url} target="_blank" rel="noreferrer">{source}<ExternalLink size={14} /></a></div></article>)}</div></>;
+}

@@ -62,7 +62,7 @@ export default function AboutPage() {
             <div><strong>Cálculos reproducibles</strong><span>El contador, los porcentajes y los indicadores parten de fechas, datos y reglas visibles.</span></div>
             <div><strong>Contenido identificado</strong><span>Los documentos, las coberturas y las opiniones se presentan como categorías diferentes.</span></div>
           </div>
-          <p className="ai-disclosure-note"><strong>Todo lo que el portal muestra, calcula o consulta es 100 % verificable en su procedencia, sus datos o su método.</strong> La plataforma no publica afirmaciones generadas por IA como si fueran noticias o hechos comprobados, ni utiliza la IA como una fuente autónoma de información. Las opiniones ciudadanas se identifican expresamente como opiniones.</p>
+          <p className="ai-disclosure-note"><strong>Todo lo que el portal muestra, calcula o consulta busca ser 100 % trazable hasta su procedencia, sus datos o su método.</strong> Trazabilidad no significa que toda afirmación de una fuente sea verdadera: permite que cada persona la compruebe, contraste y cuestione. La plataforma no publica afirmaciones generadas por IA como si fueran noticias o hechos comprobados, ni utiliza la IA como una fuente autónoma de información. Las opiniones ciudadanas se identifican expresamente como opiniones.</p>
         </aside>
         <aside className="independence-notice">
           <p className="section-kicker">DECLARACIÓN DE INDEPENDENCIA</p>

@@ -1,0 +1,5 @@
+Contact: https://linkedin.com/in/corozco9408/
+Preferred-Languages: es, en
+Canonical: https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/.well-known/security.txt
+Policy: https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/privacidad
+Expires: 2030-08-07T05:00:00.000Z

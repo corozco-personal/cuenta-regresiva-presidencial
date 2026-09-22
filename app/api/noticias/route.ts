@@ -19,7 +19,7 @@ type PublicNews = BaseNews & {
   evidenceLevel: "Documento oficial" | "Confirmado por varias fuentes" | "Reporte de una fuente";
   processStatus: "Alegación" | "Investigación" | "Imputación" | "Decisión judicial" | "Hecho documentado";
   sources: Array<{ source: string; url: string; kind: BaseNews["kind"] }>;
-  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string };
+  linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string; finalUrl?: string };
   country?: string;
   language?: string;
 };
@@ -354,6 +354,7 @@ async function checkLink(item: PublicNews): Promise<PublicNews> {
         status,
         checkedAt,
         lastModified: response.headers.get("last-modified") ?? undefined,
+        finalUrl: response.url.startsWith("https://") ? response.url : undefined,
       },
     };
   } catch {

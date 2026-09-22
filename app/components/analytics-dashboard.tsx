@@ -114,8 +114,13 @@ function pageLabel(path?: string) {
     reportes: "Reportes",
     favorabilidad: "Indicadores",
     archivo: "Archivo",
+    promesas: "Promesas",
+    resumen: "Resumen semanal",
+    alertas: "Alertas",
     fuentes: "Fuentes",
     metodologia: "Metodología",
+    privacidad: "Privacidad",
+    correcciones: "Correcciones",
     autor: "Quién soy",
   };
   return labels[clean] ?? clean.split("/").filter(Boolean).map((part) => part.replace(/-/g, " ")).join(" · ").replace(/^./, (letter) => letter.toUpperCase());
