@@ -1,6 +1,7 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, notLike } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { opinions } from "../../../db/schema";
+import { looksAutomatedOpinion } from "../../data/opinion-moderation";
 
 const ALLOWED_STANCES = new Set(["A favor", "En contra", "Neutral", "Mixta"]);
 const OFFENSIVE = /\b(imb[eé]cil|idiota|est[uú]pido|malparid|hijueput|maric[oó]n|puta|basura humana|rata inmunda|matar|mu[eé]rete)\b/i;
@@ -39,8 +40,10 @@ function publicOpinion(row: typeof opinions.$inferSelect) {
 
 export async function GET() {
   try {
-    const rows = await getDb().select().from(opinions).orderBy(desc(opinions.createdAt)).limit(50);
-    return Response.json({ opinions: rows.map(publicOpinion) });
+    const rows = await getDb().select().from(opinions)
+      .where(notLike(opinions.comment, "Opinión generada por%"))
+      .orderBy(desc(opinions.createdAt)).limit(100);
+    return Response.json({ opinions: rows.filter((row) => !looksAutomatedOpinion(row.comment)).slice(0, 50).map(publicOpinion) });
   } catch {
     return Response.json({ error: "El muro no está disponible temporalmente." }, { status: 503 });
   }
@@ -60,6 +63,9 @@ export async function POST(request: Request) {
     if (comment.length < 20 || comment.length > 1200 || !country || country.length > 80 || !ALLOWED_STANCES.has(stance) || (!isAnonymous && !displayName)) {
       return Response.json({ error: "Revisa los campos: la opinión debe tener entre 20 y 1.200 caracteres." }, { status: 400 });
     }
+    if (looksAutomatedOpinion(comment)) {
+      return Response.json({ error: "El texto parece contenido automático o de prueba y no puede publicarse." }, { status: 400 });
+    }
 
     const db = getDb();
     const normalized = normalize(comment);
@@ -73,9 +79,11 @@ export async function POST(request: Request) {
     }
 
     const contributorId = String(payload.contributorId ?? "").trim();
-    const visitorSource = /^[a-f0-9-]{20,80}$/i.test(contributorId)
-      ? `device:${contributorId}`
-      : `network:${request.headers.get("cf-connecting-ip") ?? "unknown"}|${request.headers.get("user-agent") ?? "unknown"}`;
+    const network = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const userAgent = request.headers.get("user-agent")?.slice(0, 220) ?? "unknown";
+    const visitorSource = network
+      ? `network:${network}|agent:${userAgent}`
+      : /^[a-f0-9-]{20,80}$/i.test(contributorId) ? `device:${contributorId}` : `fallback:${userAgent}`;
     const visitorHash = await digest(visitorSource);
     const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
     const previousByVisitor = await db.select({ id: opinions.id }).from(opinions)
