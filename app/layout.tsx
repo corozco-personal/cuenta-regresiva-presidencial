@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cuenta pública | Periodo presidencial 2026–2030",
+  title: "Tiempo restante para que el presidente Abelardo Gabriel De La Espriella Otero deje la presidencia",
   description: "Cuenta regresiva y archivo documental del periodo presidencial de Colombia.",
   other: {
     "codex-preview": "development",

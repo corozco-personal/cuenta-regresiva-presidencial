@@ -67,7 +67,7 @@ a { color: inherit; }
 .eyebrow, .section-kicker { margin: 0 0 24px; font-size: 12px; font-weight: 800; letter-spacing: .13em; }
 .eyebrow { color: var(--citrus); display: flex; align-items: center; gap: 10px; }
 .eyebrow span { width: 28px; height: 1px; background: currentColor; }
-.hero h1 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(64px, 7.2vw, 112px); font-weight: 400; line-height: .83; letter-spacing: -.075em; margin: 0; }
+.hero h1 { max-width: 760px; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(46px, 5vw, 78px); font-weight: 400; line-height: .92; letter-spacing: -.055em; margin: 0; }
 .hero h1 em { color: var(--citrus); font-weight: 400; }
 .hero-intro { max-width: 520px; font-size: 17px; line-height: 1.65; color: rgba(255,255,255,.7); margin: 32px 0; }
 .target-date { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; align-items: center; width: max-content; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.2); }
@@ -155,7 +155,7 @@ footer > span { text-align: right; }
   .nav { display: none; position: absolute; top: 66px; left: 0; right: 0; padding: 24px; background: var(--forest); border-top: 1px solid rgba(255,255,255,.15); flex-direction: column; gap: 22px; }
   .nav-open { display: flex; }
   .hero { min-height: auto; padding-top: 70px; padding-bottom: 80px; gap: 55px; }
-  .hero h1 { font-size: clamp(61px, 19vw, 84px); }
+  .hero h1 { font-size: clamp(44px, 12.5vw, 62px); line-height: .94; }
   .countdown-panel { padding: 24px 19px; box-shadow: 10px 10px 0 rgba(4,24,20,.42); }
   .countdown-grid { grid-template-columns: repeat(3, 1fr); }
   .time-block { padding-left: 13px; }

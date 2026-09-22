@@ -138,7 +138,10 @@ export default function Home() {
       <section className="hero" id="inicio">
         <div className="hero-copy">
           <p className="eyebrow"><span /> PERIODO PRESIDENCIAL · COLOMBIA</p>
-          <h1>El tiempo del<br /><em>poder.</em></h1>
+          <h1>
+            Tiempo restante para que el presidente{" "}
+            <em>Abelardo Gabriel De La Espriella Otero</em> deje la presidencia
+          </h1>
           <p className="hero-intro">
             Cuenta regresiva hasta la fecha constitucional estimada de finalización del periodo presidencial 2026–2030.
           </p>
