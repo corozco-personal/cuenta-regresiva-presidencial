@@ -1,7 +1,28 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Leaf } from "lucide-react";
 import Link from "./native-link";
 import CompactPresence from "./compact-presence";
 
 export default function SubpageHeader() {
+  const [ecoMode, setEcoMode] = useState(false);
+
+  useEffect(() => {
+    const storedEcoMode = window.localStorage.getItem("cuenta-publica-eco") === "true";
+    window.requestAnimationFrame(() => setEcoMode(storedEcoMode));
+    document.querySelector("main")?.classList.toggle("eco-mode", storedEcoMode);
+  }, []);
+
+  const toggleEcoMode = () => {
+    setEcoMode((current) => {
+      const next = !current;
+      window.localStorage.setItem("cuenta-publica-eco", String(next));
+      document.querySelector("main")?.classList.toggle("eco-mode", next);
+      return next;
+    });
+  };
+
   return (
     <header className="subpage-header">
       <Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link>
@@ -17,7 +38,12 @@ export default function SubpageHeader() {
           </div>
         </details>
       </nav>
-      <CompactPresence />
+      <div className="header-actions">
+        <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
+          <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
+        </button>
+        <CompactPresence />
+      </div>
     </header>
   );
 }

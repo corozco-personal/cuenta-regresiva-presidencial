@@ -371,10 +371,10 @@ export default function Home() {
           </details>
         </nav>
         <div className="header-actions">
-          <CompactPresence />
           <button className={ecoMode ? "eco-button active" : "eco-button"} onClick={toggleEcoMode} aria-pressed={ecoMode}>
             <Leaf size={16} /> {ecoMode ? "Ahorro activo" : "Bajo consumo"}
           </button>
+          <CompactPresence />
           <button className="menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label="Abrir menú">
             {menuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
