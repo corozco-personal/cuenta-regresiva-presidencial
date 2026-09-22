@@ -263,7 +263,7 @@ export default function Home() {
   }, [ecoMode]);
 
   useEffect(() => {
-    fetch("/api/noticias")
+    fetch("/api/noticias-v2")
       .then((response) => {
         if (!response.ok) throw new Error("No disponible");
         return response.json();
