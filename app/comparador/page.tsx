@@ -1,0 +1,3 @@
+import type{Metadata}from"next";import SubpageHeader from"../components/subpage-header";import CoverageComparator from"../components/coverage-comparator";
+export const metadata:Metadata={title:"Comparador de cobertura",description:"Compara las fuentes que cubren el mismo hecho sin imponer una lectura política.",alternates:{canonical:"/comparador"}};
+export default function Page(){return <main className="subpage"><SubpageHeader/><section className="subpage-hero"><p className="section-kicker">COMPARADOR</p><h1>Un hecho.<br/>Varias fuentes.</h1><p>Reúne coberturas coincidentes para que puedas contrastar titulares, procedencia y documentos originales sin depender de una sola versión.</p></section><section className="subpage-content"><CoverageComparator/></section></main>}

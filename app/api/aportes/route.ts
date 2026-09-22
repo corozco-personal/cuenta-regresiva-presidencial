@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { newsSubmissions } from "../../../db/schema";
@@ -45,6 +45,12 @@ export async function POST(request: Request) {
     const { normalized, host } = normalizeUrl(rawUrl);
     const urlHash = await digest(normalized);
     const db = getDb();
+    const visitorSource = `network:${request.headers.get("cf-connecting-ip") ?? "unknown"}|${request.headers.get("user-agent") ?? "unknown"}`;
+    const visitorHash = await digest(visitorSource);
+    const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+    const recentByVisitor = await db.select({ id: newsSubmissions.id }).from(newsSubmissions)
+      .where(and(eq(newsSubmissions.visitorHash, visitorHash), gte(newsSubmissions.createdAt, dayAgo))).limit(5);
+    if (recentByVisitor.length >= 5) return Response.json({ error: "Alcanzaste el límite de cinco enlaces por día. Vuelve a intentarlo mañana." }, { status: 429 });
     const existing = await db.select({ id: newsSubmissions.id }).from(newsSubmissions).where(eq(newsSubmissions.urlHash, urlHash)).limit(1);
     if (existing.length) return Response.json({ error: "Este enlace ya fue enviado.", duplicate: true }, { status: 409 });
 
@@ -71,7 +77,7 @@ export async function POST(request: Request) {
     else if (accessible && relevant && profile) { status = "review"; reason = "Medio incluido en el directorio. Se conserva como aporte periodístico pendiente de corroboración independiente."; }
     else if (accessible && relevant) { status = "review"; reason = "Fuente nueva: el enlace es accesible y relevante, pero su confiabilidad aún debe evaluarse."; }
 
-    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, status, reliability, reason, createdAt: new Date().toISOString() };
+    const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
     return Response.json({ submission: publicSubmission(row as typeof newsSubmissions.$inferSelect) }, { status: 201 });
   } catch (error) {

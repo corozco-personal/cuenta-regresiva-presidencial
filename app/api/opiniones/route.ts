@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { opinions } from "../../../db/schema";
 
@@ -77,8 +77,10 @@ export async function POST(request: Request) {
       ? `device:${contributorId}`
       : `network:${request.headers.get("cf-connecting-ip") ?? "unknown"}|${request.headers.get("user-agent") ?? "unknown"}`;
     const visitorHash = await digest(visitorSource);
-    const previousByVisitor = await db.select({ id: opinions.id }).from(opinions).where(eq(opinions.visitorHash, visitorHash)).limit(1);
-    if (previousByVisitor.length) return Response.json({ error: "Ya registramos una opinión desde este navegador. El muro admite un aporte por persona para evitar duplicados.", duplicate: true }, { status: 409 });
+    const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+    const previousByVisitor = await db.select({ id: opinions.id }).from(opinions)
+      .where(and(eq(opinions.visitorHash, visitorHash), gte(opinions.createdAt, dayAgo))).limit(1);
+    if (previousByVisitor.length) return Response.json({ error: "Ya registramos una opinión desde este navegador durante las últimas 24 horas.", duplicate: true }, { status: 429 });
 
     const status = OFFENSIVE.test(normalized) ? "filtered" : "published";
     const row: typeof opinions.$inferInsert = {

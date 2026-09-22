@@ -1,0 +1,3 @@
+import type{Metadata}from"next";import SubpageHeader from"../components/subpage-header";import CoverageDashboard from"../components/coverage-dashboard";
+export const metadata:Metadata={title:"Cobertura y estado",description:"Estado público del monitor, frecuencia y alcance de cobertura.",alternates:{canonical:"/cobertura"}};
+export default function Page(){return <main className="subpage"><SubpageHeader/><section className="subpage-hero"><p className="section-kicker">MONITOR PÚBLICO</p><h1>Cómo está funcionando<br/>la cobertura.</h1><p>Indicadores verificables sobre la última consulta, el archivo persistente y la disponibilidad de las fuentes externas.</p></section><section className="subpage-content"><CoverageDashboard/></section></main>}

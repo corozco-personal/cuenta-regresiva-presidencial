@@ -148,6 +148,27 @@ Para cambios de código:
 3. ejecuta `npm run lint && npm run build`; y
 4. abre un pull request explicando el propósito y la validación realizada.
 
+## Capacidades avanzadas
+
+- Archivo persistente de noticias y registro público de ejecuciones del monitor.
+- Expedientes temáticos, estado de cobertura y API de datos abiertos en JSON/CSV.
+- Solicitudes públicas de corrección, actualización y derecho de réplica.
+- Alertas RSS filtrables y generador local de tarjetas para redes sociales.
+- Controles antiabuso y verificación automática con GitHub Actions.
+
+### Datos abiertos y estado
+
+- Estado del sistema: `/api/estado`
+- Noticias: `/api/datos/noticias` o `/api/datos/noticias?format=csv`
+- Promesas: `/api/datos/promesas` o `/api/datos/promesas?format=csv`
+- Correcciones: `/api/datos/correcciones`
+
+Los metadatos propios se publican bajo CC BY 4.0. Los contenidos enlazados conservan los derechos de sus fuentes originales.
+
+### Integraciones pendientes de credenciales
+
+El proyecto está preparado para incorporar un dominio personalizado y un proveedor de correo transaccional. No se activan por defecto: requieren un dominio controlado por el mantenedor, configuración DNS y credenciales del proveedor elegido.
+
 ## Licencia
 
 El código fuente se distribuye bajo la [licencia MIT](./LICENSE). Las marcas, textos y contenidos enlazados de terceros pertenecen a sus respectivos titulares y conservan sus propias condiciones de uso.

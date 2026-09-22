@@ -349,6 +349,18 @@ export default function Home() {
     [number.format(countdown.minutes), "min"],
     [number.format(countdown.seconds), "seg"],
   ];
+  const clockMs = TARGET - (((countdown.days * 24 + countdown.hours) * 60 + countdown.minutes) * 60 + countdown.seconds) * 1000;
+  const todayNews = news.filter((item) => clockMs - Date.parse(item.publishedAt) <= 86_400_000).length;
+  const completedPromises = campaignPromises.filter((item) => item.status === "Cumplida").length;
+  const mandateDay = Math.max(1, Math.floor((clockMs - START) / 86_400_000) + 1);
+  const sharePulse = async () => {
+    const text = `Día ${mandateDay} del mandato presidencial: ${progress.toFixed(1).replace(".", ",")}% transcurrido, ${countdown.days.toLocaleString("es-CO")} días restantes y ${todayNews} noticias monitoreadas en las últimas 24 horas.`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Cuenta pública · Pulso de hoy", text, url: window.location.origin });
+      else await navigator.clipboard.writeText(`${text}\n${window.location.origin}`);
+      setSharedId("pulse"); window.setTimeout(() => setSharedId(null), 1800);
+    } catch { setSharedId(null); }
+  };
 
   return (
     <main className={`home-streamlined ${ecoMode ? "eco-mode" : ""}`}>
@@ -369,7 +381,7 @@ export default function Home() {
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
             <div className="nav-more-panel">
-              <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a><a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/promesas" onClick={() => setMenuOpen(false)}>Promesas</a><a href="/resumen" onClick={() => setMenuOpen(false)}>Resumen semanal</a><a href="/alertas" onClick={() => setMenuOpen(false)}>Alertas</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/correcciones" onClick={() => setMenuOpen(false)}>Correcciones</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
+              <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a><a className="more-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Sobre el presidente</a><a className="more-priority-3" href="/favorabilidad" onClick={() => setMenuOpen(false)}>Indicadores</a><a className="more-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a><a href="/temas" onClick={() => setMenuOpen(false)}>Expedientes</a><a href="/comparador" onClick={() => setMenuOpen(false)}>Comparador</a><a href="/nombramientos" onClick={() => setMenuOpen(false)}>Nombramientos</a><a href="/promesas" onClick={() => setMenuOpen(false)}>Promesas</a><a href="/resumen" onClick={() => setMenuOpen(false)}>Resumen semanal</a><a href="/alertas" onClick={() => setMenuOpen(false)}>Alertas</a><a href="/cobertura" onClick={() => setMenuOpen(false)}>Cobertura y estado</a><a href="/datos" onClick={() => setMenuOpen(false)}>Datos abiertos</a><a href="/compartir" onClick={() => setMenuOpen(false)}>Compartir</a><a href="/reportes" onClick={() => setMenuOpen(false)}>Reportes</a><a href="/fuentes" onClick={() => setMenuOpen(false)}>Fuentes</a><a href="/metodologia" onClick={() => setMenuOpen(false)}>Metodología</a><a href="/correcciones" onClick={() => setMenuOpen(false)}>Correcciones y réplica</a><a href="/acerca" onClick={() => setMenuOpen(false)}>Acerca de</a><a href="/autor" onClick={() => setMenuOpen(false)}>Quién soy</a>
             </div>
           </details>
         </nav>
@@ -456,6 +468,15 @@ export default function Home() {
             <p className="countdown-note">
               El cálculo usa la hora de Colombia y cuenta hasta el inicio del día. La hora oficial de transmisión de mando se actualizará cuando sea publicada.
             </p>
+            <div className="daily-pulse">
+              <div className="daily-pulse-heading"><div><span>PULSO DE HOY</span><strong>Día {mandateDay} del mandato</strong></div><button onClick={sharePulse}><Share2 size={15} /> {sharedId === "pulse" ? "Copiado" : "Compartir pulso"}</button></div>
+              <div className="daily-pulse-grid">
+                <a href="#monitoreo"><strong>{todayNews}</strong><span>noticias en 24 h</span></a>
+                <a href="/promesas"><strong>{completedPromises}/{campaignPromises.length}</strong><span>promesas cumplidas</span></a>
+                <a href="/comparador"><strong>{news.filter((item) => item.sources.length > 1).length}</strong><span>hechos con varias fuentes</span></a>
+                <a href="/nombramientos"><strong>{news.filter((item) => /nombr(?:a|amiento)|design(?:a|ación)|contrat(?:a|ación)|consejo de sabios|consejo asesor|asesor para|\btaps\b|\bappoints?\b/i.test(item.title)).length}</strong><span>nombramientos y asesores</span></a>
+              </div>
+            </div>
           </div>
 
           <aside className="promises-panel" aria-labelledby="promises-title">

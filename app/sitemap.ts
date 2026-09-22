@@ -15,5 +15,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/acerca`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/privacidad`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/correcciones`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/temas`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/cobertura`, lastModified: new Date(), changeFrequency: "daily", priority: 0.6 },
+    { url: `${base}/datos`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    { url: `${base}/compartir`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/comparador`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/nombramientos`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
   ];
 }

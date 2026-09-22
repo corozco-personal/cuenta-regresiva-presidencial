@@ -1,0 +1,3 @@
+import type { Metadata } from "next"; import SubpageHeader from "../components/subpage-header"; import TopicDossiers from "../components/topic-dossiers";
+export const metadata:Metadata={title:"Expedientes temáticos",description:"Noticias agrupadas en expedientes temáticos trazables.",alternates:{canonical:"/temas"}};
+export default function Page(){return <main className="subpage"><SubpageHeader/><section className="subpage-hero"><p className="section-kicker">EXPEDIENTES</p><h1>Los hechos,<br/>con contexto.</h1><p>La cobertura se agrupa por asunto para seguir su evolución, comparar fuentes y distinguir campaña, transición y presidencia.</p></section><section className="subpage-content"><TopicDossiers/></section></main>}

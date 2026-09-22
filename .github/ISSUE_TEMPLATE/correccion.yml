@@ -1,0 +1,25 @@
+name: Solicitud de corrección
+description: Reporta un dato, enlace o clasificación que deba revisarse.
+title: "[Corrección] "
+labels: [corrección]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Enlace del portal
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Qué debe revisarse
+      description: Explica el problema sin incluir datos personales innecesarios.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Fuentes o evidencia
+      description: Incluye enlaces públicos que permitan comprobar la solicitud.
+    validations:
+      required: true

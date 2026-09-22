@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getD1 } from "../../../db";
 
 type Scope = "Nacional" | "Internacional";
 type BaseNews = {
@@ -234,6 +235,8 @@ function gdeltDate(value?: string) {
 }
 
 const CATEGORY_RULES = [
+  { label: "Nombramientos y contratación", pattern: /nombr(?:a|amiento)|design(?:a|ación)|posesiona|contrat(?:a|ación)|banco de talentos|headhunter|definición de su gabinete|anuncia a .+ como (?:ministro|director|gerente|asesor)|\btaps\b|\bappoints?\b|\bhiring\b/i },
+  { label: "Consejo asesor", pattern: /consejo de sabios|consejo asesor|junta asesora|asesores? presidenciales?/i },
   { label: "Justicia y control", pattern: /juez|justicia|corte|fiscal|procuradur|contralor|fallo|sentencia|investiga|imputa/i },
   { label: "Elecciones", pattern: /elecci|candidat|voto|cne|registradur|campaña|posesi|proclama/i },
   { label: "Relaciones exteriores", pattern: /canciller|diplom|exterior|estados unidos|venezuela|israel|onu|oea|embajad/i },
@@ -326,7 +329,7 @@ function groupCoverage(items: PublicNews[]) {
       similarity(group.title, item.title) >= 0.55,
     );
     if (!match) return [...groups, item];
-    if (!match.sources.some(({ url }) => url === item.url)) match.sources.push(...item.sources);
+    if (!match.sources.some(({ source }) => source === item.source)) match.sources.push(...item.sources.filter((source) => !match.sources.some((existing) => existing.source === source.source)));
     match.evidenceLevel = match.sources.length > 1 ? "Confirmado por varias fuentes" : match.evidenceLevel;
     return groups;
   }, []);
@@ -348,6 +351,7 @@ async function checkLink(item: PublicNews): Promise<PublicNews> {
       : response.ok
         ? "Disponible" as const
         : "No comprobado" as const;
+    await response.body?.cancel();
     return {
       ...item,
       linkCheck: {
@@ -364,6 +368,13 @@ async function checkLink(item: PublicNews): Promise<PublicNews> {
   }
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 7500) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try { return await fetch(url, { ...init, signal: controller.signal }); }
+  finally { clearTimeout(timeout); }
+}
+
 async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
     q: '("Abelardo de la Espriella" OR "De la Espriella" OR "Defensores de la Patria")',
@@ -371,7 +382,7 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
     sortBy: "publishedAt",
     pageSize: "100",
   });
-  const response = await fetch(`https://newsapi.org/v2/everything?${params}`, {
+  const response = await fetchWithTimeout(`https://newsapi.org/v2/everything?${params}`, {
     headers: { "X-Api-Key": apiKey },
   });
   if (!response.ok) throw new Error(`NewsAPI ${response.status}`);
@@ -408,7 +419,7 @@ async function fromGdelt(): Promise<CandidateNews[]> {
     format: "json",
     sort: "DateDesc",
   });
-  const response = await fetch(`https://api.gdeltproject.org/api/v2/doc/doc?${params}`, {
+  const response = await fetchWithTimeout(`https://api.gdeltproject.org/api/v2/doc/doc?${params}`, {
     headers: { "User-Agent": "CuentaPublica/1.1 (documentary monitoring)" },
   });
   if (!response.ok) throw new Error(`GDELT ${response.status}`);
@@ -461,7 +472,7 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
   ];
   const feeds = await Promise.allSettled(feedsToSearch.map(async ({ query, hl, gl, ceid }) => {
     const params = new URLSearchParams({ q: query, hl, gl, ceid });
-    const response = await fetch(`https://news.google.com/rss/search?${params}`, {
+    const response = await fetchWithTimeout(`https://news.google.com/rss/search?${params}`, {
       headers: { "User-Agent": "CuentaPublica/1.3 (documentary monitoring)" },
     });
     if (!response.ok) throw new Error(`Google News RSS ${response.status}`);
@@ -500,7 +511,49 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
   });
 }
 
+type StoredNewsRow = Omit<PublicNews, "sources" | "linkCheck"> & {
+  sources_json: string; link_status: PublicNews["linkCheck"] extends { status: infer T } ? T : string;
+  final_url?: string; last_seen_at: string;
+};
+
+async function storeAndLoadNews(items: PublicNews[], monitor: {
+  startedAt: string; completedAt: string; providers: string; discovered: number; published: number;
+  rejected: number; countries: number; languages: number; status: string; errors: string | null;
+}) {
+  try {
+    const db = getD1();
+    const now = monitor.completedAt;
+    const statements = items.map((item) => db.prepare(`
+      INSERT INTO news_articles (id,title,source,url,published_at,scope,kind,category,stage,decision,decision_reason,evidence_level,process_status,sources_json,country,language,link_status,final_url,first_seen_at,last_seen_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(url) DO UPDATE SET title=excluded.title, source=excluded.source, published_at=excluded.published_at,
+      scope=excluded.scope, kind=excluded.kind, category=excluded.category, stage=excluded.stage, decision=excluded.decision,
+      decision_reason=excluded.decision_reason, evidence_level=excluded.evidence_level, process_status=excluded.process_status,
+      sources_json=excluded.sources_json, country=excluded.country, language=excluded.language, link_status=excluded.link_status,
+      final_url=excluded.final_url, last_seen_at=excluded.last_seen_at
+    `).bind(item.id, item.title, item.source, item.url, item.publishedAt, item.scope, item.kind, item.category, item.stage,
+      item.decision, item.decisionReason, item.evidenceLevel, item.processStatus, JSON.stringify(item.sources),
+      item.country ?? null, item.language ?? null, item.linkCheck?.status ?? null, item.linkCheck?.finalUrl ?? null, now, now));
+    if (statements.length) await db.batch(statements);
+    await db.prepare(`INSERT INTO monitor_runs (id,started_at,completed_at,providers,discovered_count,published_count,rejected_count,countries,languages,status,error_summary)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(), monitor.startedAt, monitor.completedAt, monitor.providers,
+      String(monitor.discovered), String(monitor.published), String(monitor.rejected), String(monitor.countries),
+      String(monitor.languages), monitor.status, monitor.errors).run();
+    const stored = await db.prepare(`SELECT id,title,source,url,published_at AS publishedAt,scope,kind,category,stage,decision,
+      decision_reason AS decisionReason,evidence_level AS evidenceLevel,process_status AS processStatus,sources_json,country,language,
+      link_status,final_url,last_seen_at FROM news_articles ORDER BY published_at DESC LIMIT 600`).all<StoredNewsRow>();
+    return stored.results.flatMap((row) => {
+      try { return [{ ...row, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
+      catch { return []; }
+    });
+  } catch (error) {
+    console.warn("news-persistence", error);
+    return [];
+  }
+}
+
 export async function GET() {
+  const startedAt = new Date().toISOString();
   let provider = "curated";
   let discovered: CandidateNews[] = [];
   const apiKey = process.env.NEWS_API_KEY;
@@ -512,7 +565,8 @@ export async function GET() {
   const results = await Promise.allSettled(providers.map(({ request }) => request));
   discovered = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
   provider = providers.filter((_, index) => results[index].status === "fulfilled").map(({ name }) => name).join(" + ") || "curated";
-  results.forEach((result, index) => { if (result.status === "rejected") console.error("news-monitor", providers[index].name, result.reason); });
+  const providerErrors = results.flatMap((result, index) => result.status === "rejected" ? [`${providers[index].name}: no disponible`] : []);
+  providerErrors.forEach((message) => console.warn("news-monitor", message));
 
   const candidates = Array.from(
     new Map([
@@ -531,7 +585,7 @@ export async function GET() {
     .flatMap((stage) => grouped.filter((item) => item.stage === stage).slice(0, stageLimits[stage]))
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
   const checkedRecent = await Promise.all(selected.slice(0, 18).map(checkLink));
-  const items = [...checkedRecent, ...selected.slice(18).map((item) => ({
+  const currentItems = [...checkedRecent, ...selected.slice(18).map((item) => ({
     ...item,
     linkCheck: { status: "No comprobado" as const, checkedAt: new Date().toISOString() },
   }))];
@@ -580,6 +634,15 @@ export async function GET() {
     domains: new Set(globalRadar.map((item) => item.domain)).size,
     catalogSources: SOURCE_PROFILES.length,
   };
+  const completedAt = new Date().toISOString();
+  const storedItems = await storeAndLoadNews(currentItems, {
+    startedAt, completedAt, providers: provider, discovered: discovered.length, published: currentItems.length,
+    rejected: review.rejected, countries: globalStats.countries, languages: globalStats.languages,
+    status: providerErrors.length === providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo",
+    errors: providerErrors.length ? providerErrors.join("; ") : null,
+  });
+  const items = groupCoverage(Array.from(new Map([...currentItems, ...storedItems].map((item) => [item.url, item])).values()))
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 180);
 
   return NextResponse.json(
     {
@@ -591,6 +654,7 @@ export async function GET() {
       coverage: { startsAt: CAMPAIGN_START, stages: ["Campaña", "Transición", "Presidencia"] },
       updatedAt: new Date().toISOString(),
       provider,
+      monitor: { startedAt, completedAt, status: providerErrors.length === providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo", errors: providerErrors },
     },
     { headers: { "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400" } },
   );

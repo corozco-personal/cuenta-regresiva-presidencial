@@ -84,7 +84,7 @@ export default function Community() {
         </form>
 
         <form className="community-form" onSubmit={submitOpinion}>
-          <div className="form-title"><MessageSquareText /><div><h3>Publicar una opinión</h3><p>Un aporte por navegador. Además, las coincidencias exactas o muy similares no se vuelven a publicar.</p></div></div>
+          <div className="form-title"><MessageSquareText /><div><h3>Publicar una opinión</h3><p>Un aporte por navegador cada 24 horas. Las coincidencias exactas o sustancialmente similares no se vuelven a publicar.</p></div></div>
           <label>Tu opinión<textarea name="comment" required minLength={20} maxLength={1200} rows={5} placeholder="Comparte un argumento concreto…" /></label>
           <div className="form-row"><label>Posición<select name="stance" defaultValue="Neutral"><option>A favor</option><option>En contra</option><option>Neutral</option><option>Mixta</option></select></label><label>País<input name="country" required maxLength={80} placeholder="Colombia" /></label></div>
           <div className="form-row"><label>Departamento / región<input name="department" maxLength={100} /></label><label>Municipio / ciudad<input name="municipality" maxLength={100} /></label></div>
