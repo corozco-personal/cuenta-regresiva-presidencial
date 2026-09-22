@@ -534,7 +534,7 @@ export default function Home() {
             <h2>En observación</h2>
             <p>Cobertura nacional e internacional desde el inicio de la campaña presidencial, el 16 de julio de 2025. Son pistas de lectura con fuente original, no conclusiones editoriales.</p>
           </div>
-          <span className="update-pill"><i /> Revisión varias veces al día</span>
+          <span className="update-pill"><i /> Actualización global cada 6 horas</span>
         </div>
         {reviewStats && (
           <div className="review-summary" aria-label="Resultado de la revisión automática">
