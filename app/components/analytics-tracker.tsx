@@ -20,6 +20,7 @@ function send(payload: Record<string, string>) {
 
 export default function AnalyticsTracker() {
   useEffect(() => {
+    if (window.location.pathname.startsWith("/cotejo-7d41e9c2")) return;
     send({ action: "event", eventType: "pageview", eventName: "Vista de página" });
     const heartbeat = () => { if (document.visibilityState === "visible") send({ action: "heartbeat" }); };
     const interval = window.setInterval(heartbeat, 60_000);

@@ -767,7 +767,7 @@ export default function Home() {
             <p><strong>6. Rechazo.</strong> Los resultados que incumplen una regla se contabilizan, pero no se publican ni alimentan el archivo documental.</p>
             <p><strong>7. Derecho de respuesta.</strong> Cuando existe una respuesta pública de la persona o institución señalada, se incorpora junto al hecho con su enlace original.</p>
             <p><strong>8. Alcance.</strong> “Admitido para monitoreo” significa que el enlace superó estas reglas de publicación; no certifica que cada afirmación del contenido sea verdadera ni expresa una posición política.</p>
-            <p><strong>9. Aportes ciudadanos.</strong> Los enlaces repetidos se bloquean por su URL normalizada. Las fuentes oficiales relevantes pueden marcarse como publicables; los medios y fuentes nuevas quedan en evaluación y nunca entran automáticamente al archivo verificado.</p>
+            <p><strong>9. Aportes ciudadanos.</strong> Los enlaces repetidos se bloquean por su URL normalizada. Los filtros deciden si un aporte llega a la cola o a cuarentena; ninguna opinión ni enlace aportado entra automáticamente a la vista pública.</p>
             <p><strong>10. Opiniones.</strong> Un identificador anónimo del navegador limita el muro a un aporte por persona; también se impiden duplicados exactos y textos con una similitud sustancial. Los insultos o mensajes de odio se conservan para trazabilidad, pero su contenido se oculta. La postura política, por sí sola, nunca es motivo de filtrado.</p>
           </div>
         </details>

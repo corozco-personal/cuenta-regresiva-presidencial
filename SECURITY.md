@@ -14,4 +14,4 @@ Ningún envío de opinión, noticia o solicitud de corrección se publica en la 
 
 Cada cambio de estado se guarda en `moderation_actions`. Los eventos de seguridad se agregan en `security_events` con categoría, severidad, ruta lógica y huellas irreversibles del origen y de la carga. El contenido hostil, la dirección de red y el agente de usuario no se guardan en ese registro ni se muestran en `/reportes`.
 
-La aprobación automática conservadora ocurre después de una espera mínima y solo para opiniones pertinentes y enlaces de fuentes ya incluidas en el directorio. Las fuentes nuevas permanecen pendientes hasta disponer de una corroboración suficiente.
+No existe aprobación automática. Los filtros solo deciden si un envío llega a la cola de revisión o a cuarentena; la publicación exige una decisión manual del propietario desde un espacio privado protegido por inicio de sesión y una lista blanca aplicada en el servidor. Los rechazos se clasifican y conservan como eventos agregados para el reporte de seguridad.

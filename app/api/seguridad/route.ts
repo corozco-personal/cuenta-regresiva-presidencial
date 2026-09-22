@@ -31,8 +31,8 @@ export async function GET() {
         endpoints: countBy(events.map((event) => event.endpoint)),
         daily,
         queue: {
-          pendingOpinions: opinionRows.filter((row) => row.status === "pending").length,
-          pendingNews: newsRows.filter((row) => row.status === "pending").length,
+          pendingOpinions: opinionRows.filter((row) => !["approved_manual", "rejected_manual"].includes(row.status)).length,
+          pendingNews: newsRows.filter((row) => !["approved_manual", "rejected_manual"].includes(row.status)).length,
           pendingCorrections: correctionRows.filter((row) => row.status === "Pendiente de revisión").length,
           quarantined: opinionRows.filter((row) => row.status === "quarantined").length + newsRows.filter((row) => row.status === "quarantined").length,
           actions30Days: actions.length,

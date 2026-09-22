@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { opinions } from "../../../db/schema";
 import { countryNames } from "../../data/countries";
@@ -42,25 +42,10 @@ function publicOpinion(row: typeof opinions.$inferSelect) {
   };
 }
 
-async function reviewPendingOpinions() {
-  const db = getDb();
-  const reviewBefore = new Date(Date.now() - 10 * 60_000).toISOString();
-  const rows = await db.select().from(opinions)
-    .where(and(eq(opinions.status, "pending"), lte(opinions.createdAt, reviewBefore)))
-    .orderBy(opinions.createdAt).limit(30);
-  for (const row of rows) {
-    const result = classifyOpinion(row.comment);
-    const next = result.accepted ? "approved" : "quarantined";
-    await db.update(opinions).set({ status: next, moderationReason: result.reason }).where(eq(opinions.id, row.id));
-    await recordModerationAction({ itemType: "opinion", itemId: row.id, fromStatus: "pending", toStatus: next, reason: result.reason });
-  }
-}
-
 export async function GET() {
   try {
-    await reviewPendingOpinions();
     const rows = await getDb().select().from(opinions)
-      .where(inArray(opinions.status, ["approved", "published"]))
+      .where(eq(opinions.status, "approved_manual"))
       .orderBy(desc(opinions.createdAt)).limit(100);
     return Response.json(
       { opinions: rows.filter((row) => !looksAutomatedOpinion(row.comment) && classifyOpinion(row.comment).accepted).slice(0, 50).map(publicOpinion) },
@@ -125,7 +110,7 @@ export async function POST(request: Request) {
     if (previousByVisitor.length) return Response.json({ error: "Ya registramos una opinión desde este navegador durante las últimas 24 horas.", duplicate: true }, { status: 429 });
 
     const offensive = OFFENSIVE.test(normalized);
-    const status = offensive || !classification.accepted ? "quarantined" : "pending";
+    const status = offensive || !classification.accepted ? "quarantined" : "pending_manual";
     const moderationReason = offensive ? "Lenguaje ofensivo o de odio" : classification.reason;
     const row: typeof opinions.$inferInsert = {
       id: crypto.randomUUID(), contentHash, displayName, isAnonymous: isAnonymous ? "1" : "0", country,

@@ -36,6 +36,7 @@ export async function recordSecurityEvent(request: Request, input: {
   severity: "low" | "medium" | "high";
   reason: string;
   payload?: unknown;
+  fingerprintHash?: string | null;
 }) {
   try {
     const identity = `${request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"}|${request.headers.get("user-agent")?.slice(0, 180) ?? "unknown"}`;
@@ -46,7 +47,7 @@ export async function recordSecurityEvent(request: Request, input: {
       category: input.category,
       severity: input.severity,
       reason: input.reason.slice(0, 300),
-      fingerprintHash: await digest(identity),
+      fingerprintHash: input.fingerprintHash || await digest(identity),
       payloadDigest: serialized ? await digest(serialized) : null,
       createdAt: new Date().toISOString(),
     });

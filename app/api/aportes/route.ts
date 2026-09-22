@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { newsSubmissions } from "../../../db/schema";
@@ -28,27 +28,10 @@ function normalizeUrl(raw: string) {
   return { normalized: url.toString(), host };
 }
 
-async function reviewPendingSubmissions() {
-  const db = getDb();
-  const reviewBefore = new Date(Date.now() - 10 * 60_000).toISOString();
-  const rows = await db.select().from(newsSubmissions)
-    .where(and(eq(newsSubmissions.status, "pending"), lte(newsSubmissions.createdAt, reviewBefore)))
-    .orderBy(newsSubmissions.createdAt).limit(30);
-  for (const row of rows) {
-    if (!profileFor(row.domain)) continue;
-    const reason = row.reliability === "official"
-      ? "Fuente oficial accesible, relacionada y aprobada tras la espera de moderación."
-      : "Medio registrado, enlace accesible y relación temática confirmada; aprobado para mostrarse como aporte periodístico.";
-    await db.update(newsSubmissions).set({ status: "approved", reason }).where(eq(newsSubmissions.id, row.id));
-    await recordModerationAction({ itemType: "news", itemId: row.id, fromStatus: "pending", toStatus: "approved", reason });
-  }
-}
-
 export async function GET() {
   try {
-    await reviewPendingSubmissions();
     const rows = await getDb().select().from(newsSubmissions)
-      .where(inArray(newsSubmissions.status, ["approved", "publishable", "review"]))
+      .where(eq(newsSubmissions.status, "approved_manual"))
       .orderBy(desc(newsSubmissions.createdAt)).limit(30);
     return Response.json({ submissions: rows.map(publicSubmission) });
   } catch {
@@ -113,9 +96,9 @@ export async function POST(request: Request) {
     const reliability = profile?.official ? "official" : profile ? "known_media" : "unknown";
     let status = "quarantined";
     let reason = "El enlace no pudo verificarse o no se refiere directamente al mandatario.";
-    if (accessible && relevant && profile?.official) { status = "pending"; reason = "Fuente oficial accesible y relacionada; pendiente de aprobación."; }
-    else if (accessible && relevant && profile) { status = "pending"; reason = "Medio incluido en el directorio; pendiente de corroboración y aprobación."; }
-    else if (accessible && relevant) { status = "pending"; reason = "Fuente nueva accesible y relevante; requiere revisión adicional antes de mostrarse."; }
+    if (accessible && relevant && profile?.official) { status = "pending_manual"; reason = "Fuente oficial accesible y relacionada; pendiente de aprobación manual."; }
+    else if (accessible && relevant && profile) { status = "pending_manual"; reason = "Medio incluido en el directorio; pendiente de aprobación manual."; }
+    else if (accessible && relevant) { status = "pending_manual"; reason = "Fuente nueva accesible y relevante; requiere aprobación manual y corroboración adicional."; }
 
     const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);

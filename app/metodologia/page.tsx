@@ -10,7 +10,7 @@ const policies = [
   ["Lenguaje preciso", "Denuncia, investigación, imputación, sanción y sentencia son estados distintos. Una acusación nunca se presenta como hecho probado."],
   ["Correcciones", "El sistema puede normalizar espacios o puntuación, pero no cambia el sentido de un titular. Las modificaciones editoriales relevantes deben quedar registradas."],
   ["Rechazo", "Se excluyen enlaces inseguros, duplicados y resultados que no guardan relación directa con el tema."],
-  ["Aportes ciudadanos", "Una fuente oficial relevante puede marcarse como publicable. Una nota periodística o una fuente nueva queda en evaluación y no entra automáticamente al archivo documental."],
+  ["Aportes ciudadanos", "Los filtros automáticos solo determinan si un aporte llega a la cola o a cuarentena. Ninguna opinión ni enlace aportado se publica sin aprobación manual del propietario."],
   ["Opiniones y duplicados", "Un identificador anónimo del navegador limita el muro a un aporte por persona. También se comparan huellas exactas y similitud sustancial entre textos."],
   ["Moderación", "Los insultos y mensajes de odio se conservan para trazabilidad, pero su texto se oculta públicamente. La postura política nunca es, por sí sola, motivo de filtrado."],
   ["Orientación de medios", "La orientación se toma de evaluaciones externas agregadas por Ground News a partir de AllSides, Ad Fontes Media y Media Bias/Fact Check. Es una calificación del medio, no del artículo. Los medios sin evaluación permanecen como ‘sin datos’."],
