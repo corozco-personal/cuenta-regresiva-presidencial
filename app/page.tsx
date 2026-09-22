@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Clock3,
   FileCheck2,
+  Flag,
   Landmark,
   Menu,
   Search,
@@ -25,7 +26,15 @@ type NewsItem = {
   scope: "Nacional" | "Internacional";
 };
 
+const START = new Date("2026-08-07T00:00:00-05:00").getTime();
 const TARGET = new Date("2030-08-07T00:00:00-05:00").getTime();
+const milestones = [
+  { year: "2026", position: 0, label: "Inicio" },
+  { year: "2027", position: 25 },
+  { year: "2028", position: 50 },
+  { year: "2029", position: 75 },
+  { year: "2030", position: 100, label: "Entrega" },
+];
 
 const records = [
   {
@@ -117,10 +126,16 @@ function getCountdown(): Countdown {
   };
 }
 
+function getProgress() {
+  const elapsed = ((Date.now() - START) / (TARGET - START)) * 100;
+  return Math.min(100, Math.max(0, elapsed));
+}
+
 const number = new Intl.NumberFormat("es-CO", { minimumIntegerDigits: 2 });
 
 export default function Home() {
   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [progress, setProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("Todos");
@@ -128,8 +143,12 @@ export default function Home() {
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    const initial = window.setTimeout(() => setCountdown(getCountdown()), 0);
-    const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
+    const tick = () => {
+      setCountdown(getCountdown());
+      setProgress(getProgress());
+    };
+    const initial = window.setTimeout(tick, 0);
+    const timer = window.setInterval(tick, 1000);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(timer);
@@ -217,6 +236,41 @@ export default function Home() {
                 <span>{label}</span>
               </div>
             ))}
+          </div>
+          <div className="mandate-progress">
+            <div className="progress-summary">
+              <span>Mandato transcurrido</span>
+              <strong>{progress.toFixed(1).replace(".", ",")}%</strong>
+            </div>
+            <div className="timeline-wrap">
+              <div
+                className="timeline-track"
+                role="progressbar"
+                aria-label="Porcentaje transcurrido del mandato"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Number(progress.toFixed(1))}
+              >
+                <span className="timeline-fill" style={{ width: `${progress}%` }} />
+                <span className="today-marker" style={{ left: `${progress}%` }}>
+                  <span className="today-label"><Flag size={13} aria-hidden="true" /> Hoy</span>
+                  <i aria-hidden="true" />
+                </span>
+              </div>
+              <div className="timeline-milestones" aria-label="Hitos anuales del mandato">
+                {milestones.map((milestone, index) => (
+                  <div
+                    className={`milestone ${index === 0 ? "milestone-first" : ""} ${index === milestones.length - 1 ? "milestone-last" : ""}`}
+                    style={{ left: `${milestone.position}%` }}
+                    key={milestone.year}
+                  >
+                    <Flag size={15} aria-hidden="true" />
+                    <strong>{milestone.year}</strong>
+                    {milestone.label && <small>{milestone.label}</small>}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <p className="countdown-note">
             El cálculo usa la hora de Colombia y cuenta hasta el inicio del día. La hora oficial de transmisión de mando se actualizará cuando sea publicada.

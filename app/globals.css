@@ -84,6 +84,24 @@ a { color: inherit; }
 .time-block strong { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(36px, 5vw, 72px); line-height: 1; font-weight: 400; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
 .time-block span { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .time-block.featured strong { color: var(--forest); }
+.mandate-progress { padding: 21px 0 18px; border-top: 1px solid var(--line); }
+.progress-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+.progress-summary span { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.progress-summary strong { color: var(--forest); font-family: Georgia, 'Times New Roman', serif; font-size: 23px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.timeline-wrap { padding: 0 4px; }
+.timeline-track { height: 7px; margin-top: 38px; position: relative; background: #d5d4ca; }
+.timeline-fill { display: block; height: 100%; min-width: 2px; background: var(--forest); }
+.today-marker { position: absolute; top: -8px; width: 1px; height: 23px; background: var(--forest); transform: translateX(-50%); z-index: 2; }
+.today-marker i { position: absolute; left: 50%; bottom: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--citrus); border: 2px solid var(--forest); transform: translateX(-50%); }
+.today-label { position: absolute; left: 50%; bottom: 27px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; background: var(--forest); color: var(--white); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transform: translateX(-50%); }
+.today-label svg { color: var(--citrus); }
+.timeline-milestones { height: 64px; position: relative; }
+.milestone { position: absolute; top: 13px; display: grid; grid-template-columns: auto auto; align-items: center; gap: 2px 5px; color: var(--muted); transform: translateX(-50%); }
+.milestone svg { color: var(--forest); }
+.milestone strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+.milestone small { grid-column: 1 / 3; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+.milestone-first { transform: none; }
+.milestone-last { transform: translateX(-100%); }
 .countdown-note { padding-top: 17px; margin: 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.55; }
 
 .section-shell { padding: clamp(75px, 9vw, 130px) clamp(20px, 7vw, 110px); }
@@ -172,6 +190,12 @@ footer > span { text-align: right; }
   .time-block.featured { grid-column: 1 / 4; border-left: 0; border-bottom: 1px solid var(--line); padding: 4px 0 20px; margin-bottom: 14px; }
   .time-block strong { font-size: 42px; }
   .time-block.featured strong { font-size: 64px; }
+  .mandate-progress { padding-top: 18px; }
+  .timeline-wrap { padding: 0 2px; }
+  .milestone { gap: 2px 3px; }
+  .milestone svg { width: 13px; }
+  .milestone strong { font-size: 11px; }
+  .milestone small { font-size: 9px; }
   .section-heading { align-items: flex-start; }
   .verified-seal { display: none; }
   .filters { flex-direction: column; }
