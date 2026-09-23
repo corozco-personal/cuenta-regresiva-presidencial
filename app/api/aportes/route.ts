@@ -5,7 +5,7 @@ import { newsSubmissions } from "../../../db/schema";
 import { profileFor } from "../noticias/route";
 import { countryNames } from "../../data/countries";
 import { httpsUrl, plainText } from "../../data/input-security";
-import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
+import { enforceRateLimit, turnstileErrorMessage, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
 import { assertPublicHostname, readHtmlWithin } from "../../data/safe-remote-url";
@@ -58,8 +58,8 @@ export async function POST(request: Request) {
     }
     const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-news");
     if (!challenge.ok) {
-      await recordSecurityEvent(request, { endpoint: "aportes", category: "bot", severity: "medium", reason: "Desafío Turnstile inválido" });
-      return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
+      await recordSecurityEvent(request, { endpoint: "aportes", category: "bot", severity: "medium", reason: `Desafío Turnstile inválido: ${challenge.reason ?? "sin detalle"}` });
+      return Response.json({ error: turnstileErrorMessage(challenge.reason) }, { status: 403 });
     }
     const rawUrl = httpsUrl(payload.url);
     const country = plainText(payload.country, { max: 80 });

@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 import { getDb } from "../../../db";
 import { correctionRequests } from "../../../db/schema";
 import { httpsUrl, plainText, safeEmail } from "../../data/input-security";
-import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
+import { enforceRateLimit, turnstileErrorMessage, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { assertPublicHostname } from "../../data/safe-remote-url";
 import { recordPrivateSubmissionAudit } from "../../data/private-submission-audit";
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     auditPayload = payload;
     if (payload.website) { await recordSecurityEvent(request, { endpoint: "solicitudes", category: "bot", severity: "medium", reason: "Campo trampa completado", payload }); return Response.json({ ok: true }, { status: 202 }); }
     const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-correction");
-    if (!challenge.ok) { await recordSecurityEvent(request, { endpoint: "solicitudes", category: "bot", severity: "medium", reason: "Desafío Turnstile inválido" }); return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 }); }
+    if (!challenge.ok) { await recordSecurityEvent(request, { endpoint: "solicitudes", category: "bot", severity: "medium", reason: `Desafío Turnstile inválido: ${challenge.reason ?? "sin detalle"}` }); return Response.json({ error: turnstileErrorMessage(challenge.reason) }, { status: 403 }); }
     const requestType = plainText(payload.requestType, { max: 40 }); const subject = plainText(payload.subject, { min: 8, max: 160 });
     const relatedUrl = await safePublicUrl(httpsUrl(payload.relatedUrl)); const explanation = plainText(payload.explanation, { min: 40, max: 2000, multiline: true });
     const evidenceUrl = payload.evidenceUrl ? await safePublicUrl(httpsUrl(payload.evidenceUrl)) : null;

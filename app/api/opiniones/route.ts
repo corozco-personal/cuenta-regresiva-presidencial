@@ -4,7 +4,7 @@ import { opinions } from "../../../db/schema";
 import { countryNames } from "../../data/countries";
 import { plainText } from "../../data/input-security";
 import { classifyOpinion, looksAutomatedOpinion } from "../../data/opinion-moderation";
-import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
+import { enforceRateLimit, turnstileErrorMessage, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
 import { recordPrivateSubmissionAudit } from "../../data/private-submission-audit";
@@ -74,8 +74,8 @@ export async function POST(request: Request) {
     }
     const challenge = await verifyTurnstile(request, payload.turnstileToken, "submit-opinion");
     if (!challenge.ok) {
-      await recordSecurityEvent(request, { endpoint: "opiniones", category: "bot", severity: "medium", reason: "Desafío Turnstile inválido" });
-      return Response.json({ error: "Completa nuevamente la verificación antiabuso." }, { status: 403 });
+      await recordSecurityEvent(request, { endpoint: "opiniones", category: "bot", severity: "medium", reason: `Desafío Turnstile inválido: ${challenge.reason ?? "sin detalle"}` });
+      return Response.json({ error: turnstileErrorMessage(challenge.reason) }, { status: 403 });
     }
     const comment = plainText(payload.comment, { min: 20, max: 1200, multiline: true });
     const country = plainText(payload.country, { max: 80 });
