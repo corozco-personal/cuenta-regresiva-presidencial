@@ -311,8 +311,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .community { background: #edf0e8; }
 .community-heading > svg { color: var(--forest); }
-.community-forms { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 18px; margin: 46px 0 70px; }
-.community-form { padding: clamp(24px, 4vw, 42px); border: 1px solid var(--line); background: var(--paper); }
+.community-forms { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 18px; margin: 46px 0 70px; }
+.community-form { height: 100%; padding: clamp(24px, 4vw, 42px); border: 1px solid var(--line); background: var(--paper); }
 .form-title { display: flex; align-items: flex-start; gap: 15px; padding-bottom: 25px; border-bottom: 1px solid var(--line); margin-bottom: 25px; }
 .form-title > svg { flex: 0 0 auto; color: var(--forest); }
 .form-title h3, .stream-title h3 { margin: 0; font-family: Georgia, serif; font-size: 28px; font-weight: 400; }
@@ -927,6 +927,7 @@ footer > span { text-align: right; }
   .radar-heading { flex-direction: column; }
   .radar-stats, .radar-grid { grid-template-columns: 1fr; }
   .community-forms, .form-row { grid-template-columns: 1fr; }
+  .community-form { height: auto; }
   .radar-stats > div { border-right: 0; }
   .radar-filters, .directory-filters { grid-template-columns: 1fr; }
   .news-card { min-height: 230px; }
