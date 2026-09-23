@@ -43,6 +43,7 @@ export async function recordSecurityEvent(request: Request, input: {
     const serialized = input.payload === undefined ? "" : JSON.stringify(input.payload).slice(0, 12_000);
     await getDb().insert(securityEvents).values({
       id: crypto.randomUUID(),
+      requestReference: (request.headers.get("cf-ray")?.split("-")[0] || crypto.randomUUID()).slice(0, 36),
       endpoint: input.endpoint,
       category: input.category,
       severity: input.severity,

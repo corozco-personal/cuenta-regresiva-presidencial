@@ -12,6 +12,7 @@ type Report = {
   categories: Array<{ name: string; value: number }>;
   endpoints: Array<{ name: string; value: number }>;
   daily: Array<{ day: string; blocked: number; high: number }>;
+  recentEvents: Array<{ id: string; requestReference?: string | null; endpoint: string; category: string; severity: string; reason: string; createdAt: string }>;
   queue: { pendingOpinions: number; pendingNews: number; pendingCorrections: number; quarantined: number; actions30Days: number };
   privacy: string;
 };
@@ -36,6 +37,13 @@ export default function SecurityReport() {
       <div><h3>Cola de revisión</h3><dl><div><dt>Opiniones</dt><dd>{report.queue.pendingOpinions}</dd></div><div><dt>Noticias</dt><dd>{report.queue.pendingNews}</dd></div><div><dt>Solicitudes</dt><dd>{report.queue.pendingCorrections}</dd></div><div><dt>Decisiones registradas</dt><dd>{report.queue.actions30Days}</dd></div></dl></div>
       <div className="security-bars"><h3>Actividad diaria</h3>{report.daily.length ? report.daily.slice(-14).map((row) => <div key={row.day}><time>{new Intl.DateTimeFormat("es-CO", { month: "short", day: "numeric" }).format(new Date(`${row.day}T12:00:00Z`))}</time><span><i style={{ width: `${Math.max(4, row.blocked / max * 100)}%` }} /></span><strong>{row.blocked}</strong></div>) : <p>Sin actividad bloqueada.</p>}</div>
     </div>
+    <details className="security-event-log">
+      <summary><DatabaseZap size={17} />Bitácora técnica reciente ({report.recentEvents.length})</summary>
+      <div className="security-event-log-table" role="region" aria-label="Bitácora técnica reciente" tabIndex={0}>
+        <table><thead><tr><th>Fecha</th><th>Severidad</th><th>Origen</th><th>Categoría</th><th>Causa interna</th><th>Referencia</th></tr></thead><tbody>{report.recentEvents.map((event) => <tr key={event.id}><td>{new Intl.DateTimeFormat("es-CO", { dateStyle: "short", timeStyle: "medium" }).format(new Date(event.createdAt))}</td><td><span className={`event-severity severity-${event.severity}`}>{event.severity}</span></td><td>{event.endpoint}</td><td>{labels[event.category] ?? event.category}</td><td>{event.reason}</td><td><code>{event.requestReference ?? event.id.slice(0, 12)}</code></td></tr>)}</tbody></table>
+      </div>
+      <p>La referencia permite correlacionar el evento con los registros del Worker sin exponer direcciones IP, contenido hostil, huellas completas ni secretos.</p>
+    </details>
     <p className="analytics-privacy"><ShieldCheck size={17} />{report.privacy} Actualizado el {new Date(report.generatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}.</p>
   </section>;
 }

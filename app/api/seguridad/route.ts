@@ -34,6 +34,15 @@ export async function GET() {
         uniqueFingerprints: new Set(events.map((event) => event.fingerprintHash)).size,
         categories: countBy(events.map((event) => event.category)),
         endpoints: countBy(events.map((event) => event.endpoint)),
+        recentEvents: events.slice(0, 100).map((event) => ({
+          id: event.id,
+          requestReference: event.requestReference,
+          endpoint: event.endpoint,
+          category: event.category,
+          severity: event.severity,
+          reason: event.reason,
+          createdAt: event.createdAt,
+        })),
         daily,
         queue: {
           pendingOpinions: opinionRows.filter((row) => !["approved_manual", "rejected_manual"].includes(row.status)).length,

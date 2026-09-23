@@ -167,6 +167,7 @@ export const moderationActions = sqliteTable("moderation_actions", {
 
 export const securityEvents = sqliteTable("security_events", {
   id: text("id").primaryKey(),
+  requestReference: text("request_reference"),
   endpoint: text("endpoint").notNull(),
   category: text("category").notNull(),
   severity: text("severity").notNull(),

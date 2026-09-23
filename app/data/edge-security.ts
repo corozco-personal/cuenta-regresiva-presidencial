@@ -78,9 +78,6 @@ export async function verifyTurnstile(request: Request, token: unknown, expected
 }
 
 export function turnstileErrorMessage(reason?: string | null) {
-  if (reason === "invalid-secret") return "La clave secreta no corresponde al widget configurado. Revisa que SITE_KEY y SECRET_KEY pertenezcan al mismo widget de Turnstile.";
-  if (reason === "hostname-mismatch") return "El dominio actual no está autorizado en el widget de Turnstile.";
-  if (reason === "action-mismatch") return "La verificación no corresponde a este formulario. Recarga la página e inténtalo de nuevo.";
-  if (reason === "verification-unavailable" || reason?.startsWith("http-")) return "Cloudflare no pudo validar el desafío en este momento. Intenta nuevamente en unos minutos.";
-  return "La verificación venció o ya fue utilizada. Completa el nuevo desafío antes de volver a enviar.";
+  void reason;
+  return "No fue posible completar la verificación. Recarga el desafío e inténtalo nuevamente.";
 }

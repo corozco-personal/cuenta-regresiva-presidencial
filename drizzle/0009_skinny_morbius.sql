@@ -1,0 +1,1 @@
+ALTER TABLE `security_events` ADD `request_reference` text;
