@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getD1 } from "../../../db";
+import { globalMediaProfiles } from "../../data/global-media-sources";
 
 type Scope = "Nacional" | "Internacional";
 type BaseNews = {
@@ -33,6 +34,7 @@ const INAUGURATION_DAY = new Date("2026-08-07T00:00:00-05:00").getTime();
 const SUBJECT_PATTERN = /abelardo(?:\s+gabriel)?\s+de\s+la\s+espriella|de\s+la\s+espriella|defensores\s+de\s+la\s+patria/i;
 
 const SOURCE_PROFILES: SourceProfile[] = [
+  ...globalMediaProfiles,
   { domain: "presidencia.gov.co", scope: "Nacional", official: true, label: "Presidencia de Colombia" },
   { domain: "cne.gov.co", scope: "Nacional", official: true, label: "Consejo Nacional Electoral" },
   { domain: "registraduria.gov.co", scope: "Nacional", official: true, label: "Registraduría Nacional" },
@@ -613,7 +615,7 @@ function sourceDirectoryBase() {
     region: profile.region ?? (profile.scope === "Nacional" ? "Colombia" : "Global"),
     criterion: profile.official
       ? "Publica documentos o comunicaciones institucionales de primera mano."
-      : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
+      : "Dominio editorial propio de un medio identificado, con trayectoria y enlaces públicos trazables.",
     homepageUrl: `https://${profile.domain}/`,
   }));
 }
