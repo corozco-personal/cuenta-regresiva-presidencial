@@ -76,6 +76,14 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
     );
   }, [items]);
   const sources = useMemo(() => Array.from(new Map(publications.map((item) => [item.source.toLocaleLowerCase("es"), item])).values()), [publications]);
+  const mappedCountries = useMemo(() => Array.from(publications.reduce((countries, item) => {
+    const country = (item.country || (item.scope === "Nacional" ? "Colombia" : "")).trim();
+    if (!country) return countries;
+    const key = country.toLocaleLowerCase("es");
+    const current = countries.get(key);
+    countries.set(key, current ? { ...current, newsCount: current.newsCount + 1, sources: new Set([...current.sources, item.source]) } : { item, country, newsCount: 1, sources: new Set([item.source]) });
+    return countries;
+  }, new Map<string, { item: Publication; country: string; newsCount: number; sources: Set<string> }>()).values()), [publications]);
   const hierarchy = useMemo(() => {
     const continents = new Map<string, Map<string, Map<string, Publication[]>>>();
     publications.forEach((item) => {
@@ -99,11 +107,11 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><span className="update-pill"><i /> Actualización global cada hora</span></div>
     <div className="world-map-layout">
       <figure className="world-map-figure">
-        <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${sources.length} medios detectados hoy`}>
+        <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${mappedCountries.length} países con publicaciones detectadas hoy`}>
           <path className="world-sphere" d={mapPath({ type: "Sphere" }) ?? undefined} />
           <path className="world-grid" d={graticulePath ?? undefined} />
           <g className="world-land">{countries.features.map((country, index) => <path key={String(country.id ?? index)} d={mapPath(country) ?? undefined} />)}</g>
-          {sources.map((item, index) => { const point = projectedPoint(item, index); if (!point) return null; const [x, y] = point; return <g className="world-point" key={`${item.source}-${item.url}`} transform={`translate(${x} ${y})`}><circle r="11" /><circle r="3.5" /><title>{item.source} · {item.country || item.scope}: {item.title}</title></g>; })}
+          {mappedCountries.map(({ item, country, newsCount, sources: countrySources }) => { const point = projectedPoint(item, 0); if (!point) return null; const [x, y] = point; return <g className="world-point" key={country} transform={`translate(${x} ${y})`}><circle r="11" /><circle r="3.5" /><title>{country}: {newsCount} {newsCount === 1 ? "noticia" : "noticias"} en {countrySources.size} {countrySources.size === 1 ? "medio" : "medios"}</title></g>; })}
         </svg>
         <figcaption><Clock3 size={14} />Actualización cada hora · {lastUpdate ? `último barrido ${new Date(lastUpdate).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}` : "esperando el primer barrido"}</figcaption>
       </figure>
