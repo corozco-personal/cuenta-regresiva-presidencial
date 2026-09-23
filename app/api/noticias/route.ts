@@ -218,6 +218,31 @@ export function profileFor(hostname: string) {
   return SOURCE_PROFILES.find(({ domain }) => normalized === domain || normalized.endsWith(`.${domain}`));
 }
 
+const SOURCE_COUNTRIES: Record<string, string> = {
+  "el país": "España", "dw español": "Alemania", reuters: "Reino Unido", "noticias caracol": "Colombia",
+  "bbc mundo": "Reino Unido", "france 24": "Francia", "cnn en español": "Estados Unidos",
+  "the guardian": "Reino Unido", "al jazeera": "Catar", "consejo nacional electoral": "Colombia",
+  "associated press": "Estados Unidos", "agencia efe": "España", "presidencia de colombia": "Colombia",
+};
+
+function resolvedCountry(source: string, url: string, current: string | undefined, scope: Scope) {
+  if (current && current !== "Sin identificar" && current !== "Cobertura internacional") return current;
+  const byLabel = SOURCE_PROFILES.find((profile) => profile.label?.toLocaleLowerCase("es") === source.trim().toLocaleLowerCase("es"));
+  if (byLabel?.country) return byLabel.country;
+  if (byLabel?.scope === "Nacional" || scope === "Nacional") return "Colombia";
+  const known = SOURCE_COUNTRIES[source.trim().toLocaleLowerCase("es")];
+  if (known) return known;
+  try {
+    const profile = profileFor(new URL(url).hostname);
+    if (profile?.country) return profile.country;
+    if (profile?.scope === "Nacional") return "Colombia";
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.endsWith(".gov.co") || hostname.endsWith(".com.co")) return "Colombia";
+    if (hostname.endsWith(".gov")) return "Estados Unidos";
+  } catch { /* El enlace puede ser heredado de un agregador. */ }
+  return "Pendiente de clasificación geográfica";
+}
+
 function idFor(value: string) {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) hash = (hash * 31 + value.charCodeAt(i)) | 0;
@@ -552,7 +577,7 @@ async function storeAndLoadNews(items: PublicNews[], monitor: {
       decision_reason AS decisionReason,evidence_level AS evidenceLevel,process_status AS processStatus,sources_json,country,language,
       link_status,final_url,last_seen_at FROM news_articles ORDER BY published_at DESC LIMIT 600`).all<StoredNewsRow>();
     return stored.results.flatMap((row) => {
-      try { return [{ ...row, evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
+      try { return [{ ...row, country: resolvedCountry(row.source, row.url, row.country, row.scope), evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
       catch { return []; }
     });
   } catch (error) {
@@ -569,6 +594,7 @@ async function loadStoredNews(limit = 600) {
     try {
       return [{
         ...row,
+        country: resolvedCountry(row.source, row.url, row.country, row.scope),
         evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel,
         sources: JSON.parse(row.sources_json),
         linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined },
@@ -704,7 +730,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   const currentItems = [...checkedRecent, ...selected.slice(18).map((item) => ({
     ...item,
     linkCheck: { status: "No comprobado" as const, checkedAt: new Date().toISOString() },
-  }))];
+  }))].map((item) => ({ ...item, country: resolvedCountry(item.source, item.url, item.country, item.scope) }));
   const review = {
     admitted: reviewed.filter(({ decision }) => decision === "Admitido").length,
     corrected: reviewed.filter(({ decision }) => decision === "Corregido").length,

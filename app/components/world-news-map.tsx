@@ -17,7 +17,7 @@ const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   "costa rica": [-84, 9.7], panamá: [-80, 8.5], ecuador: [-78.2, -1.5], perú: [-75, -9], venezuela: [-66, 7],
   uruguay: [-56, -33], paraguay: [-58, -23], bolivia: [-64, -17], guatemala: [-90, 15.6], cuba: [-79.5, 21.5],
   bélgica: [4.5, 50.7], "países bajos": [5.3, 52.1], suecia: [16, 62], noruega: [8, 61], ucrania: [31, 49], turquía: [35, 39],
-  israel: [35, 31.5], "arabia saudita": [45, 24], "emiratos árabes unidos": [54, 24], "corea del sur": [128, 36], singapur: [104, 1.3],
+  israel: [35, 31.5], catar: [51.2, 25.3], "arabia saudita": [45, 24], "emiratos árabes unidos": [54, 24], "corea del sur": [128, 36], singapur: [104, 1.3],
 };
 
 const topology = world as unknown as Topology<{ countries: GeometryCollection }>;
