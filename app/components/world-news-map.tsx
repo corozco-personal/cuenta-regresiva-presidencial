@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Globe2 } from "lucide-react";
+import { Clock3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
@@ -96,7 +96,7 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
   }, [publications]);
 
   return <section className="world-today section-shell" aria-labelledby="world-today-title">
-    <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><Globe2 aria-hidden="true" /></div>
+    <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><span className="update-pill"><i /> Actualización global cada hora</span></div>
     <div className="world-map-layout">
       <figure className="world-map-figure">
         <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${sources.length} medios detectados hoy`}>
