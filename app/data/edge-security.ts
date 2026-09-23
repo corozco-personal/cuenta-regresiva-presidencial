@@ -55,14 +55,13 @@ export async function verifyTurnstile(request: Request, token: unknown, expected
   const responseToken = String(token ?? "").trim();
   if (!responseToken || responseToken.length > 2048) return { ok: false, configured: true, reason: "missing-token" };
 
-  const body = new FormData();
-  body.set("secret", secret);
-  body.set("response", responseToken);
-  body.set("remoteip", visitorAddress(request));
-  body.set("idempotency_key", crypto.randomUUID());
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
-  if (!response.ok) return { ok: false, configured: true, reason: "verification-unavailable" };
-  const result = await response.json() as TurnstileResult;
+  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ secret, response: responseToken, remoteip: visitorAddress(request), idempotency_key: crypto.randomUUID() }),
+  });
+  const result = await response.json().catch(() => ({ success: false, "error-codes": [`http-${response.status}`] })) as TurnstileResult;
+  if (!response.ok && !(result["error-codes"]?.length)) return { ok: false, configured: true, reason: `http-${response.status}` };
   const requestHost = new URL(request.url).hostname;
   const errors = result["error-codes"] ?? [];
   const reason = errors.includes("invalid-input-secret") ? "invalid-secret"
@@ -70,7 +69,7 @@ export async function verifyTurnstile(request: Request, token: unknown, expected
       : errors.includes("invalid-input-response") ? "invalid-token"
         : result.action !== expectedAction ? "action-mismatch"
           : result.hostname && result.hostname !== requestHost ? "hostname-mismatch"
-            : errors[0] ?? "rejected";
+            : errors[0] ?? (!response.ok ? `http-${response.status}` : "rejected");
   return {
     ok: result.success === true && result.action === expectedAction && (!result.hostname || result.hostname === requestHost),
     configured: true,
@@ -82,6 +81,6 @@ export function turnstileErrorMessage(reason?: string | null) {
   if (reason === "invalid-secret") return "La clave secreta no corresponde al widget configurado. Revisa que SITE_KEY y SECRET_KEY pertenezcan al mismo widget de Turnstile.";
   if (reason === "hostname-mismatch") return "El dominio actual no está autorizado en el widget de Turnstile.";
   if (reason === "action-mismatch") return "La verificación no corresponde a este formulario. Recarga la página e inténtalo de nuevo.";
-  if (reason === "verification-unavailable") return "Cloudflare no pudo validar el desafío en este momento. Intenta nuevamente en unos minutos.";
+  if (reason === "verification-unavailable" || reason?.startsWith("http-")) return "Cloudflare no pudo validar el desafío en este momento. Intenta nuevamente en unos minutos.";
   return "La verificación venció o ya fue utilizada. Completa el nuevo desafío antes de volver a enviar.";
 }
