@@ -249,6 +249,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .world-source-list a { min-height: 53px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; }
 .world-source-list a span { font-size: 13px; font-weight: 800; }
 .world-source-list small, .world-source-list p { color: var(--muted); font-size: 11px; }
+.world-source-tree { margin-top: 24px; border-top: 1px solid var(--line); }
+.world-source-tree details { border-bottom: 1px solid var(--line); }
+.world-source-tree details details { margin-left: 14px; border-bottom: 0; border-top: 1px solid rgba(20,58,50,.12); }
+.world-source-tree summary { min-height: 48px; display: grid; grid-template-columns: 15px minmax(0,1fr) auto; align-items: center; gap: 8px; cursor: pointer; list-style: none; }
+.world-source-tree summary::-webkit-details-marker { display: none; }
+.world-source-tree summary::before { content:"+"; color: var(--forest); font-size: 17px; font-weight: 400; }
+.world-source-tree details[open] > summary::before { content:"−"; }
+.world-source-tree summary > span { overflow: hidden; font-size: 12px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.world-source-tree summary > strong { font: 400 20px/1 Georgia,serif; }
+.world-source-tree details details summary > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.world-source-tree ol { margin: 0 0 9px 23px; }
+.world-source-tree li a { min-height: 43px; }
+.world-source-tree li a span { font-size: 11px; }
+.world-source-tree li a small { text-transform: uppercase; }
 @keyframes worldPulse { 0%,100% { opacity:.65; transform:scale(.8) } 50% { opacity:1; transform:scale(1.18) } }
 
 .monitoring { background: var(--ink); color: var(--white); }

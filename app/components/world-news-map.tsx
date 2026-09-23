@@ -20,6 +20,15 @@ const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   israel: [35, 31.5], catar: [51.2, 25.3], "arabia saudita": [45, 24], "emiratos árabes unidos": [54, 24], "corea del sur": [128, 36], singapur: [104, 1.3],
 };
 
+const COUNTRY_CONTINENTS: Record<string, string> = {
+  colombia: "América del Sur", argentina: "América del Sur", brasil: "América del Sur", chile: "América del Sur", ecuador: "América del Sur", perú: "América del Sur", venezuela: "América del Sur", uruguay: "América del Sur", paraguay: "América del Sur", bolivia: "América del Sur",
+  "estados unidos": "América del Norte", méxico: "América del Norte", canadá: "América del Norte", "costa rica": "Centroamérica y Caribe", panamá: "Centroamérica y Caribe", guatemala: "Centroamérica y Caribe", cuba: "Centroamérica y Caribe",
+  españa: "Europa", francia: "Europa", alemania: "Europa", italia: "Europa", "reino unido": "Europa", portugal: "Europa", suiza: "Europa", bélgica: "Europa", "países bajos": "Europa", suecia: "Europa", noruega: "Europa", ucrania: "Europa", rusia: "Europa y Asia",
+  china: "Asia", japón: "Asia", india: "Asia", "corea del sur": "Asia", singapur: "Asia", turquía: "Europa y Asia",
+  israel: "Oriente Medio", catar: "Oriente Medio", "arabia saudita": "Oriente Medio", "emiratos árabes unidos": "Oriente Medio",
+  australia: "Oceanía",
+};
+
 const topology = world as unknown as Topology<{ countries: GeometryCollection }>;
 const countries = feature(topology, topology.objects.countries) as unknown as FeatureCollection<Geometry>;
 const projection = geoNaturalEarth1().scale(154).translate([480, 250]);
@@ -59,6 +68,21 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
     );
     return Array.from(new Map(publications.map((item) => [item.source.toLocaleLowerCase("es"), item])).values());
   }, [items]);
+  const hierarchy = useMemo(() => {
+    const continents = new Map<string, Map<string, typeof sources>>();
+    sources.forEach((item) => {
+      const country = item.country || (item.scope === "Nacional" ? "Colombia" : "Pendiente de clasificación geográfica");
+      const continent = COUNTRY_CONTINENTS[country.toLocaleLowerCase("es")] ?? "Otros territorios";
+      if (!continents.has(continent)) continents.set(continent, new Map());
+      const countries = continents.get(continent)!;
+      countries.set(country, [...(countries.get(country) ?? []), item]);
+    });
+    return [...continents].map(([continent, countries]) => ({
+      continent,
+      countries: [...countries].map(([country, media]) => ({ country, media })).sort((a, b) => b.media.length - a.media.length || a.country.localeCompare(b.country, "es")),
+      count: [...countries.values()].reduce((sum, media) => sum + media.length, 0),
+    })).sort((a, b) => b.count - a.count || a.continent.localeCompare(b.continent, "es"));
+  }, [sources]);
 
   return <section className="world-today section-shell" aria-labelledby="world-today-title">
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><Globe2 aria-hidden="true" /></div>
@@ -72,7 +96,7 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
         </svg>
         <figcaption><Clock3 size={14} />Actualización cada hora · {lastUpdate ? `último barrido ${new Date(lastUpdate).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}` : "esperando el primer barrido"}</figcaption>
       </figure>
-      <div className="world-source-list"><strong>{sources.length}</strong><span>medios con publicaciones hoy</span>{sources.length ? <ol>{sources.slice(0, 8).map((item) => <li key={`${item.source}-${item.url}`}><a href={item.url} target="_blank" rel="noreferrer"><span>{item.source}</span><small>{item.country || item.scope}</small></a></li>)}</ol> : <p>El radar todavía no detecta publicaciones fechadas hoy.</p>}</div>
+      <div className="world-source-list"><strong>{sources.length}</strong><span>medios con publicaciones hoy</span>{sources.length ? <div className="world-source-tree">{hierarchy.map((group) => <details key={group.continent} open={hierarchy.length === 1}><summary><span>{group.continent}</span><strong>{group.count}</strong></summary><div>{group.countries.map((country) => <details key={country.country} open={group.countries.length === 1}><summary><span>{country.country}</span><strong>{country.media.length}</strong></summary><ol>{country.media.map((item) => <li key={`${item.source}-${item.url}`}><a href={item.url} target="_blank" rel="noreferrer"><span>{item.source}</span><small>Ver noticia</small></a></li>)}</ol></details>)}</div></details>)}</div> : <p>El radar todavía no detecta publicaciones fechadas hoy.</p>}</div>
     </div>
   </section>;
 }
