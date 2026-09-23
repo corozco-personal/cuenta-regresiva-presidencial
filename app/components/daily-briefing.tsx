@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, BellRing, Check, FileText, History, Share2 } from "lucide-react";
 import { campaignPromises } from "../data/campaign-promises";
+import ShareOptions from "./share-options";
 
-type NewsItem = { id: string; title: string; source: string; url: string; publishedAt: string; category: string; scope: string; evidenceLevel: string; decisionReason: string; sources?: Array<{ source: string }> };
+type NewsItem = { id: string; title: string; source: string; url: string; publishedAt: string; category: string; scope: string; kind?: string; evidenceLevel: string; decisionReason: string; sources?: Array<{ source: string }> };
 const LAST_VISIT = "cuenta-publica-last-visit";
 
 function evidenceLabel(item: NewsItem) {
@@ -55,8 +56,11 @@ export default function DailyBriefing() {
       <a href="/resumen">Ver resumen semanal <ArrowUpRight size={15} /></a>
     </div>
     <div className="briefing-columns">
-      {(["Nacional", "Internacional"] as const).map((scope) => <section className="briefing-column" key={scope} aria-labelledby={`briefing-${scope.toLowerCase()}`}><header><span>{scope === "Nacional" ? "CO" : "INT"}</span><div><h3 id={`briefing-${scope.toLowerCase()}`}>{scope}</h3><p>{scope === "Nacional" ? "Entidades y medios colombianos" : "Cobertura publicada fuera de Colombia"}</p></div></header><div className="briefing-list">{latestByScope[scope].length ? latestByScope[scope].map((item, index) => <article key={item.id}>
-        <span className="briefing-index">0{index + 1}</span><div><small>{item.category} · {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small><h3>{item.title}</h3><p><strong>{evidenceLabel(item)}.</strong> {item.decisionReason}</p><a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={14} /></a></div>
+      {(["Nacional", "Internacional"] as const).map((scope) => <section className="briefing-column" key={scope} aria-labelledby={`briefing-${scope.toLowerCase()}`}><header><span>{scope === "Nacional" ? "CO" : "INT"}</span><div><h3 id={`briefing-${scope.toLowerCase()}`}>{scope}</h3><p>{scope === "Nacional" ? "Entidades y medios colombianos" : "Cobertura publicada fuera de Colombia"}</p></div></header><div className="briefing-list briefing-card-list">{latestByScope[scope].length ? latestByScope[scope].map((item) => <article className="news-card briefing-news-card" id={`resumen-${item.id}`} key={item.id}>
+        <div className="news-card-top"><span>{item.source}</span><span>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span></div>
+        <div className="decision-row"><span className="decision">Resumen verificado</span><span>{item.category}</span></div>
+        <h3>{item.title}</h3><p className="decision-reason"><strong>{evidenceLabel(item)}.</strong> {item.decisionReason}</p>
+        <div className="news-card-bottom"><span>{item.kind ?? "Cobertura periodística"}</span><div><ShareOptions title={item.title} url={`/#resumen-${item.id}`} context="news" /><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente original de ${item.title}`}><ArrowUpRight size={17} /></a></div></div>
       </article>) : <p className="news-message">Sin novedades recientes en esta categoría.</p>}</div></section>)}
     </div>
     {updatedAt && <p className="briefing-updated">Última consulta: {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(updatedAt))}.</p>}

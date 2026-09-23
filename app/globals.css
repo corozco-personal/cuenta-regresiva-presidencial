@@ -1093,6 +1093,15 @@ footer > span { text-align: right; }
 .contributed-news-card .news-card-bottom>div>a,.contributed-news-card .news-card-bottom .share-options-menu>summary{width:40px;height:40px;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;border:1px solid var(--line);background:transparent;color:var(--ink);line-height:0}
 .contributed-news-card .news-card-bottom .share-options-menu{width:40px;height:40px;display:block}
 .contributed-news-card .news-card-bottom svg{display:block;margin:auto}
+.briefing-card-list{display:grid;gap:16px;border-top:0;margin-top:24px}
+.briefing-card-list>.briefing-news-card{min-height:320px;padding:28px;display:flex;grid-template-columns:none;gap:0;background:var(--cream);color:var(--ink);border:1px solid var(--line)}
+.briefing-news-card .news-card-top,.briefing-news-card .news-card-bottom,.briefing-news-card .decision-row{color:var(--muted)}
+.briefing-news-card .decision{color:var(--forest);border-color:var(--forest)}
+.briefing-news-card .decision-reason{color:var(--muted)}
+.briefing-news-card .news-card-bottom>span{color:var(--forest)}
+.briefing-news-card .news-card-bottom>div{align-items:center;gap:10px;padding:4px 2px}
+.briefing-news-card .news-card-bottom>div>a,.briefing-news-card .news-card-bottom .share-options-menu>summary{width:40px;height:40px;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;border:1px solid var(--line);background:transparent;color:var(--ink);line-height:0}
+.briefing-news-card .news-card-bottom .share-options-menu{width:40px;height:40px;display:block}.briefing-news-card .news-card-bottom svg{display:block;margin:auto}
 .turnstile-retry{width:max-content!important;margin-top:8px!important;padding:10px 14px!important;background:transparent!important;color:var(--ink)!important;border:1px solid var(--ink)!important}
 .briefing-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin-top:50px;border:1px solid var(--line)}
 .briefing-column{min-width:0;padding:28px}.briefing-column+.briefing-column{border-left:1px solid var(--line)}
