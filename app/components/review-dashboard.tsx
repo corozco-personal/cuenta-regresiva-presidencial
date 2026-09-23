@@ -9,6 +9,7 @@ import {
 import AnalyticsDashboard from "./analytics-dashboard";
 import SecurityReport from "./security-report";
 import SecurityOperations from "./security-operations";
+import MediaPublicationRadar from "./media-publication-radar";
 
 type Audit = { id: string; fromStatus: string; toStatus: string; reason: string; reviewer: string; createdAt: string };
 type Email = { notifiedAt?: string | null; expiresAt?: string | null; reviewedAt?: string | null; deliveryStatus?: string | null; lastError?: string | null };
@@ -210,6 +211,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
 
       {section === "reports" ? (
         <div className="review-reports">
+          <MediaPublicationRadar />
           <AnalyticsDashboard />
           <SecurityReport />
           <SecurityOperations />

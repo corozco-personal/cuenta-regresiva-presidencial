@@ -668,7 +668,7 @@ async function approvedCommunitySources() {
   }
 }
 
-async function refreshNews() {
+async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-revalidate=21600") {
   const startedAt = new Date().toISOString();
   let provider = "curated";
   let discovered: CandidateNews[] = [];
@@ -764,7 +764,7 @@ async function refreshNews() {
       provider,
       monitor: { startedAt, completedAt, status: providerErrors.length === providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo", errors: providerErrors },
     },
-    { headers: { "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400" } },
+    { headers: { "Cache-Control": cacheControl, "X-Data-Source": "global-refresh" } },
   );
 }
 
@@ -781,5 +781,5 @@ export async function GET(request: Request) {
       },
     });
   }
-  return refreshNews();
+  return refreshNews(forceRefresh ? "private, no-store, max-age=0" : undefined);
 }

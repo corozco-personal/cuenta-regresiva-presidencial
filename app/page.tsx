@@ -30,6 +30,7 @@ import CompactPresence from "./components/compact-presence";
 import { campaignPromises } from "./data/campaign-promises";
 import { clientPlainText } from "./data/client-input";
 import DailyBriefing from "./components/daily-briefing";
+import WorldNewsMap from "./components/world-news-map";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -40,6 +41,7 @@ type NewsItem = {
   publishedAt: string;
   kind: "Fuente primaria" | "Cobertura periodística";
   scope: "Nacional" | "Internacional";
+  country?: string;
   category: string;
   stage: "Campaña" | "Transición" | "Presidencia";
   decision: "Admitido" | "Corregido";
@@ -580,6 +582,8 @@ export default function Home() {
         <div><strong>{new Set(records.map((item) => item.source)).size}</strong><span>fuentes citadas</span></div>
       </section>
 
+      <WorldNewsMap initialItems={news} updatedAt={monitorUpdatedAt} />
+
       <section className="monitoring section-shell" id="monitoreo">
         <div className="section-heading compact">
           <div>
@@ -587,7 +591,7 @@ export default function Home() {
             <h2>En observación</h2>
             <p>Cobertura nacional e internacional desde el inicio de la campaña presidencial, el 16 de julio de 2025. Son pistas de lectura con fuente original, no conclusiones editoriales.</p>
           </div>
-          <span className="update-pill"><i /> Actualización global cada 6 horas</span>
+          <span className="update-pill"><i /> Actualización global cada hora</span>
         </div>
         {reviewStats && (
           <div className="review-summary" aria-label="Resultado de la revisión automática">
