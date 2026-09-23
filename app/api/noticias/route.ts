@@ -800,6 +800,14 @@ export async function GET(request: Request) {
   const cached = await cachedNewsPayload();
   const requestUrl = new URL(request.url);
   const forceRefresh = requestUrl.searchParams.get("refresh") === "1";
+  if (forceRefresh) {
+    const configuredSecret = process.env.CRON_SECRET;
+    const suppliedSecret = request.headers.get("x-cron-secret");
+    if (!configuredSecret || suppliedSecret !== configuredSecret) {
+      console.warn("news-monitor", "Intento no autorizado de forzar una actualización global");
+      return NextResponse.json({ error: "No disponible" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
+  }
   const isPublicRead = requestUrl.pathname.endsWith("/noticias-v2");
   if (cached && isPublicRead && !forceRefresh) {
     return NextResponse.json(cached, {
