@@ -26,7 +26,14 @@ export default function DailyBriefing() {
     }).catch(() => undefined);
   }, []);
 
-  const latest = useMemo(() => [...items].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 3), [items]);
+  const latestByScope = useMemo(() => {
+    const sorted = [...items].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+    return {
+      Nacional: sorted.filter((item) => item.scope === "Nacional").slice(0, 3),
+      Internacional: sorted.filter((item) => item.scope === "Internacional").slice(0, 3),
+    };
+  }, [items]);
+  const latest = [...latestByScope.Nacional, ...latestByScope.Internacional];
   const newItems = previousVisit ? items.filter((item) => Date.parse(item.publishedAt) > previousVisit).length : 0;
   const promiseChanges = previousVisit ? campaignPromises.filter((item) => Date.parse(`${item.lastReviewed}T23:59:59-05:00`) > previousVisit).length : 0;
 
@@ -47,9 +54,11 @@ export default function DailyBriefing() {
       <article><FileText /><strong>{items.filter((item) => item.evidenceLevel === "Documento oficial").length}</strong><span>fuentes primarias activas</span></article>
       <a href="/resumen">Ver resumen semanal <ArrowUpRight size={15} /></a>
     </div>
-    <div className="briefing-list">{latest.length ? latest.map((item, index) => <article key={item.id}>
-      <span className="briefing-index">0{index + 1}</span><div><small>{item.scope} · {item.category} · {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small><h3>{item.title}</h3><p><strong>{evidenceLabel(item)}.</strong> {item.decisionReason}</p><a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={14} /></a></div>
-    </article>) : <p className="news-message">El resumen se completará cuando finalice la consulta más reciente.</p>}</div>
+    <div className="briefing-columns">
+      {(["Nacional", "Internacional"] as const).map((scope) => <section className="briefing-column" key={scope} aria-labelledby={`briefing-${scope.toLowerCase()}`}><header><span>{scope === "Nacional" ? "CO" : "INT"}</span><div><h3 id={`briefing-${scope.toLowerCase()}`}>{scope}</h3><p>{scope === "Nacional" ? "Entidades y medios colombianos" : "Cobertura publicada fuera de Colombia"}</p></div></header><div className="briefing-list">{latestByScope[scope].length ? latestByScope[scope].map((item, index) => <article key={item.id}>
+        <span className="briefing-index">0{index + 1}</span><div><small>{item.category} · {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</small><h3>{item.title}</h3><p><strong>{evidenceLabel(item)}.</strong> {item.decisionReason}</p><a href={item.url} target="_blank" rel="noreferrer">{item.source}<ArrowUpRight size={14} /></a></div>
+      </article>) : <p className="news-message">Sin novedades recientes en esta categoría.</p>}</div></section>)}
+    </div>
     {updatedAt && <p className="briefing-updated">Última consulta: {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(updatedAt))}.</p>}
   </section>;
 }
