@@ -13,7 +13,11 @@ function equal(left: Uint8Array, right: Uint8Array) {
 }
 async function validSignature(body: string, request: Request) {
   const secret = env.RESEND_WEBHOOK_SECRET?.trim(); if (!secret) return false;
-  const id = request.headers.get("webhook-id") ?? ""; const timestamp = request.headers.get("webhook-timestamp") ?? ""; const signature = request.headers.get("webhook-signature") ?? "";
+  // Resend currently signs webhooks with Svix headers. Keep the legacy names as
+  // a compatibility fallback for endpoints created before the header rename.
+  const id = request.headers.get("svix-id") ?? request.headers.get("webhook-id") ?? "";
+  const timestamp = request.headers.get("svix-timestamp") ?? request.headers.get("webhook-timestamp") ?? "";
+  const signature = request.headers.get("svix-signature") ?? request.headers.get("webhook-signature") ?? "";
   if (!id || !timestamp || !signature || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
   const key = decodeBase64(secret.replace(/^whsec_/, ""));
   const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
