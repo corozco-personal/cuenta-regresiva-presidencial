@@ -21,7 +21,7 @@ type Correction = Base & { type: "correction"; requestType: string; subject: str
 type Item = Opinion | Submission | Correction;
 type View = "review" | "approved" | "rejected" | "all";
 type Section = "opinion" | "news" | "correction";
-type Workspace = "pending" | "reports" | "operations";
+type Workspace = "pending" | "reports" | "intrusions" | "operations";
 type ReportTab = "activity" | "media";
 type Counts = { opinions: Record<string, number>; news: Record<string, number>; corrections: Record<string, number> };
 
@@ -202,6 +202,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
       <div className="review-tabs">
         <button className={workspace === "pending" ? "active" : ""} onClick={() => setWorkspace("pending")}><ClipboardList />Pendientes por revisar<strong>{totalFor(counts, "review")}</strong></button>
         <button className={workspace === "reports" ? "active" : ""} onClick={() => setWorkspace("reports")}><BarChart3 />Reportes</button>
+        <button className={workspace === "intrusions" ? "active" : ""} onClick={() => setWorkspace("intrusions")}><AlertTriangle />Intentos de intrusión</button>
         <button className={workspace === "operations" ? "active" : ""} onClick={() => setWorkspace("operations")}><ShieldCheck />Continuidad, privacidad y alertas</button>
         {workspace === "pending" && <div className="review-refresh-group">
           <button className={`review-auto${autoRefresh ? " is-active" : ""}`} onClick={() => void toggleAutoRefresh()} aria-pressed={autoRefresh}>
@@ -219,8 +220,10 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
             <button className={reportTab === "activity" ? "active" : ""} onClick={() => setReportTab("activity")}><Activity size={17} />Actividad del sitio</button>
             <button className={reportTab === "media" ? "active" : ""} onClick={() => setReportTab("media")}><RadioTower size={17} />Radar de medios</button>
           </nav>
-          {reportTab === "activity" ? <div className="report-tab-panel"><AnalyticsDashboard /><SecurityReport /></div> : <div className="report-tab-panel"><MediaPublicationRadar /></div>}
+          {reportTab === "activity" ? <div className="report-tab-panel"><AnalyticsDashboard /></div> : <div className="report-tab-panel"><MediaPublicationRadar /></div>}
         </div>
+      ) : workspace === "intrusions" ? (
+        <div className="review-reports"><SecurityReport /></div>
       ) : workspace === "operations" ? (
         <div className="review-reports"><SecurityOperations /></div>
       ) : (

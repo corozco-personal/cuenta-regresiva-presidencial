@@ -25,7 +25,7 @@ export default function SecurityReport() {
   if (!report) return null;
   const max = Math.max(1, ...report.daily.map((row) => row.blocked));
   return <section className="security-report" aria-labelledby="security-report-title">
-    <div className="analytics-section-title"><div><p className="section-kicker">SEGURIDAD Y MODERACIÓN</p><h2 id="security-report-title">Señales de abuso bloqueadas</h2></div><ShieldCheck size={28} /></div>
+    <div className="analytics-section-title"><div><p className="section-kicker">SEGURIDAD Y MODERACIÓN</p><h2 id="security-report-title">Intentos de intrusión e información fraudulenta</h2><p>Registro privado de señales bloqueadas automáticamente o clasificadas durante la revisión manual. Una señal técnica permite investigar abuso, pero no identifica por sí sola a una persona.</p></div><ShieldCheck size={28} /></div>
     <div className="security-metrics">
       <article><ShieldCheck /><span>30 días</span><strong>{report.totalBlocked}</strong><p>intentos bloqueados</p></article>
       <article><AlertTriangle /><span>Prioridad</span><strong>{report.highSeverity}</strong><p>señales de severidad alta</p></article>
