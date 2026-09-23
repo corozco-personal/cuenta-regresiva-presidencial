@@ -561,6 +561,88 @@ async function storeAndLoadNews(items: PublicNews[], monitor: {
   }
 }
 
+async function loadStoredNews(limit = 600) {
+  const stored = await getD1().prepare(`SELECT id,title,source,url,published_at AS publishedAt,scope,kind,category,stage,decision,
+    decision_reason AS decisionReason,evidence_level AS evidenceLevel,process_status AS processStatus,sources_json,country,language,
+    link_status,final_url,last_seen_at FROM news_articles ORDER BY published_at DESC LIMIT ?`).bind(limit).all<StoredNewsRow>();
+  return stored.results.flatMap((row) => {
+    try {
+      return [{
+        ...row,
+        evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel,
+        sources: JSON.parse(row.sources_json),
+        linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined },
+      } as PublicNews];
+    } catch { return []; }
+  });
+}
+
+function sourceDirectoryBase() {
+  return SOURCE_PROFILES.map((profile) => ({
+    domain: profile.domain,
+    label: profile.label ?? profile.domain,
+    scope: profile.scope,
+    kind: profile.official ? "Institución oficial" : "Medio periodístico",
+    country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Cobertura internacional"),
+    region: profile.region ?? (profile.scope === "Nacional" ? "Colombia" : "Global"),
+    criterion: profile.official
+      ? "Publica documentos o comunicaciones institucionales de primera mano."
+      : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
+    homepageUrl: `https://${profile.domain}/`,
+  }));
+}
+
+async function cachedNewsPayload() {
+  try {
+    const db = getD1();
+    const [storedItems, run, communitySources] = await Promise.all([
+      loadStoredNews(),
+      db.prepare(`SELECT started_at AS startedAt,completed_at AS completedAt,providers,
+        discovered_count AS discovered,published_count AS published,rejected_count AS rejected,
+        countries,languages,status,error_summary AS errors
+        FROM monitor_runs ORDER BY completed_at DESC LIMIT 1`).first<{
+          startedAt: string; completedAt: string; providers: string; discovered: string; published: string;
+          rejected: string; countries: string; languages: string; status: string; errors: string | null;
+        }>(),
+      approvedCommunitySources(),
+    ]);
+    if (!storedItems.length || !run?.completedAt) return null;
+    const items = groupCoverage(storedItems)
+      .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 180);
+    const sourceDirectory = Array.from(new Map([...sourceDirectoryBase(), ...communitySources]
+      .map((source) => [source.domain, source])).values());
+    const globalRadar = items.slice(0, 80).map((item) => {
+      const domain = (() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.source; } })();
+      return {
+        id: item.id, title: item.title, source: item.source, domain, url: item.url,
+        publishedAt: item.publishedAt, country: item.country ?? "Sin identificar",
+        language: item.language ?? "Sin identificar", status: "Admitido para monitoreo",
+        signal: item.sources?.length > 1 ? "Cobertura recurrente" : "Directorio editorial",
+      };
+    });
+    return {
+      items,
+      review: { admitted: Number(run.published) || items.length, corrected: 0, rejected: Number(run.rejected) || 0, policyVersion: "1.2" },
+      sourceDirectory,
+      globalRadar,
+      globalStats: {
+        results: globalRadar.length,
+        countries: new Set(globalRadar.map((item) => item.country).filter((value) => value !== "Sin identificar")).size,
+        languages: new Set(globalRadar.map((item) => item.language).filter((value) => value !== "Sin identificar")).size,
+        domains: new Set(globalRadar.map((item) => item.domain)).size,
+        catalogSources: sourceDirectory.length,
+      },
+      coverage: { startsAt: CAMPAIGN_START, stages: ["Campaña", "Transición", "Presidencia"] },
+      updatedAt: run.completedAt,
+      provider: run.providers,
+      monitor: { startedAt: run.startedAt, completedAt: run.completedAt, status: run.status, errors: run.errors ? [run.errors] : [] },
+    };
+  } catch (error) {
+    console.warn("news-cache-read", error);
+    return null;
+  }
+}
+
 async function approvedCommunitySources() {
   try {
     const rows = await getD1().prepare(`SELECT domain,title,country,created_at AS createdAt
@@ -586,7 +668,7 @@ async function approvedCommunitySources() {
   }
 }
 
-export async function GET() {
+async function refreshNews() {
   const startedAt = new Date().toISOString();
   let provider = "curated";
   let discovered: CandidateNews[] = [];
@@ -629,18 +711,7 @@ export async function GET() {
     rejected: reviewed.filter(({ decision }) => decision === "Rechazado").length,
     policyVersion: "1.2",
   };
-  const baseSourceDirectory = SOURCE_PROFILES.map((profile) => ({
-    domain: profile.domain,
-    label: profile.label ?? profile.domain,
-    scope: profile.scope,
-    kind: profile.official ? "Institución oficial" : "Medio periodístico",
-    country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Cobertura internacional"),
-    region: profile.region ?? (profile.scope === "Nacional" ? "Colombia" : "Global"),
-    criterion: profile.official
-      ? "Publica documentos o comunicaciones institucionales de primera mano."
-      : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
-    homepageUrl: `https://${profile.domain}/`,
-  }));
+  const baseSourceDirectory = sourceDirectoryBase();
   const communitySources = await approvedCommunitySources();
   const sourceDirectory = Array.from(new Map([...baseSourceDirectory, ...communitySources].map((source) => [source.domain, source])).values());
   const domainCounts = discovered.reduce<Record<string, number>>((counts, item) => {
@@ -695,4 +766,20 @@ export async function GET() {
     },
     { headers: { "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400" } },
   );
+}
+
+export async function GET(request: Request) {
+  const cached = await cachedNewsPayload();
+  const requestUrl = new URL(request.url);
+  const forceRefresh = requestUrl.searchParams.get("refresh") === "1";
+  const isPublicRead = requestUrl.pathname.endsWith("/noticias-v2");
+  if (cached && isPublicRead && !forceRefresh) {
+    return NextResponse.json(cached, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=21600",
+        "X-Data-Source": "database-cache",
+      },
+    });
+  }
+  return refreshNews();
 }

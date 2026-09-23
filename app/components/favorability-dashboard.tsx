@@ -26,7 +26,7 @@ export default function FavorabilityDashboard() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    void Promise.all([fetch("/api/indicadores"), fetch("/api/noticias")]).then(async ([indicatorResponse, newsResponse]) => {
+    void Promise.all([fetch("/api/indicadores"), fetch("/api/noticias-v2")]).then(async ([indicatorResponse, newsResponse]) => {
       if (!indicatorResponse.ok || !newsResponse.ok) throw new Error();
       const [indicatorData, newsData] = await Promise.all([indicatorResponse.json(), newsResponse.json()]);
       setIndicators(indicatorData); setNews(Array.isArray(newsData.items) ? newsData.items : []);

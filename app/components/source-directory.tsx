@@ -11,7 +11,7 @@ export default function SourceDirectory() {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    void fetch("/api/noticias").then((response) => response.ok ? response.json() : Promise.reject()).then((data) => {
+    void fetch("/api/noticias-v2").then((response) => response.ok ? response.json() : Promise.reject()).then((data) => {
       setSources(Array.isArray(data.sourceDirectory) ? data.sourceDirectory : []);
       setState("ready");
     }).catch(() => setState("error"));
