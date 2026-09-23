@@ -59,14 +59,16 @@ function projectedPoint(item: NewsPoint, index: number): [number, number] | null
 }
 
 export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems: NewsPoint[]; updatedAt: string | null }) {
-  const [items, setItems] = useState(initialItems);
-  const [lastUpdate, setLastUpdate] = useState(updatedAt);
+  const [refreshedItems, setRefreshedItems] = useState<NewsPoint[] | null>(null);
+  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
+  const items = refreshedItems ?? initialItems;
+  const lastUpdate = refreshedAt ?? updatedAt;
   const [mapPanelHeight, setMapPanelHeight] = useState(620);
   const mapFigureRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const interval = window.setInterval(() => {
       void fetch("/api/noticias-v2", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject())
-        .then((data) => { setItems(data.items ?? []); setLastUpdate(data.updatedAt ?? null); }).catch(() => undefined);
+        .then((data) => { setRefreshedItems(data.items ?? []); setRefreshedAt(data.updatedAt ?? null); }).catch(() => undefined);
     }, 60 * 60_000);
     return () => window.clearInterval(interval);
   }, []);
