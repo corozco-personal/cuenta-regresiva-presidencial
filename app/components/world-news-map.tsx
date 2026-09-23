@@ -2,26 +2,43 @@
 
 import { Clock3, Globe2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
+import { feature } from "topojson-client";
+import world from "world-atlas/countries-110m.json";
+import type { FeatureCollection, Geometry } from "geojson";
+import type { GeometryCollection, Topology } from "topojson-specification";
 
 type NewsPoint = { id: string; title: string; source: string; url: string; publishedAt: string; country?: string; scope: "Nacional" | "Internacional"; sources?: Array<{ source: string; url: string }> };
 
-const COUNTRY_POINTS: Record<string, [number, number]> = {
-  Colombia: [31, 61], "Estados Unidos": [19, 34], México: [20, 47], Argentina: [32, 82], Brasil: [38, 69], Chile: [27, 80],
-  España: [49, 35], Francia: [51, 31], Alemania: [54, 29], Italia: [55, 36], "Reino Unido": [48, 25], Portugal: [47, 36],
-  Canadá: [18, 21], China: [79, 39], Japón: [90, 42], India: [72, 52], Australia: [86, 79], Rusia: [70, 22],
-  "Costa Rica": [27, 55], Panamá: [29, 57], Ecuador: [29, 65], Perú: [29, 70], Venezuela: [34, 59],
+const COUNTRY_COORDINATES: Record<string, [number, number]> = {
+  colombia: [-74.3, 4.6], "estados unidos": [-98.5, 39.8], méxico: [-102.5, 23.6], argentina: [-64, -34], brasil: [-52, -10], chile: [-71, -33],
+  españa: [-3.7, 40.4], francia: [2.2, 46.2], alemania: [10.4, 51.1], italia: [12.5, 42.8], "reino unido": [-3.4, 55.3], portugal: [-8, 39.6],
+  canadá: [-106, 56], china: [104, 35], japón: [138, 36], india: [79, 22], australia: [134, -25], rusia: [90, 61], suiza: [8.2, 46.8],
+  "costa rica": [-84, 9.7], panamá: [-80, 8.5], ecuador: [-78.2, -1.5], perú: [-75, -9], venezuela: [-66, 7],
+  uruguay: [-56, -33], paraguay: [-58, -23], bolivia: [-64, -17], guatemala: [-90, 15.6], cuba: [-79.5, 21.5],
+  bélgica: [4.5, 50.7], "países bajos": [5.3, 52.1], suecia: [16, 62], noruega: [8, 61], ucrania: [31, 49], turquía: [35, 39],
+  israel: [35, 31.5], "arabia saudita": [45, 24], "emiratos árabes unidos": [54, 24], "corea del sur": [128, 36], singapur: [104, 1.3],
 };
+
+const topology = world as unknown as Topology<{ countries: GeometryCollection }>;
+const countries = feature(topology, topology.objects.countries) as unknown as FeatureCollection<Geometry>;
+const projection = geoNaturalEarth1().scale(154).translate([480, 250]);
+const mapPath = geoPath(projection);
+const graticulePath = mapPath(geoGraticule10());
 
 function dayInColombia(value: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 }
 
-function inferredPoint(item: NewsPoint, index: number): [number, number] {
-  const explicit = COUNTRY_POINTS[item.country ?? ""];
-  if (explicit) return explicit;
-  if (item.scope === "Nacional") return COUNTRY_POINTS.Colombia;
-  const fallback: Array<[number, number]> = [[50, 29], [55, 34], [73, 43], [83, 38], [18, 33], [86, 74]];
-  return fallback[index % fallback.length];
+function projectedPoint(item: NewsPoint, index: number): [number, number] | null {
+  const country = (item.country ?? "").trim().toLocaleLowerCase("es");
+  const coordinate = COUNTRY_COORDINATES[country] ?? (item.scope === "Nacional" ? COUNTRY_COORDINATES.colombia : null);
+  if (!coordinate) return null;
+  const point = projection(coordinate);
+  if (!point) return null;
+  const angle = index * 2.399;
+  const radius = Math.min(12, 2 + Math.floor(index / 5) * 2);
+  return [point[0] + Math.cos(angle) * radius, point[1] + Math.sin(angle) * radius];
 }
 
 export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems: NewsPoint[]; updatedAt: string | null }) {
@@ -47,17 +64,11 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><Globe2 aria-hidden="true" /></div>
     <div className="world-map-layout">
       <figure className="world-map-figure">
-        <svg viewBox="0 0 1000 500" role="img" aria-label={`Mapa mundial con ${sources.length} medios detectados hoy`}>
-          <g className="world-land">
-            <path d="M70 105 145 62l102 14 62 54-23 52-60 28-28 68-51-16-18-66-55-30Z" />
-            <path d="m260 276 63 17 42 62-20 98-44 36-26-77-38-78Z" />
-            <path d="m438 91 65-33 83 20 38 35 79-24 123 31 91 73-43 48-104-15-56 36-68-7-35-61-55-7-31 44-63-14-34-62Z" />
-            <path d="m492 244 90 16 42 69-36 126-70-42-38-102Z" />
-            <path d="m809 349 74-24 72 50-29 71-90-3-46-52Z" />
-            <path d="m909 223 22-18 20 17-18 25Z" />
-          </g>
-          <g className="world-grid"><path d="M0 250h1000M500 0v500" /></g>
-          {sources.map((item, index) => { const [x, y] = inferredPoint(item, index); return <g className="world-point" key={`${item.source}-${item.url}`} transform={`translate(${x * 10} ${y * 5})`}><circle r="12" /><circle r="4" /><title>{item.source} · {item.country || item.scope}: {item.title}</title></g>; })}
+        <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${sources.length} medios detectados hoy`}>
+          <path className="world-sphere" d={mapPath({ type: "Sphere" }) ?? undefined} />
+          <path className="world-grid" d={graticulePath ?? undefined} />
+          <g className="world-land">{countries.features.map((country, index) => <path key={String(country.id ?? index)} d={mapPath(country) ?? undefined} />)}</g>
+          {sources.map((item, index) => { const point = projectedPoint(item, index); if (!point) return null; const [x, y] = point; return <g className="world-point" key={`${item.source}-${item.url}`} transform={`translate(${x} ${y})`}><circle r="11" /><circle r="3.5" /><title>{item.source} · {item.country || item.scope}: {item.title}</title></g>; })}
         </svg>
         <figcaption><Clock3 size={14} />Actualización cada hora · {lastUpdate ? `último barrido ${new Date(lastUpdate).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}` : "esperando el primer barrido"}</figcaption>
       </figure>

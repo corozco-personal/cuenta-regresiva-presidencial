@@ -234,8 +234,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .world-map-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr); border: 1px solid var(--line); margin-top: 34px; background: var(--paper); }
 .world-map-figure { min-width: 0; margin: 0; padding: 26px; border-right: 1px solid var(--line); }
 .world-map-figure > svg { width: 100%; height: auto; display: block; background: #dfe7df; }
-.world-land { fill: #f7f3e9; stroke: #8ca19a; stroke-width: 1.2; }
-.world-grid { fill: none; stroke: rgba(20,58,50,.09); stroke-width: 1; }
+.world-sphere { fill: #dfe7df; stroke: #7f9790; stroke-width: 1.2; }
+.world-land { fill: #f7f3e9; stroke: #8ca19a; stroke-width: .55; stroke-linejoin: round; }
+.world-grid { fill: none; stroke: rgba(20,58,50,.12); stroke-width: .55; }
 .world-point circle:first-child { fill: rgba(230,255,94,.32); stroke: var(--forest); stroke-width: 2; animation: worldPulse 2.4s ease-in-out infinite; }
 .world-point circle:last-of-type { fill: var(--forest); }
 .world-map-figure figcaption { display: flex; align-items: center; gap: 7px; margin-top: 13px; color: var(--muted); font-size: 11px; }
