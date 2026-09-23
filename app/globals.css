@@ -347,6 +347,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .opinion small, .submission-list small { color: var(--muted); font-size: 10px; }
 .opinion em { display: flex; gap: 5px; align-items: center; margin-top: 10px; color: #86520c; font-size: 10px; font-style: normal; font-weight: 800; text-transform: uppercase; }
 .opinion.filtered p { color: var(--muted); font-family: inherit; font-size: 13px; font-style: italic; }
+.opinion-list { padding: 0; border: 1px solid var(--line); background: transparent; }
+.opinion-list .opinion { min-height: 300px; box-sizing: border-box; padding: 28px; background: var(--cream); }
 .submission-list article > strong { display: block; margin: 13px 0 8px; font-family: Georgia, serif; font-size: 19px; font-weight: 400; }
 .submission-list article p { margin: 0 0 13px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .submission-list article a { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; }
