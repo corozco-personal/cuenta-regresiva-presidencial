@@ -574,8 +574,8 @@ async function approvedCommunitySources() {
         label: known?.label ?? row.domain,
         scope: known?.scope ?? (row.country === "Colombia" ? "Nacional" : "Internacional"),
         kind: known?.official ? "Institución oficial" : "Medio periodístico",
-        country: known?.country ?? row.country,
-        region: known?.region ?? (row.country === "Colombia" ? "Colombia" : "Internacional"),
+        country: known?.country ?? (known?.scope === "Internacional" ? "Cobertura internacional" : row.country),
+        region: known?.region ?? (known?.scope === "Internacional" ? "Global" : row.country === "Colombia" ? "Colombia" : "Internacional"),
         criterion: known ? "Fuente incluida en el directorio editorial y usada en una cobertura aprobada." : "Fuente incorporada después de revisar manualmente un enlace aportado por la comunidad.",
         homepageUrl: `https://${row.domain}/`,
       }] as const;
