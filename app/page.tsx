@@ -503,6 +503,8 @@ export default function Home() {
         </div>
       </section>
 
+      <WorldNewsMap initialItems={news} updatedAt={monitorUpdatedAt} />
+
       <DailyBriefing />
 
       <section className="archive section-shell" id="archivo" hidden>
@@ -581,8 +583,6 @@ export default function Home() {
         <div><strong>{records.length - officialRecords}</strong><span>coberturas periodísticas</span></div>
         <div><strong>{new Set(records.map((item) => item.source)).size}</strong><span>fuentes citadas</span></div>
       </section>
-
-      <WorldNewsMap initialItems={news} updatedAt={monitorUpdatedAt} />
 
       <section className="monitoring section-shell" id="monitoreo">
         <div className="section-heading compact">
