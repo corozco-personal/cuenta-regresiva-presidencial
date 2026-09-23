@@ -1,14 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, ExternalLink, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, MessageSquarePlus, MessageSquareText, Newspaper, Send, ShieldCheck } from "lucide-react";
 import CountrySelect from "./country-select";
 import TurnstileWidget from "./turnstile-widget";
+import ShareOptions from "./share-options";
 
 type Opinion = { id: string; displayName: string; country: string; department?: string; municipality?: string; stance: string; status: string; comment: string; createdAt: string };
-type Submission = { id: string; url: string; domain: string; title?: string; status: string; reliability: string; reason: string; country: string; department?: string; municipality?: string; createdAt: string };
-
-const statusLabel: Record<string, string> = { approved: "Aprobado", publishable: "Fuente primaria publicable", review: "En evaluación" };
+type Submission = { id: string; url: string; domain: string; source: string; title?: string; newsType: string; status: string; reliability: string; reason: string; country: string; department?: string; municipality?: string; createdAt: string };
 
 async function readJson(response: Response) {
   return response.json().catch(() => ({ error: "Respuesta inesperada del servidor." }));
@@ -107,7 +106,7 @@ export default function Community() {
       </div>
 
       <div className="community-streams">
-        <div><div className="stream-title"><h3>Enlaces aportados</h3><span>{submissions.length} recientes</span></div>{submissions.length ? <div className="submission-list" role="region" aria-label="Enlaces aportados recientemente, lista desplazable" tabIndex={0}>{submissions.map((item) => <article key={item.id}><div><span className={`submission-status status-${item.status}`}>{statusLabel[item.status]}</span><small>{[item.municipality, item.department, item.country].filter(Boolean).join(" · ")}</small></div><strong>{item.title || item.domain}</strong><p>{item.reason}</p><a href={item.url} target="_blank" rel="noreferrer">{item.domain}<ExternalLink size={13} /></a></article>)}</div> : <p className="empty-stream">Aún no hay enlaces ciudadanos evaluados.</p>}</div>
+        <div><div className="stream-title"><h3>Enlaces aportados</h3><span>{submissions.length} recientes</span></div>{submissions.length ? <div className="submission-list contributed-news-list" role="region" aria-label="Enlaces aportados recientemente, lista desplazable" tabIndex={0}>{submissions.map((item) => <article className="news-card contributed-news-card" id={`aporte-${item.id}`} key={item.id}><div className="news-card-top"><span>{item.source}</span><span>{new Date(item.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</span></div><div className="decision-row"><span className="decision">Aprobado por revisión manual</span><span>{item.country === "Colombia" ? "Nacional" : "Internacional"}</span></div><h3>{item.title || item.domain}</h3><p className="decision-reason">Enlace aportado por la comunidad y admitido después de revisión editorial.</p><div className="news-card-bottom"><span>{item.newsType}</span><div><ShareOptions title={item.title || item.domain} url={`/#aporte-${item.id}`} context="news" /><a href={item.url} target="_blank" rel="noreferrer" aria-label={`Ver noticia en ${item.source}`}><ArrowUpRight size={17} /></a></div></div></article>)}</div> : <p className="empty-stream">Aún no hay enlaces ciudadanos evaluados.</p>}</div>
         <div><div className="stream-title"><h3>Muro de opiniones</h3><span>{opinions.length} recientes</span></div>{opinions.length ? <div className="opinion-list" role="region" aria-label="Opiniones recientes, lista desplazable" tabIndex={0}>{opinions.map((item) => <article className="opinion" key={item.id}><div><strong>{item.displayName}</strong><span>{item.stance}</span></div><p>{item.comment}</p><small>{[item.municipality, item.department, item.country].filter(Boolean).join(" · ")} · {new Date(item.createdAt).toLocaleDateString("es-CO")}</small></article>)}</div> : <p className="empty-stream">Aún no hay opiniones aprobadas.</p>}</div>
       </div>
       <div className="community-policy"><CheckCircle2 /><p><strong>Conservar no significa amplificar.</strong> Ningún envío se publica automáticamente. Para prevenir abuso se conserva de forma privada una referencia seudónima de red, navegador, dispositivo y ubicación aproximada del punto de conexión; no se muestra al público ni prueba por sí sola la identidad de una persona. Los aportes legítimos no se filtran por su postura.</p></div>

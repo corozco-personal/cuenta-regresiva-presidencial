@@ -121,7 +121,7 @@ function pageLabel(path?: string) {
     metodologia: "Metodología",
     privacidad: "Privacidad",
     correcciones: "Correcciones",
-    autor: "Quién soy",
+    autor: "Sobre el autor",
   };
   return labels[clean] ?? clean.split("/").filter(Boolean).map((part) => part.replace(/-/g, " ")).join(" · ").replace(/^./, (letter) => letter.toUpperCase());
 }

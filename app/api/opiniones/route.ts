@@ -3,7 +3,7 @@ import { getDb } from "../../../db";
 import { opinions } from "../../../db/schema";
 import { countryNames } from "../../data/countries";
 import { plainText } from "../../data/input-security";
-import { classifyOpinion, looksAutomatedOpinion } from "../../data/opinion-moderation";
+import { classifyOpinion } from "../../data/opinion-moderation";
 import { enforceRateLimit, turnstileErrorMessage, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
@@ -50,7 +50,8 @@ export async function GET() {
       .where(eq(opinions.status, "approved_manual"))
       .orderBy(desc(opinions.createdAt)).limit(100);
     return Response.json(
-      { opinions: rows.filter((row) => !looksAutomatedOpinion(row.comment) && classifyOpinion(row.comment).accepted).slice(0, 50).map(publicOpinion) },
+      // La aprobación manual es la decisión editorial final.
+      { opinions: rows.slice(0, 50).map(publicOpinion) },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   } catch {

@@ -28,7 +28,7 @@ export default function SubpageHeader() {
     <header className="subpage-header">
       <Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link>
       <nav aria-label="Navegación principal">
-        <Link href="/">Inicio</Link><Link href="/#monitoreo">Noticias</Link><Link href="/#participa">Participa</Link>
+        <Link href="/">Inicio</Link><Link href="/#monitoreo">Noticias</Link>
         <Link className="nav-priority nav-priority-2" href="/presidente">Presidente</Link>
         <Link className="nav-priority nav-priority-3" href="/favorabilidad">Indicadores</Link>
         <Link className="nav-priority nav-priority-4" href="/archivo">Archivo</Link>

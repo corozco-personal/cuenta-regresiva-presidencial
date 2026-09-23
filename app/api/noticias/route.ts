@@ -561,6 +561,31 @@ async function storeAndLoadNews(items: PublicNews[], monitor: {
   }
 }
 
+async function approvedCommunitySources() {
+  try {
+    const rows = await getD1().prepare(`SELECT domain,title,country,created_at AS createdAt
+      FROM news_submissions WHERE status = 'approved_manual' ORDER BY created_at DESC LIMIT 200`).all<{
+        domain: string; title: string | null; country: string; createdAt: string;
+      }>();
+    return Array.from(new Map(rows.results.map((row) => {
+      const known = profileFor(row.domain);
+      return [row.domain, {
+        domain: row.domain,
+        label: known?.label ?? row.domain,
+        scope: known?.scope ?? (row.country === "Colombia" ? "Nacional" : "Internacional"),
+        kind: known?.official ? "Institución oficial" : "Medio periodístico",
+        country: known?.country ?? row.country,
+        region: known?.region ?? (row.country === "Colombia" ? "Colombia" : "Internacional"),
+        criterion: known ? "Fuente incluida en el directorio editorial y usada en una cobertura aprobada." : "Fuente incorporada después de revisar manualmente un enlace aportado por la comunidad.",
+        homepageUrl: `https://${row.domain}/`,
+      }] as const;
+    })).values());
+  } catch (error) {
+    console.warn("community-source-directory", error);
+    return [];
+  }
+}
+
 export async function GET() {
   const startedAt = new Date().toISOString();
   let provider = "curated";
@@ -604,7 +629,7 @@ export async function GET() {
     rejected: reviewed.filter(({ decision }) => decision === "Rechazado").length,
     policyVersion: "1.2",
   };
-  const sourceDirectory = SOURCE_PROFILES.map((profile) => ({
+  const baseSourceDirectory = SOURCE_PROFILES.map((profile) => ({
     domain: profile.domain,
     label: profile.label ?? profile.domain,
     scope: profile.scope,
@@ -614,7 +639,10 @@ export async function GET() {
     criterion: profile.official
       ? "Publica documentos o comunicaciones institucionales de primera mano."
       : "Medio identificado con trayectoria editorial y enlaces públicos trazables.",
+    homepageUrl: `https://${profile.domain}/`,
   }));
+  const communitySources = await approvedCommunitySources();
+  const sourceDirectory = Array.from(new Map([...baseSourceDirectory, ...communitySources].map((source) => [source.domain, source])).values());
   const domainCounts = discovered.reduce<Record<string, number>>((counts, item) => {
     const domain = item.domain ?? new URL(item.url).hostname.replace(/^www\./, "");
     counts[domain] = (counts[domain] ?? 0) + 1;
@@ -641,7 +669,7 @@ export async function GET() {
     countries: new Set(globalRadar.map((item) => item.country).filter((value) => value !== "Sin identificar")).size,
     languages: new Set(globalRadar.map((item) => item.language).filter((value) => value !== "Sin identificar")).size,
     domains: new Set(globalRadar.map((item) => item.domain)).size,
-    catalogSources: SOURCE_PROFILES.length,
+    catalogSources: sourceDirectory.length,
   };
   const completedAt = new Date().toISOString();
   const storedItems = await storeAndLoadNews(currentItems, {

@@ -18,7 +18,11 @@ async function digest(value: string) {
 }
 
 function publicSubmission(row: typeof newsSubmissions.$inferSelect) {
-  return { id: row.id, url: row.url, domain: row.domain, title: row.title, status: row.status, reliability: row.reliability, reason: row.reason, country: row.country, department: row.department, municipality: row.municipality, createdAt: row.createdAt };
+  const profile = profileFor(row.domain);
+  return { id: row.id, url: row.url, domain: row.domain, title: row.title, status: row.status,
+    source: profile?.label ?? row.domain, newsType: profile?.official ? "Fuente primaria" : "Cobertura periodística",
+    reliability: row.reliability, reason: row.reason, country: row.country, department: row.department,
+    municipality: row.municipality, createdAt: row.createdAt };
 }
 
 function normalizeUrl(raw: string) {

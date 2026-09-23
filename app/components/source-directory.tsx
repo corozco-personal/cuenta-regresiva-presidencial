@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Search } from "lucide-react";
 
-type Source = { domain: string; label: string; kind: string; criterion: string; country: string; region: string };
+type Source = { domain: string; label: string; kind: string; criterion: string; country: string; region: string; homepageUrl?: string };
 
 export default function SourceDirectory() {
   const [sources, setSources] = useState<Source[]>([]);
