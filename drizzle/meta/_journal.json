@@ -57,6 +57,13 @@
       "when": 1790125253269,
       "tag": "0007_gigantic_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790127596436,
+      "tag": "0008_swift_peter_parker",
+      "breakpoints": true
     }
   ]
 }

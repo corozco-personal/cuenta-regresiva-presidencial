@@ -197,3 +197,17 @@ export const submissionAuditProfiles = sqliteTable("submission_audit_profiles", 
   uniqueIndex("submission_audit_item_unique").on(table.itemType, table.itemId),
   index("submission_audit_network_created_idx").on(table.networkHash, table.createdAt),
 ]);
+
+export const moderationBackups = sqliteTable("moderation_backups", {
+  id: text("id").primaryKey(),
+  snapshotJson: text("snapshot_json").notNull(),
+  itemCount: integer("item_count").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("moderation_backups_created_idx").on(table.createdAt)]);
+
+export const securityOperations = sqliteTable("security_operations", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

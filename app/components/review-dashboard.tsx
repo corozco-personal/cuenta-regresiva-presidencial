@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import AnalyticsDashboard from "./analytics-dashboard";
 import SecurityReport from "./security-report";
+import SecurityOperations from "./security-operations";
 
 type Audit = { id: string; fromStatus: string; toStatus: string; reason: string; reviewer: string; createdAt: string };
 type Email = { notifiedAt?: string | null; expiresAt?: string | null; reviewedAt?: string | null; deliveryStatus?: string | null; lastError?: string | null };
@@ -211,6 +212,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
         <div className="review-reports">
           <AnalyticsDashboard />
           <SecurityReport />
+          <SecurityOperations />
         </div>
       ) : (
         <>

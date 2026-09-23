@@ -61,3 +61,20 @@ export async function sendReviewNotification(input: {
   const result = await response.json().catch(() => ({})) as { id?: string };
   return { sent: true as const, messageId: result.id ?? null };
 }
+
+export async function sendOperationalAlert(input: { subject: string; detail: string }) {
+  const apiKey = env.RESEND_API_KEY?.trim();
+  const to = env.REVIEW_NOTIFICATION_EMAIL?.trim();
+  if (!apiKey || !to) return { sent: false as const, reason: "not_configured" };
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: env.REVIEW_FROM_EMAIL?.trim() || "Cuenta pública <onboarding@resend.dev>",
+      to: [to],
+      subject: `Alerta operativa: ${input.subject.slice(0, 120)}`,
+      html: `<div style="font-family:Arial,sans-serif;color:#122b27;max-width:620px;margin:auto;padding:28px"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7f342e">Cuenta pública · seguridad operativa</p><h1 style="font-family:Georgia,serif;font-weight:400">${escapeHtml(input.subject.slice(0, 180))}</h1><p style="line-height:1.6">${escapeHtml(input.detail.slice(0, 1000))}</p><p style="font-size:12px;color:#687571">Consulta el Centro de cotejo para revisar el registro completo. Este correo no contiene datos privados del visitante.</p></div>`,
+    }),
+  });
+  return response.ok ? { sent: true as const } : { sent: false as const, reason: `provider_${response.status}` };
+}

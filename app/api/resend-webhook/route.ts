@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { newsSubmissions, opinions } from "../../../db/schema";
+import { sendOperationalAlert } from "../../data/review-email";
 
 function decodeBase64(value: string) {
   const binary = atob(value); return Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -34,10 +35,12 @@ export async function POST(request: Request) {
     if (!messageId || !["sent", "delivered", "delivery_delayed", "bounced", "complained", "failed", "suppressed"].includes(deliveryStatus)) return Response.json({ received: true });
     const error = ["bounced", "complained", "failed", "suppressed"].includes(deliveryStatus) ? deliveryStatus : null;
     const db = getDb();
-    await Promise.all([
+    const updates = await Promise.all([
       db.update(opinions).set({ emailDeliveryStatus: deliveryStatus, emailLastError: error }).where(eq(opinions.emailMessageId, messageId)),
       db.update(newsSubmissions).set({ emailDeliveryStatus: deliveryStatus, emailLastError: error }).where(eq(newsSubmissions.emailMessageId, messageId)),
     ]);
+    const matched = updates.some((result) => Number(result.meta?.changes ?? 0) > 0);
+    if (matched && error) await sendOperationalAlert({ subject: `falló una notificación de revisión (${error})`, detail: `Resend informó el estado ${deliveryStatus} para una notificación de moderación. Identificador del mensaje: ${messageId}.` }).catch(() => undefined);
     return Response.json({ received: true }, { headers: { "Cache-Control": "no-store" } });
   } catch { return Response.json({ error: "Evento inválido." }, { status: 400 }); }
 }
