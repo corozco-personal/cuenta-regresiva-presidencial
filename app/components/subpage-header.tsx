@@ -30,7 +30,7 @@ export default function SubpageHeader() {
       <nav aria-label="Navegación principal">
         <Link href="/">Inicio</Link><Link href="/#monitoreo">Noticias</Link>
         <Link className="nav-priority nav-priority-2" href="/presidente">Presidente</Link>
-        <Link className="nav-priority nav-priority-3" href="/favorabilidad">Indicadores</Link>
+        <Link className="nav-priority nav-priority-3" href="/indicadores">Indicadores</Link>
         <Link className="nav-priority nav-priority-4" href="/archivo">Archivo</Link>
         <details className="nav-more">
           <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
