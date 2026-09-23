@@ -259,6 +259,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .world-source-tree summary > span { overflow: hidden; font-size: 12px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 .world-source-tree summary > strong { font: 400 20px/1 Georgia,serif; }
 .world-source-tree details details summary > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.world-source-tree .country-summary { display: flex; align-items: center; gap: 8px; }
+.world-source-tree .country-summary i { width: 20px; flex: 0 0 20px; font-size: 16px; font-style: normal; line-height: 1; text-align: center; }
 .world-source-tree ol { margin: 0 0 9px 23px; }
 .world-source-tree li a { min-height: 43px; }
 .world-source-tree li a span { font-size: 11px; }
