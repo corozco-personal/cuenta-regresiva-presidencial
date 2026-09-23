@@ -231,7 +231,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .world-today-heading h2 { margin: 0; font: 400 clamp(38px, 5vw, 72px)/.98 Georgia, serif; letter-spacing: -.04em; }
 .world-today-heading p:not(.section-kicker) { max-width: 700px; margin: 18px 0 0; color: var(--muted); line-height: 1.6; }
 .world-today-heading > .update-pill { flex: 0 0 auto; align-self: flex-start; }
-.world-map-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr); border: 1px solid var(--line); margin-top: 34px; background: var(--paper); }
+.world-map-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr); align-items:start; border: 1px solid var(--line); margin-top: 34px; background: var(--paper); }
 .world-map-figure { min-width: 0; margin: 0; padding: 26px; border-right: 1px solid var(--line); }
 .world-map-figure > svg { width: 100%; height: auto; display: block; background: #dfe7df; }
 .world-sphere { fill: #dfe7df; stroke: #7f9790; stroke-width: 1.2; }
@@ -241,7 +241,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .world-point circle:last-of-type { fill: var(--forest); }
 .world-map-figure figcaption { display: flex; align-items: center; gap: 7px; margin-top: 13px; color: var(--muted); font-size: 11px; }
 .world-map-figure figcaption svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.world-source-list { max-height: 620px; padding: 28px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.world-source-list { max-height: var(--map-panel-height, 620px); padding: 28px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .world-source-list > strong { display: block; font: 400 62px/1 Georgia, serif; }
 .world-source-list > span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
 .world-source-list ol { list-style: none; margin: 25px 0 0; padding: 0; }

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight, Clock3 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { geoGraticule10, geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import world from "world-atlas/countries-110m.json";
@@ -61,6 +61,8 @@ function projectedPoint(item: NewsPoint, index: number): [number, number] | null
 export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems: NewsPoint[]; updatedAt: string | null }) {
   const [items, setItems] = useState(initialItems);
   const [lastUpdate, setLastUpdate] = useState(updatedAt);
+  const [mapPanelHeight, setMapPanelHeight] = useState(620);
+  const mapFigureRef = useRef<HTMLElement>(null);
   useEffect(() => { setItems(initialItems); setLastUpdate(updatedAt); }, [initialItems, updatedAt]);
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -68,6 +70,15 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
         .then((data) => { setItems(data.items ?? []); setLastUpdate(data.updatedAt ?? null); }).catch(() => undefined);
     }, 60 * 60_000);
     return () => window.clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const figure = mapFigureRef.current;
+    if (!figure) return;
+    const updateHeight = () => setMapPanelHeight(Math.ceil(figure.getBoundingClientRect().height));
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(figure);
+    return () => observer.disconnect();
   }, []);
   const publications = useMemo<Publication[]>(() => {
     const today = dayInColombia(new Date().toISOString());
@@ -105,8 +116,8 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
 
   return <section className="world-today section-shell" aria-labelledby="world-today-title">
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><span className="update-pill"><i /> Actualización global cada hora</span></div>
-    <div className="world-map-layout">
-      <figure className="world-map-figure">
+    <div className="world-map-layout" style={{ "--map-panel-height": `${mapPanelHeight}px` } as CSSProperties}>
+      <figure className="world-map-figure" ref={mapFigureRef}>
         <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${mappedCountries.length} países con publicaciones detectadas hoy`}>
           <path className="world-sphere" d={mapPath({ type: "Sphere" }) ?? undefined} />
           <path className="world-grid" d={graticulePath ?? undefined} />
