@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Archive, CheckCircle2, KeyRound, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, KeyRound, MailCheck, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 
 type Status = {
   controls: Record<string, boolean>;
@@ -28,7 +28,8 @@ export default function SecurityOperations() {
       <article><KeyRound /><h3>Rotación de secretos</h3><p>Revisión cada 90 días. El registro no cambia las llaves: confirma que fueron rotadas también en Cloudflare y Resend.</p><strong>{data.rotation.due ? "Rotación pendiente" : `Registrada · ${date(data.rotation.lastRegisteredAt)}`}</strong><button disabled={busy !== ""} onClick={() => void run("rotation-ack", "Rotación registrada en la bitácora.")}><CheckCircle2 />Registrar rotación completada</button></article>
       <article><Archive /><h3>Respaldo privado</h3><p>Copia restaurable de la cola, decisiones y eventos, sin tokens, huellas ni datos de contacto.</p><strong>{data.backup.lastAt ? `${data.backup.itemCount} registros · ${date(data.backup.lastAt)}` : "Aún no existe un respaldo"}</strong><button disabled={busy !== ""} onClick={() => void run("backup", "Respaldo privado creado.")}><Archive />Crear respaldo ahora</button></article>
       <article><Trash2 /><h3>Retención mínima</h3><p>Auditoría privada y analítica: 90 días. Eventos de seguridad: 365. Historial editorial: 730.</p><strong>{data.retention.lastAt ? `Última limpieza · ${date(data.retention.lastAt)}` : "Limpieza pendiente"}</strong><button disabled={busy !== ""} onClick={() => void run("retention", "Política de retención aplicada.")}><Trash2 />Aplicar retención</button></article>
-      <article><RefreshCw /><h3>Autoprueba</h3><p>Comprueba base de datos, Turnstile, correo, webhook, cifrado y límites sin publicar contenido.</p><strong>{data.deliveryAlerts.length ? `${data.deliveryAlerts.length} fallos recientes de entrega` : "Sin fallos recientes de entrega"}</strong><button disabled={busy !== ""} onClick={() => void run("self-test", "Autoprueba completada.")}><RefreshCw className={busy === "self-test" ? "review-spin" : undefined} />Ejecutar autoprueba</button></article>
+      <article><RefreshCw /><h3>Autoprueba</h3><p>Comprueba base de datos, Turnstile, webhook, cifrado y límites sin publicar contenido.</p><strong>{data.deliveryAlerts.length ? `${data.deliveryAlerts.length} fallos recientes de entrega` : "Sin fallos recientes de entrega"}</strong><button disabled={busy !== ""} onClick={() => void run("self-test", "Autoprueba completada.")}><RefreshCw className={busy === "self-test" ? "review-spin" : undefined} />Ejecutar autoprueba</button></article>
+      <article><MailCheck /><h3>Entrega de correo</h3><p>Envía una prueba real al destinatario configurado y registra si Resend acepta la solicitud.</p><strong>La entrega final se confirma por webhook</strong><button disabled={busy !== ""} onClick={() => void run("email-test", "Correo de prueba aceptado por el proveedor.")}><MailCheck />Enviar correo de prueba</button></article>
     </div>
     {data.deliveryAlerts.length > 0 && <details className="operations-alerts"><summary><AlertTriangle />Alertas de correo recientes</summary><ol>{data.deliveryAlerts.map((item, index) => <li key={`${item.createdAt}-${index}`}><time>{date(item.createdAt)}</time><strong>{item.status}</strong><span>{item.error ?? "Sin detalle"}</span></li>)}</ol></details>}
     {message && <p className="review-message" role="status">{message}</p>}

@@ -31,7 +31,7 @@ async function runHourlyNewsRefresh(env: WorkerEnvironment, context: ExecutionCo
   });
 }
 
-export default {
+const worker = {
   fetch(request: Request, env: WorkerEnvironment, context: ExecutionContext) {
     return handler.fetch(request, env, context);
   },
@@ -39,3 +39,5 @@ export default {
     context.waitUntil(runHourlyNewsRefresh(env, context));
   },
 };
+
+export default worker;

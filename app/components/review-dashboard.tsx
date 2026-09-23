@@ -20,7 +20,8 @@ type Submission = Base & { type: "news"; title?: string | null; url: string; dom
 type Correction = Base & { type: "correction"; requestType: string; subject: string; relatedUrl: string; explanation: string; evidenceUrl?: string | null; classification: string };
 type Item = Opinion | Submission | Correction;
 type View = "review" | "approved" | "rejected" | "all";
-type Section = "opinion" | "news" | "correction" | "reports";
+type Section = "opinion" | "news" | "correction";
+type Workspace = "pending" | "reports" | "operations";
 type ReportTab = "activity" | "media";
 type Counts = { opinions: Record<string, number>; news: Record<string, number>; corrections: Record<string, number> };
 
@@ -69,6 +70,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
   const [counts, setCounts] = useState<Counts>({ opinions: {}, news: {}, corrections: {} });
   const [view, setView] = useState<View>("review");
   const [section, setSection] = useState<Section>("opinion");
+  const [workspace, setWorkspace] = useState<Workspace>("pending");
   const [reportTab, setReportTab] = useState<ReportTab>("activity");
   const [query, setQuery] = useState("");
   const [appliedQuery, setAppliedQuery] = useState("");
@@ -86,7 +88,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
   const [renderedAt] = useState(() => Date.now());
 
   const load = useCallback(async (silent = false) => {
-    if (section === "reports") {
+    if (workspace !== "pending") {
       if (!silent) setLoading(false);
       return true;
     }
@@ -107,7 +109,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
     setSelected(new Set());
     if (!silent) setLoading(false);
     return true;
-  }, [appliedQuery, cursor, section, view]);
+  }, [appliedQuery, cursor, section, view, workspace]);
 
   useEffect(() => { const frame = requestAnimationFrame(() => void load()); return () => cancelAnimationFrame(frame); }, [load]);
 
@@ -128,6 +130,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
   const visible = useMemo(() => items.filter((item) => riskFilter === "todos" || risk(item) === riskFilter), [items, riskFilter]);
 
   function changeContext(nextSection: Section = section, nextView: View = view) {
+    setWorkspace("pending");
     setSection(nextSection);
     setView(nextView);
     setCursor("");
@@ -190,37 +193,43 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
       <p>Cola paginada, solicitudes de corrección, reportes de audiencia y señales de abuso. La aprobación siempre es individual.</p>
     </section>
     <section className="review-stats">{(["review", "approved", "rejected", "all"] as View[]).map((item) => (
-      <button key={item} className={view === item ? "active" : ""} onClick={() => changeContext(section === "reports" ? "opinion" : section, item)}>
+      <button key={item} className={view === item ? "active" : ""} onClick={() => changeContext(section, item)}>
         {item === "review" ? <ShieldCheck /> : item === "approved" ? <CheckCircle2 /> : item === "rejected" ? <XCircle /> : <RefreshCw />}
         {viewLabel[item]}<strong>{totalFor(counts, item)}</strong>
       </button>
     ))}</section>
     <section className="review-workspace">
       <div className="review-tabs">
-        <button className={section === "opinion" ? "active" : ""} onClick={() => changeContext("opinion")}><MessageSquareText />Opiniones<strong>{countFor(counts.opinions, view, "opinion")}</strong></button>
-        <button className={section === "news" ? "active" : ""} onClick={() => changeContext("news")}><Newspaper />Enlaces<strong>{countFor(counts.news, view, "news")}</strong></button>
-        <button className={section === "correction" ? "active" : ""} onClick={() => changeContext("correction")}><ClipboardList />Correcciones<strong>{countFor(counts.corrections, view, "correction")}</strong></button>
-        <button className={section === "reports" ? "active" : ""} onClick={() => changeContext("reports")}><BarChart3 />Reportes</button>
-        <div className="review-refresh-group">
+        <button className={workspace === "pending" ? "active" : ""} onClick={() => setWorkspace("pending")}><ClipboardList />Pendientes por revisar<strong>{totalFor(counts, "review")}</strong></button>
+        <button className={workspace === "reports" ? "active" : ""} onClick={() => setWorkspace("reports")}><BarChart3 />Reportes</button>
+        <button className={workspace === "operations" ? "active" : ""} onClick={() => setWorkspace("operations")}><ShieldCheck />Continuidad, privacidad y alertas</button>
+        {workspace === "pending" && <div className="review-refresh-group">
           <button className={`review-auto${autoRefresh ? " is-active" : ""}`} onClick={() => void toggleAutoRefresh()} aria-pressed={autoRefresh}>
             <Clock3 />Auto · 5 min
           </button>
           <button className={`review-refresh${refreshing ? " is-loading" : ""}`} onClick={() => void refreshNow()} disabled={refreshing}>
             <RefreshCw className={refreshing ? "review-spin" : undefined} />Actualizar
           </button>
-        </div>
+        </div>}
       </div>
 
-      {section === "reports" ? (
+      {workspace === "reports" ? (
         <div className="review-reports">
           <nav className="report-subtabs" aria-label="Secciones de reportes">
             <button className={reportTab === "activity" ? "active" : ""} onClick={() => setReportTab("activity")}><Activity size={17} />Actividad del sitio</button>
             <button className={reportTab === "media" ? "active" : ""} onClick={() => setReportTab("media")}><RadioTower size={17} />Radar de medios</button>
           </nav>
-          {reportTab === "activity" ? <div className="report-tab-panel"><AnalyticsDashboard /><SecurityReport /><SecurityOperations /></div> : <div className="report-tab-panel"><MediaPublicationRadar /></div>}
+          {reportTab === "activity" ? <div className="report-tab-panel"><AnalyticsDashboard /><SecurityReport /></div> : <div className="report-tab-panel"><MediaPublicationRadar /></div>}
         </div>
+      ) : workspace === "operations" ? (
+        <div className="review-reports"><SecurityOperations /></div>
       ) : (
         <>
+          <nav className="queue-subtabs" aria-label="Colas pendientes por revisar">
+            <button className={section === "opinion" ? "active" : ""} onClick={() => changeContext("opinion")}><MessageSquareText />Opiniones<strong>{countFor(counts.opinions, view, "opinion")}</strong></button>
+            <button className={section === "news" ? "active" : ""} onClick={() => changeContext("news")}><Newspaper />Enlaces<strong>{countFor(counts.news, view, "news")}</strong></button>
+            <button className={section === "correction" ? "active" : ""} onClick={() => changeContext("correction")}><ClipboardList />Correcciones<strong>{countFor(counts.corrections, view, "correction")}</strong></button>
+          </nav>
           <div className="review-toolbar">
             <form onSubmit={(event) => { event.preventDefault(); setCursor(""); setHistory([]); setAppliedQuery(query.trim()); }}>
               <Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} maxLength={100} placeholder="Buscar texto, dominio, país o nombre" /><button>Buscar</button>

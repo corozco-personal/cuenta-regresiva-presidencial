@@ -63,7 +63,6 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
   const [lastUpdate, setLastUpdate] = useState(updatedAt);
   const [mapPanelHeight, setMapPanelHeight] = useState(620);
   const mapFigureRef = useRef<HTMLElement>(null);
-  useEffect(() => { setItems(initialItems); setLastUpdate(updatedAt); }, [initialItems, updatedAt]);
   useEffect(() => {
     const interval = window.setInterval(() => {
       void fetch("/api/noticias-v2", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject())
@@ -115,8 +114,9 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
   }, [publications]);
 
   return <section className="world-today section-shell" aria-labelledby="world-today-title">
-    <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div><span className="update-pill"><i /> Actualización global cada hora</span></div>
+    <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div></div>
     <div className="world-map-layout" style={{ "--map-panel-height": `${mapPanelHeight}px` } as CSSProperties}>
+      <span className="update-pill world-update-pill"><i /> Actualización global cada hora</span>
       <figure className="world-map-figure" ref={mapFigureRef}>
         <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${mappedCountries.length} países con publicaciones detectadas hoy`}>
           <path className="world-sphere" d={mapPath({ type: "Sphere" }) ?? undefined} />

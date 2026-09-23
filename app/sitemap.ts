@@ -18,6 +18,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/compartir`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/comparador`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/nombramientos`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    { url: `${base}/congreso`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/indicadores`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/buscar`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
   ];
 }

@@ -6,6 +6,7 @@ import {
   newsSubmissions, opinions, securityEvents, securityOperations, submissionAuditProfiles,
 } from "../../../../db/schema";
 import { getAuthorizedReviewer } from "../../../data/reviewer-auth";
+import { sendOperationalAlert } from "../../../data/review-email";
 
 const DAY = 86_400_000;
 const policy = { privateAuditDays: 90, analyticsDays: 90, securityEventDays: 365, moderationDays: 730, backupDays: 180, rotationDays: 90, backupIntervalDays: 7 };
@@ -86,6 +87,12 @@ export async function POST(request: Request) {
     if (action === "retention") return Response.json({ ok: true, result: await applyRetention(), status: await status() });
     if (action === "rotation-ack") { await operation("secret_rotation", "registered"); return Response.json({ ok: true, status: await status() }); }
     if (action === "self-test") { await operation("self_test", "passed"); return Response.json({ ok: true, status: await status() }); }
+    if (action === "email-test") {
+      const delivery = await sendOperationalAlert({ subject: "prueba de entrega", detail: `Prueba solicitada por ${reviewer.displayName} desde el Centro de cotejo. Si recibiste este mensaje, el proveedor y el destinatario están funcionando.` });
+      await operation("email_test", delivery.sent ? "accepted" : delivery.reason ?? "failed");
+      if (!delivery.sent) return Response.json({ error: "La prueba no fue aceptada por el proveedor. Revisa la alerta técnica en este panel." }, { status: 502 });
+      return Response.json({ ok: true, status: await status() });
+    }
     return Response.json({ error: "Acción no válida." }, { status: 400 });
   } catch { return Response.json({ error: "No fue posible ejecutar el control." }, { status: 503 }); }
 }

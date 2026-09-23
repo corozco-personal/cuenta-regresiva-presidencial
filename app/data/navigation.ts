@@ -6,7 +6,9 @@ export const navigationGroups = [
       { label: "Sobre el presidente", href: "/presidente", className: "more-priority-2" },
       { label: "Promesas", href: "/promesas" },
       { label: "Nombramientos", href: "/nombramientos" },
-      { label: "Indicadores", href: "/favorabilidad", className: "more-priority-3" },
+      { label: "Congreso", href: "/congreso" },
+      { label: "Indicadores del país", href: "/indicadores", className: "more-priority-3" },
+      { label: "Favorabilidad", href: "/favorabilidad" },
     ],
   },
   {
