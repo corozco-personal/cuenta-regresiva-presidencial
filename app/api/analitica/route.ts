@@ -1,5 +1,6 @@
 import { getD1 } from "../../../db";
 import { enforceRateLimit } from "../../data/edge-security";
+import { getAuthorizedReviewer } from "../../data/reviewer-auth";
 
 const SESSION_PATTERN = /^[a-f0-9-]{20,80}$/i;
 const EVENT_TYPES = new Set(["pageview", "interaction"]);
@@ -92,17 +93,24 @@ export async function GET(request: Request) {
     ]);
 
     const todayRow = (todayMetrics.results?.[0] ?? {}) as Record<string, number>;
-    return Response.json({
+    const summary = {
       liveUsers: Number((live.results?.[0] as Record<string, number> | undefined)?.value ?? 0),
       today: { users: Number(todayRow.users ?? 0), pageviews: Number(todayRow.pageviews ?? 0), interactions: Number(todayRow.interactions ?? 0) },
+      activeWindowMinutes: 5,
+      generatedAt: new Date().toISOString(),
+    };
+    const reviewer = await getAuthorizedReviewer();
+    if (!reviewer) {
+      return Response.json(summary, { headers: { "Cache-Control": "no-store" } });
+    }
+    return Response.json({
+      ...summary,
       daily: daily.results ?? [],
       topPages: topPages.results ?? [],
       topInteractions: topInteractions.results ?? [],
       range,
-      activeWindowMinutes: 5,
-      generatedAt: new Date().toISOString(),
       privacy: "Métricas anónimas. No se almacenan nombres, textos escritos ni direcciones IP.",
-    }, { headers: { "Cache-Control": "no-store" } });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return Response.json({ error: "Los reportes no están disponibles temporalmente." }, { status: 503 });
   }

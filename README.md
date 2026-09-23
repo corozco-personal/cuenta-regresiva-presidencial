@@ -23,9 +23,12 @@ Es una iniciativa personal de **Carlos Eduardo Orozco**, sin financiación, prom
 - Archivo cronológico con búsqueda y filtros por etapa y alcance.
 - Directorio mundial de medios e instituciones admitidas para monitoreo.
 - Muro de opiniones con anonimato opcional, cola previa, moderación, cuarentena y detección de duplicados.
-- Reporte agregado de intentos de automatización, spam, enlaces inseguros e inyección, sin exponer las cargas ni datos del visitante.
+- Reporte interno de intentos de automatización, spam, enlaces inseguros e inyección, visible solo en el centro de cotejo.
 - Formulario para proponer noticias con evaluación de enlace, fuente y relevancia.
-- Indicadores de favorabilidad, audiencia agregada y usuarios activos.
+- Indicadores de favorabilidad y usuarios activos agregados.
+- Resumen diario de lectura rápida y búsqueda global por noticia, fuente, promesa o sección.
+- Aplicación instalable (PWA) con una copia de navegación básica disponible sin conexión.
+- Centro privado de cotejo con colas separadas, señales técnicas seudónimas, auditoría, respaldo y reportes.
 - Resumen semanal descargable y canal RSS público.
 - Bitácora pública de correcciones y metodología editorial.
 - Modo de bajo consumo y diseño responsive.
@@ -85,10 +88,9 @@ npm run build
 Aplica las migraciones D1 en orden:
 
 ```bash
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_flashy_iron_lad.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_stormy_justice.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_typical_silver_samurai.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_tidy_argent.sql
+for migration in drizzle/*.sql; do
+  node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file "$migration"
+done
 ```
 
 Inicia el entorno de desarrollo:
@@ -113,9 +115,12 @@ Los formularios ciudadanos admiten Cloudflare Turnstile. En producción deben co
 TURNSTILE_SITE_KEY=clave_publica_del_widget
 TURNSTILE_SECRET_KEY=secreto_del_widget
 RATE_LIMIT_SALT=valor_aleatorio_largo
+AUDIT_ENCRYPTION_KEY=clave_aleatoria_independiente
 ```
 
 La clave pública se entrega al navegador mediante `/api/seguridad`; el secreto nunca se expone. Cuando ambas claves existen, opiniones, noticias aportadas y solicitudes de corrección exigen un token válido, de un solo uso y correspondiente a la acción esperada. Sin las dos claves, Turnstile permanece desactivado para no simular una protección inexistente. El límite persistente por IP, agente, ruta y ventana temporal funciona de manera independiente en el Worker.
+
+Las notificaciones de revisión pueden usar Resend con `RESEND_API_KEY`, `REVIEW_NOTIFICATION_EMAIL`, `REVIEW_FROM_EMAIL` y `RESEND_WEBHOOK_SECRET`. El webhook firmado registra entrega o rebote sin hacer pública la dirección del revisor.
 
 No agregues claves reales al repositorio. Los archivos `.env*` están ignorados por Git y los secretos de producción deben configurarse en la plataforma de alojamiento.
 
@@ -143,12 +148,14 @@ public/              Recursos públicos y metadatos de seguridad
 
 ## Privacidad y seguridad
 
-- La analítica pública utiliza datos agregados.
+- La analítica de audiencia detallada es privada y usa datos agregados.
 - No se incorporan rastreadores publicitarios.
 - Los identificadores utilizados para limitar opiniones duplicadas se transforman criptográficamente y no se muestran públicamente.
 - Las preferencias de interfaz se guardan localmente en el navegador.
-- Los reportes no exponen direcciones IP ni rutas internas.
+- Los reportes internos no exponen direcciones IP ni rutas de administración.
 - Los formularios públicos utilizan límites persistentes en el borde; las identidades de red se almacenan únicamente como huellas con sal secreta.
+- El centro de cotejo conserva de forma privada señales mínimas del navegador, dispositivo, país aproximado del borde y una referencia seudónima de red. No conserva la IP sin transformar ni presenta esas señales como prueba de identidad civil.
+- Los contactos opcionales de solicitudes editoriales se cifran con AES-GCM y solo se descifran dentro del espacio privado autorizado.
 - Turnstile se valida exclusivamente en el servidor cuando sus credenciales de producción están configuradas.
 - La política pública está disponible en [`/privacidad`](https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/privacidad).
 

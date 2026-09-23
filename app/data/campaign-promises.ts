@@ -1,6 +1,8 @@
 export type PromiseStatus =
   | "Cumplida"
+  | "Cumplida parcialmente"
   | "En ejecución"
+  | "En preparación"
   | "Pendiente"
   | "Vencida"
   | "Incumplida"
@@ -18,6 +20,10 @@ export type CampaignPromise = {
   campaignSource: { label: string; url: string };
   evidence: Array<{ label: string; url: string; kind: "Fuente oficial" | "Cobertura periodística" }>;
   lastReviewed: string;
+  responsible?: string;
+  measurement?: string;
+  baseline?: string;
+  budget?: string;
 };
 
 export const campaignPromises: CampaignPromise[] = [
@@ -33,6 +39,10 @@ export const campaignPromises: CampaignPromise[] = [
     campaignSource: { label: "Programa de gobierno", url: "https://propuestas.abelardopresidente.com.co/" },
     evidence: [{ label: "Europa Press · entrega del primer salario", url: "https://www.europapress.es/internacional/noticia-espriella-cumple-promesa-renuncia-primer-sueldo-favor-dos-geriatricos-afectados-terremoto-20260913014550.html", kind: "Cobertura periodística" }],
     lastReviewed: "2026-09-22",
+    responsible: "Presidencia de la República",
+    measurement: "Entrega documentada de cada salario recibido durante el mandato",
+    baseline: "Salario presidencial legalmente asignado",
+    budget: "No aplica; corresponde a una decisión personal sobre la remuneración",
   },
   {
     id: "choque-salud",
@@ -46,6 +56,10 @@ export const campaignPromises: CampaignPromise[] = [
     campaignSource: { label: "Programa de gobierno", url: "https://propuestas.abelardopresidente.com.co/" },
     evidence: [{ label: "Presidencia · declaración sobre el plan", url: "https://www.presidencia.gov.co/prensa/Paginas/Declaracion-del-Presidente-de-la-Republica-Abelardo-De-La-Espriella-al-termino-260921.aspx", kind: "Fuente oficial" }],
     lastReviewed: "2026-09-22",
+    responsible: "Gobierno nacional y autoridades del sector salud",
+    measurement: "Medidas ejecutadas, recursos desembolsados y resultados de atención publicados",
+    baseline: "Pendiente de una línea base oficial consolidada",
+    budget: "Pendiente de soporte presupuestal verificable",
   },
   {
     id: "recuperar-territorios",
@@ -59,6 +73,10 @@ export const campaignPromises: CampaignPromise[] = [
     campaignSource: { label: "Programa de gobierno · PDF", url: "https://defensoresdelapatria.com/wp-content/uploads/2026/04/PROPUESTAS-ABELARDO-DE-LA-ESPRIELLA-EL-TIGRE.pdf" },
     evidence: [],
     lastReviewed: "2026-09-22",
+    responsible: "Gobierno nacional, Ministerio de Defensa y Fuerza Pública",
+    measurement: "Territorios definidos en la promesa con indicadores comparables de control y seguridad",
+    baseline: "No publicada de forma suficientemente precisa",
+    budget: "No identificado",
   },
   {
     id: "reducir-burocracia",
@@ -168,7 +186,9 @@ export const campaignPromises: CampaignPromise[] = [
 
 export const promiseStatusDefinition: Record<PromiseStatus, string> = {
   "Cumplida": "La evidencia disponible permite verificar el resultado prometido dentro del alcance descrito.",
+  "Cumplida parcialmente": "Una parte medible del resultado fue alcanzada, pero quedan componentes explícitos pendientes.",
   "En ejecución": "Hay acciones documentadas, pero el resultado final o el plazo todavía no permiten declarar cumplimiento.",
+  "En preparación": "Existe diseño, trámite o asignación inicial documentada, pero la ejecución material aún no comenzó.",
   "Pendiente": "El plazo sigue abierto y aún no existe un resultado verificable.",
   "Vencida": "El plazo terminó sin evidencia suficiente para declarar cumplimiento.",
   "Incumplida": "La evidencia disponible contradice de forma verificable el resultado prometido.",

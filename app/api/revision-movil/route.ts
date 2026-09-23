@@ -3,6 +3,7 @@ import { getDb } from "../../../db";
 import { newsSubmissions, opinions } from "../../../db/schema";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { hashReviewToken } from "../../data/review-email";
+import { enforceRateLimit } from "../../data/edge-security";
 
 const INTRUSION_TYPES = new Set(["rate_limit", "bot", "injection", "spam", "unsafe_url", "validation"]);
 type ItemType = "opinion" | "news";
@@ -33,6 +34,8 @@ async function readItem(itemType: ItemType, itemId: string, expectedHash: string
 
 export async function GET(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "email-review-read", 30, 900);
+    if (limited) return limited;
     const url = new URL(request.url);
     const itemType = url.searchParams.get("tipo") ?? "";
     const itemId = url.searchParams.get("id") ?? "";
@@ -46,6 +49,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const limited = await enforceRateLimit(request, "email-review-write", 10, 900);
+    if (limited) return limited;
     const payload = await request.json() as Record<string, unknown>;
     const itemType = String(payload.itemType ?? "");
     const itemId = String(payload.itemId ?? "");

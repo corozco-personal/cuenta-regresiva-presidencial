@@ -52,13 +52,13 @@ export default function FavorabilityDashboard() {
 
   return <div className="indicator-dashboard">
     <div className="indicator-summary">
-      <article><small>Favorabilidad ciudadana</small><strong>{directional ? `${favorability}%` : "—"}</strong><p>Entre opiniones que tomaron posición a favor o en contra.</p></article>
+      <article><small>Sentimiento de participantes</small><strong>{directional ? `${favorability}%` : "—"}</strong><p>Entre aportes aprobados que tomaron posición a favor o en contra.</p></article>
       <article><small>Muestra de opiniones</small><strong>{indicators.opinions.total}</strong><p>Un aporte único por navegador.</p></article>
       <article><small>Noticias analizadas</small><strong>{toneTotal}</strong><p>Titulares admitidos en la actualización actual.</p></article>
       <article><small>Aportes de noticias</small><strong>{indicators.contributions.total}</strong><p>Enlaces enviados por la comunidad.</p></article>
     </div>
 
-    {!enoughSample && <div className="sample-warning"><AlertCircle size={18} /><p><strong>Muestra insuficiente.</strong> Con menos de 10 opiniones, el porcentaje es descriptivo y no representa a la población colombiana.</p></div>}
+    <div className="sample-warning"><AlertCircle size={18} /><p><strong>No es una encuesta ni mide favorabilidad nacional.</strong> Es una muestra autoseleccionada de participantes del portal; no tiene diseño probabilístico ni representa a la población colombiana.{!enoughSample && " Además, contiene menos de 10 opiniones aprobadas."}</p></div>
 
     <div className="indicator-grid">
       <section><p className="section-kicker">OPINIONES CIUDADANAS</p><h2>Distribución de posturas</h2><Bars rows={[
@@ -80,10 +80,9 @@ export default function FavorabilityDashboard() {
         { label: "No incorporado", value: contributionStatuses.rejected, total: indicators.contributions.total, tone: "critical" },
       ]} /><p className="chart-note">Describe el resultado de las reglas editoriales aplicadas a los enlaces enviados.</p></section>
 
-      <section><p className="section-kicker">CONVIVENCIA</p><h2>Moderación del muro</h2><Bars rows={[
+      <section><p className="section-kicker">MUESTRA PÚBLICA</p><h2>Opiniones admitidas</h2><Bars rows={[
         { label: "Publicado", value: moderation.published, total: indicators.opinions.total, tone: "positive" },
-        { label: "Texto filtrado", value: moderation.filtered, total: indicators.opinions.total, tone: "critical" },
-      ]} /><p className="chart-note">Un texto filtrado se conserva para trazabilidad, pero no se amplifica en el muro.</p></section>
+      ]} /><p className="chart-note">Solo incluye textos aprobados manualmente. Los rechazados y la cuarentena no alteran el sentimiento mostrado.</p></section>
     </div>
     <p className="indicator-updated">Actualizado el {new Date(indicators.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}.</p>
   </div>;

@@ -2,9 +2,14 @@ import { desc, gte } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { correctionRequests, moderationActions, newsSubmissions, opinions, securityEvents } from "../../../db/schema";
 import { turnstileConfiguration } from "../../data/edge-security";
+import { getAuthorizedReviewer } from "../../data/reviewer-auth";
 
 export async function GET() {
   const configuration = turnstileConfiguration();
+  const reviewer = await getAuthorizedReviewer();
+  if (!reviewer) {
+    return Response.json(configuration, { headers: { "Cache-Control": "no-store, max-age=0" } });
+  }
   try {
     const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
     const db = getDb();
@@ -33,7 +38,7 @@ export async function GET() {
         queue: {
           pendingOpinions: opinionRows.filter((row) => !["approved_manual", "rejected_manual"].includes(row.status)).length,
           pendingNews: newsRows.filter((row) => !["approved_manual", "rejected_manual"].includes(row.status)).length,
-          pendingCorrections: correctionRows.filter((row) => row.status === "Pendiente de revisión").length,
+          pendingCorrections: correctionRows.filter((row) => !["Resuelta", "Rechazada"].includes(row.status)).length,
           quarantined: opinionRows.filter((row) => row.status === "quarantined").length + newsRows.filter((row) => row.status === "quarantined").length,
           actions30Days: actions.length,
         },

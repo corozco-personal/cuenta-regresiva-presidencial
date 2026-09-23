@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, MousePointerClick, Users } from "lucide-react";
+import { MousePointerClick, Users } from "lucide-react";
 
 type Snapshot = { liveUsers: number; today: { users: number; interactions: number; pageviews: number } };
 
@@ -20,7 +20,6 @@ export default function AudienceStrip() {
       <div><span className="live-presence-dot" /><strong>{data.liveUsers}</strong><p>usuarios activos ahora</p></div>
       <div><Users size={20} /><strong>{data.today.users}</strong><p>visitantes hoy</p></div>
       <div><MousePointerClick size={20} /><strong>{data.today.interactions}</strong><p>interacciones hoy</p></div>
-      <a href="/reportes">Ver reportes <ArrowUpRight size={16} /></a>
     </section>
   );
 }

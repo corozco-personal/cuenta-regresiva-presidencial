@@ -17,6 +17,9 @@ export const opinions = sqliteTable("opinions", {
   emailReviewExpiresAt: text("email_review_expires_at"),
   emailNotifiedAt: text("email_notified_at"),
   emailReviewedAt: text("email_reviewed_at"),
+  emailMessageId: text("email_message_id"),
+  emailDeliveryStatus: text("email_delivery_status").notNull().default("not_sent"),
+  emailLastError: text("email_last_error"),
   createdAt: text("created_at").notNull(),
 }, (table) => [
   uniqueIndex("opinions_content_hash_unique").on(table.contentHash),
@@ -43,6 +46,9 @@ export const newsSubmissions = sqliteTable("news_submissions", {
   emailReviewExpiresAt: text("email_review_expires_at"),
   emailNotifiedAt: text("email_notified_at"),
   emailReviewedAt: text("email_reviewed_at"),
+  emailMessageId: text("email_message_id"),
+  emailDeliveryStatus: text("email_delivery_status").notNull().default("not_sent"),
+  emailLastError: text("email_last_error"),
   createdAt: text("created_at").notNull(),
 }, (table) => [
   uniqueIndex("news_submissions_url_hash_unique").on(table.urlHash),
@@ -172,4 +178,22 @@ export const securityEvents = sqliteTable("security_events", {
   index("security_events_created_idx").on(table.createdAt),
   index("security_events_category_created_idx").on(table.category, table.createdAt),
   index("security_events_endpoint_created_idx").on(table.endpoint, table.createdAt),
+]);
+
+export const submissionAuditProfiles = sqliteTable("submission_audit_profiles", {
+  id: text("id").primaryKey(),
+  itemType: text("item_type").notNull(),
+  itemId: text("item_id").notNull(),
+  networkHash: text("network_hash").notNull(),
+  browser: text("browser").notNull(),
+  operatingSystem: text("operating_system").notNull(),
+  deviceClass: text("device_class").notNull(),
+  countryCode: text("country_code"),
+  edgeLocation: text("edge_location"),
+  language: text("language"),
+  contactCiphertext: text("contact_ciphertext"),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("submission_audit_item_unique").on(table.itemType, table.itemId),
+  index("submission_audit_network_created_idx").on(table.networkHash, table.createdAt),
 ]);

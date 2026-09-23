@@ -29,6 +29,7 @@ import NavigationCatalog from "./components/navigation-catalog";
 import CompactPresence from "./components/compact-presence";
 import { campaignPromises } from "./data/campaign-promises";
 import { clientPlainText } from "./data/client-input";
+import DailyBriefing from "./components/daily-briefing";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -500,6 +501,8 @@ export default function Home() {
           </aside>
         </div>
       </section>
+
+      <DailyBriefing />
 
       <section className="archive section-shell" id="archivo" hidden>
         <div className="section-heading">

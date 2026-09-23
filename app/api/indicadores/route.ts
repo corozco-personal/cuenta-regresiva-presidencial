@@ -13,22 +13,21 @@ export async function GET() {
     const stances = { favorable: 0, unfavorable: 0, neutral: 0, mixed: 0 };
     const moderation = { published: 0, filtered: 0 };
     const countries = new Map<string, number>();
-    const validOpinionRows = opinionRows.filter((row) => !looksAutomatedOpinion(row.comment));
+    const validOpinionRows = opinionRows.filter((row) => row.status === "approved_manual" && !looksAutomatedOpinion(row.comment));
     for (const row of validOpinionRows) {
       if (row.stance === "A favor") stances.favorable += 1;
       else if (row.stance === "En contra") stances.unfavorable += 1;
       else if (row.stance === "Mixta") stances.mixed += 1;
       else stances.neutral += 1;
-      if (row.status === "filtered") moderation.filtered += 1;
-      else moderation.published += 1;
+      moderation.published += 1;
       countries.set(row.country, (countries.get(row.country) ?? 0) + 1);
     }
 
     const contributions = { publishable: 0, review: 0, rejected: 0 };
     for (const row of submissionRows) {
-      if (row.status === "publishable") contributions.publishable += 1;
-      else if (row.status === "review") contributions.review += 1;
-      else contributions.rejected += 1;
+      if (row.status === "approved_manual") contributions.publishable += 1;
+      else if (["pending_manual", "quarantined"].includes(row.status)) contributions.review += 1;
+      else if (row.status === "rejected_manual") contributions.rejected += 1;
     }
 
     return Response.json({

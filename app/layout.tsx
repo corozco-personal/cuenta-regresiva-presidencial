@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AnalyticsTracker from "./components/analytics-tracker";
+import PwaRegister from "./components/pwa-register";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site"),
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -40,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="antialiased">{children}<AnalyticsTracker /></body>
+      <body className="antialiased">{children}<AnalyticsTracker /><PwaRegister /></body>
     </html>
   );
 }

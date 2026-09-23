@@ -7,6 +7,7 @@ import { classifyOpinion, looksAutomatedOpinion } from "../../data/opinion-moder
 import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
+import { recordPrivateSubmissionAudit } from "../../data/private-submission-audit";
 
 const ALLOWED_STANCES = new Set(["A favor", "En contra", "Neutral", "Mixta"]);
 const OFFENSIVE = /\b(imb[eé]cil|idiota|est[uú]pido|malparid|hijueput|maric[oó]n|puta|basura humana|rata inmunda|matar|mu[eé]rete)\b/i;
@@ -122,14 +123,16 @@ export async function POST(request: Request) {
       emailReviewExpiresAt: reviewExpiresAt, createdAt: new Date().toISOString(),
     };
     await db.insert(opinions).values(row);
+    await recordPrivateSubmissionAudit(request, { itemType: "opinion", itemId: row.id });
     await recordModerationAction({ itemType: "opinion", itemId: row.id, fromStatus: "received", toStatus: status, reason: moderationReason });
     if (status === "quarantined") {
       await recordSecurityEvent(request, { endpoint: "opiniones", category: "spam", severity: offensive ? "high" : "low", reason: moderationReason, payload: { comment, country, stance } });
     } else if (reviewToken) {
       try {
         const notification = await sendReviewNotification({ itemType: "opinion", itemId: row.id, token: reviewToken, title: `Opinión ${stance.toLowerCase()}`, summary: comment, source: [municipality, department, country].filter(Boolean).join(" · ") });
-        if (notification.sent) await db.update(opinions).set({ emailNotifiedAt: new Date().toISOString() }).where(eq(opinions.id, row.id));
-      } catch { /* La cola y el panel siguen disponibles si el correo falla. */ }
+        if (notification.sent) await db.update(opinions).set({ emailNotifiedAt: new Date().toISOString(), emailMessageId: notification.messageId, emailDeliveryStatus: "sent" }).where(eq(opinions.id, row.id));
+        else await db.update(opinions).set({ emailDeliveryStatus: "failed", emailLastError: notification.reason }).where(eq(opinions.id, row.id));
+      } catch { await db.update(opinions).set({ emailDeliveryStatus: "failed", emailLastError: "unexpected_error" }).where(eq(opinions.id, row.id)).catch(() => undefined); }
     }
     return Response.json({ queued: true, status: "pending_review" }, { status: 202 });
   } catch (error) {

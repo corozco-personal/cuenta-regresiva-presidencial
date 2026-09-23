@@ -8,6 +8,8 @@ import { httpsUrl, plainText } from "../../data/input-security";
 import { enforceRateLimit, verifyTurnstile } from "../../data/edge-security";
 import { recordModerationAction, recordSecurityEvent } from "../../data/moderation-log";
 import { createReviewToken, hashReviewToken, sendReviewNotification } from "../../data/review-email";
+import { assertPublicHostname, readHtmlWithin } from "../../data/safe-remote-url";
+import { recordPrivateSubmissionAudit } from "../../data/private-submission-audit";
 
 async function digest(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
     const submitterName = isAnonymous ? null : plainText(payload.submitterName, { min: 2, max: 80 });
     if (!countryNames.has(country) || (!isAnonymous && !submitterName)) return Response.json({ error: "Completa el enlace, selecciona un país válido y, si aplica, tu nombre." }, { status: 400 });
     const { normalized, host } = normalizeUrl(rawUrl);
+    await assertPublicHostname(host);
     const urlHash = await digest(normalized);
     const db = getDb();
     const visitorSource = `network:${request.headers.get("cf-connecting-ip") ?? "unknown"}|${request.headers.get("user-agent") ?? "unknown"}`;
@@ -85,9 +88,9 @@ export async function POST(request: Request) {
     let relevant = false;
     try {
       const response = await fetch(normalized, { signal: controller.signal, redirect: "manual", headers: { "user-agent": "CuentaPublica/1.0 (+public-source-check)" } });
-      accessible = response.ok && (response.headers.get("content-type") ?? "").includes("text/html");
+      const html = response.ok ? await readHtmlWithin(response) : "";
+      accessible = response.ok && Boolean(html);
       if (accessible) {
-        const html = (await response.text()).slice(0, 300_000);
         title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim().slice(0, 240) || host;
         relevant = /abelardo|espriella/i.test(`${title} ${html.slice(0, 120_000)}`);
       }
@@ -105,20 +108,22 @@ export async function POST(request: Request) {
     const reviewExpiresAt = reviewToken ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null;
     const row: typeof newsSubmissions.$inferInsert = { id: crypto.randomUUID(), urlHash, url: normalized, domain: host, title, submitterName, isAnonymous: isAnonymous ? "1" : "0", country, department: department || null, municipality: municipality || null, status, reliability, reason, visitorHash, emailReviewTokenHash: reviewToken ? await hashReviewToken(reviewToken) : null, emailReviewExpiresAt: reviewExpiresAt, createdAt: new Date().toISOString() };
     await db.insert(newsSubmissions).values(row);
+    await recordPrivateSubmissionAudit(request, { itemType: "news", itemId: row.id });
     await recordModerationAction({ itemType: "news", itemId: row.id, fromStatus: "received", toStatus: status, reason });
     if (status === "quarantined") {
       await recordSecurityEvent(request, { endpoint: "aportes", category: "spam", severity: "medium", reason, payload: { url: normalized, country } });
     } else if (reviewToken) {
       try {
         const notification = await sendReviewNotification({ itemType: "news", itemId: row.id, token: reviewToken, title: title || host, summary: reason, source: `${host} · ${[municipality, department, country].filter(Boolean).join(" · ")}` });
-        if (notification.sent) await db.update(newsSubmissions).set({ emailNotifiedAt: new Date().toISOString() }).where(eq(newsSubmissions.id, row.id));
-      } catch { /* La cola y el panel siguen disponibles si el correo falla. */ }
+        if (notification.sent) await db.update(newsSubmissions).set({ emailNotifiedAt: new Date().toISOString(), emailMessageId: notification.messageId, emailDeliveryStatus: "sent" }).where(eq(newsSubmissions.id, row.id));
+        else await db.update(newsSubmissions).set({ emailDeliveryStatus: "failed", emailLastError: notification.reason }).where(eq(newsSubmissions.id, row.id));
+      } catch { await db.update(newsSubmissions).set({ emailDeliveryStatus: "failed", emailLastError: "unexpected_error" }).where(eq(newsSubmissions.id, row.id)).catch(() => undefined); }
     }
     return Response.json({ queued: true, status: "pending_review" }, { status: 202 });
   } catch (error) {
-    if (error instanceof Error && error.message === "unsafe") {
+    if (error instanceof Error && ["unsafe", "dns-unavailable"].includes(error.message)) {
       await recordSecurityEvent(request, { endpoint: "aportes", category: "unsafe_url", severity: "high", reason: "URL privada, no HTTPS o con credenciales", payload: auditPayload });
-      return Response.json({ error: "Solo se aceptan enlaces HTTPS públicos y seguros." }, { status: 400 });
+      return Response.json({ error: error.message === "dns-unavailable" ? "No fue posible verificar de forma segura el dominio del enlace." : "Solo se aceptan enlaces HTTPS públicos y seguros." }, { status: 400 });
     }
     if (error instanceof Error && error.message === "invalid-text") {
       await recordSecurityEvent(request, { endpoint: "aportes", category: "injection", severity: "high", reason: "Patrón activo o formato no permitido", payload: auditPayload });

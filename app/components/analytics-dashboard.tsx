@@ -35,7 +35,7 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => void load());
-    const interval = window.setInterval(() => void load(), 30_000);
+    const interval = window.setInterval(() => void load(), 5 * 60_000);
     return () => { window.cancelAnimationFrame(frame); window.clearInterval(interval); };
   }, [load]);
 

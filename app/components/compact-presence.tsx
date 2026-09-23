@@ -16,8 +16,8 @@ export default function CompactPresence() {
   }, []);
 
   return (
-    <a className="compact-presence" href="/reportes" aria-label={`${liveUsers ?? "—"} usuarios activos ahora. Ver reportes`}>
+    <span className="compact-presence" aria-label={`${liveUsers ?? "—"} usuarios activos ahora`}>
       <span aria-hidden="true" /><strong>{liveUsers ?? "—"}</strong><small>usuarios activos</small>
-    </a>
+    </span>
   );
 }

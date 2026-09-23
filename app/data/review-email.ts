@@ -57,5 +57,7 @@ export async function sendReviewNotification(input: {
       html: `<div style="background:#edf0e8;padding:28px;font-family:Arial,sans-serif;color:#122b27"><div style="max-width:620px;margin:auto;background:#fff;padding:30px;border:1px solid #c9cec3"><p style="margin:0 0 10px;color:#687571;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Cuenta pública · revisión manual</p><h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:30px;font-weight:400">${safeTitle}</h1><p style="font-family:Georgia,serif;font-size:20px;line-height:1.45">${safeSummary}</p>${safeSource}<table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="padding-right:10px"><a href="${approveUrl}" style="display:inline-block;padding:14px 18px;background:#143f37;color:#fff;text-decoration:none;font-weight:700">Revisar y aprobar</a></td><td><a href="${rejectUrl}" style="display:inline-block;padding:13px 18px;border:1px solid #7f342e;color:#7f342e;text-decoration:none;font-weight:700">Revisar y rechazar</a></td></tr></table><p style="margin:24px 0 0;color:#687571;font-size:12px;line-height:1.5">Los enlaces vencen en 48 horas y no ejecutan la decisión hasta que la confirmes en el portal. Esto evita acciones automáticas de los escáneres de correo.</p></div></div>`,
     }),
   });
-  return response.ok ? { sent: true as const } : { sent: false as const, reason: `provider_${response.status}` };
+  if (!response.ok) return { sent: false as const, reason: `provider_${response.status}` };
+  const result = await response.json().catch(() => ({})) as { id?: string };
+  return { sent: true as const, messageId: result.id ?? null };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Image as ImageIcon, QrCode } from "lucide-react";
 import QRCode from "qrcode";
 import ShareOptions from "./share-options";
@@ -43,7 +43,7 @@ export default function ShareCardGenerator() {
   const [text, setText] = useState(presets[0]);
   const [ready, setReady] = useState(false);
 
-  async function draw() {
+  const draw = useCallback(async () => {
     const target = canvas.current; const context = target?.getContext("2d"); if (!target || !context) return;
     target.width = 1200 * SCALE; target.height = 630 * SCALE; context.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     context.fillStyle = "#163d36"; context.fillRect(0, 0, 1200, 630);
@@ -53,13 +53,13 @@ export default function ShareCardGenerator() {
     const qrData = await QRCode.toDataURL(SITE_URL, { width: 720, margin: 1, errorCorrectionLevel: "H", color: { dark: "#163d36", light: "#fffef9" } });
     const qr = new Image(); qr.src = qrData; await qr.decode();
     context.fillStyle = "#fffef9"; context.fillRect(928, 188, 182, 182); context.drawImage(qr, 940, 200, 158, 158);
-    context.fillStyle = "#b8c3bf"; context.font = "18px Arial"; context.fillText("Escanea para abrir el portal", 920, 396);
+    context.fillStyle = "#b8c3bf"; context.font = "18px Arial"; context.fillText("Escanear QR", 955, 396);
     context.fillStyle = "#b8c3bf"; context.font = "20px Arial"; context.fillText("cuenta-regresiva-presidencial.carlos940807.chatgpt.site", 90, 515);
     context.fillStyle = "#fffef9"; context.font = "700 20px Arial"; context.fillText("Creado por Carlos Orozco", 90, 552);
     setReady(true);
-  }
+  }, [text]);
 
-  useEffect(() => { const frame = requestAnimationFrame(() => { void draw(); }); return () => cancelAnimationFrame(frame); }, [text]);
+  useEffect(() => { const frame = requestAnimationFrame(() => { void draw(); }); return () => cancelAnimationFrame(frame); }, [draw]);
 
   async function download() {
     await draw(); const target = canvas.current; if (!target) return;
@@ -72,7 +72,7 @@ export default function ShareCardGenerator() {
       <ImageIcon aria-hidden="true" /><h2>Crea una tarjeta</h2><p>La exportación tiene 6.000 × 3.150 px: resolución suficiente para producir una pieza de 12 × 6,3 pulgadas a 500 ppp. Incluye un QR directo al portal.</p>
       <label>Mensaje<select value={text} onChange={(event) => setText(event.target.value)}>{presets.map((preset) => <option key={preset}>{preset}</option>)}</select></label>
       <label>Personalizar<textarea value={text} onChange={(event) => setText(clientPlainText(event.target.value, 150))} maxLength={150} rows={4} /></label>
-      <p className="share-card-qr-note"><QrCode size={17} /> QR incluido · Creado por Carlos Orozco</p>
+      <p className="share-card-qr-note"><QrCode size={17} /> Escanear QR</p>
       <div className="share-card-actions">
         <button onClick={() => void download()} disabled={!ready}><Download size={16} />Descargar PNG · 500 ppp</button>
         <ShareOptions mode="inline" context="site" />

@@ -5,7 +5,7 @@ import { CheckCircle2, CircleHelp, Clock3, ExternalLink, Search } from "lucide-r
 import { campaignPromises, promiseStatusDefinition, type PromiseStatus } from "../data/campaign-promises";
 import { clientPlainText } from "../data/client-input";
 
-const statuses: Array<"Todos" | PromiseStatus> = ["Todos", "Cumplida", "En ejecución", "Pendiente", "Vencida", "Incumplida", "Sin evidencia suficiente"];
+const statuses: Array<"Todos" | PromiseStatus> = ["Todos", "Cumplida", "Cumplida parcialmente", "En ejecución", "En preparación", "Pendiente", "Vencida", "Incumplida", "Sin evidencia suficiente"];
 
 export default function PromiseExplorer() {
   const [status, setStatus] = useState<(typeof statuses)[number]>("Todos");
@@ -37,7 +37,7 @@ export default function PromiseExplorer() {
         <blockquote><span>Promesa original</span>{promise.originalPromise}</blockquote>
         <div className="promise-progress"><div><span>Avance documental</span><strong>{promise.progress} %</strong></div><div className="promise-progress-track"><i style={{ width: `${promise.progress}%` }} /></div></div>
         <p>{promise.assessment}</p>
-        <dl><div><dt>Plazo</dt><dd>{promise.deadline}</dd></div><div><dt>Última revisión</dt><dd>{new Date(`${promise.lastReviewed}T12:00:00-05:00`).toLocaleDateString("es-CO", { dateStyle: "medium" })}</dd></div></dl>
+        <dl><div><dt>Plazo</dt><dd>{promise.deadline}</dd></div><div><dt>Última revisión</dt><dd>{new Date(`${promise.lastReviewed}T12:00:00-05:00`).toLocaleDateString("es-CO", { dateStyle: "medium" })}</dd></div>{promise.responsible && <div><dt>Responsable asociado</dt><dd>{promise.responsible}</dd></div>}{promise.measurement && <div><dt>Criterio de medición</dt><dd>{promise.measurement}</dd></div>}{promise.baseline && <div><dt>Línea base</dt><dd>{promise.baseline}</dd></div>}{promise.budget && <div><dt>Presupuesto relacionado</dt><dd>{promise.budget}</dd></div>}</dl>
         <details><summary>Evidencia y fuente de la promesa</summary><div className="promise-evidence"><a href={promise.campaignSource.url} target="_blank" rel="noreferrer"><span>Promesa · {promise.campaignSource.label}</span><ExternalLink size={14} /></a>{promise.evidence.length ? promise.evidence.map((evidence) => <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer"><span>{evidence.kind} · {evidence.label}</span><ExternalLink size={14} /></a>) : <p>No hay evidencia de ejecución admitida en la revisión actual.</p>}</div></details>
       </article>)}
       {!filtered.length && <p className="promise-empty">No hay promesas que coincidan con este filtro.</p>}

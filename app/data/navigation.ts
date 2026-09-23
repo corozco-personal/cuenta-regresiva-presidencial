@@ -14,6 +14,7 @@ export const navigationGroups = [
     description: "Cobertura, contraste y archivo",
     items: [
       { label: "Noticias", href: "/#monitoreo" },
+      { label: "Buscar", href: "/buscar" },
       { label: "Archivo", href: "/archivo", className: "more-priority-4" },
       { label: "Expedientes", href: "/temas" },
       { label: "Comparador", href: "/comparador" },
@@ -25,7 +26,6 @@ export const navigationGroups = [
     title: "Datos y transparencia",
     description: "Métodos, fuentes y resultados",
     items: [
-      { label: "Reportes", href: "/reportes" },
       { label: "Cobertura y estado", href: "/cobertura" },
       { label: "Datos abiertos", href: "/datos" },
       { label: "Fuentes", href: "/fuentes" },
