@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Clock3,
+  Activity, AlertTriangle, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Clock3,
   Download, ExternalLink, History, LogOut, MailCheck, MessageSquareText, Newspaper, RefreshCw,
-  Search, ShieldCheck, XCircle,
+  RadioTower, Search, ShieldCheck, XCircle,
 } from "lucide-react";
 import AnalyticsDashboard from "./analytics-dashboard";
 import SecurityReport from "./security-report";
@@ -21,6 +21,7 @@ type Correction = Base & { type: "correction"; requestType: string; subject: str
 type Item = Opinion | Submission | Correction;
 type View = "review" | "approved" | "rejected" | "all";
 type Section = "opinion" | "news" | "correction" | "reports";
+type ReportTab = "activity" | "media";
 type Counts = { opinions: Record<string, number>; news: Record<string, number>; corrections: Record<string, number> };
 
 const AUTO_REFRESH_MS = 5 * 60_000;
@@ -68,6 +69,7 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
   const [counts, setCounts] = useState<Counts>({ opinions: {}, news: {}, corrections: {} });
   const [view, setView] = useState<View>("review");
   const [section, setSection] = useState<Section>("opinion");
+  const [reportTab, setReportTab] = useState<ReportTab>("activity");
   const [query, setQuery] = useState("");
   const [appliedQuery, setAppliedQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState("todos");
@@ -211,10 +213,11 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
 
       {section === "reports" ? (
         <div className="review-reports">
-          <MediaPublicationRadar />
-          <AnalyticsDashboard />
-          <SecurityReport />
-          <SecurityOperations />
+          <nav className="report-subtabs" aria-label="Secciones de reportes">
+            <button className={reportTab === "activity" ? "active" : ""} onClick={() => setReportTab("activity")}><Activity size={17} />Actividad del sitio</button>
+            <button className={reportTab === "media" ? "active" : ""} onClick={() => setReportTab("media")}><RadioTower size={17} />Radar de medios</button>
+          </nav>
+          {reportTab === "activity" ? <div className="report-tab-panel"><AnalyticsDashboard /><SecurityReport /><SecurityOperations /></div> : <div className="report-tab-panel"><MediaPublicationRadar /></div>}
         </div>
       ) : (
         <>
