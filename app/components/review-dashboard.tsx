@@ -204,14 +204,6 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
         <button className={workspace === "reports" ? "active" : ""} onClick={() => setWorkspace("reports")}><BarChart3 />Reportes</button>
         <button className={workspace === "intrusions" ? "active" : ""} onClick={() => setWorkspace("intrusions")}><AlertTriangle />Intentos de intrusión</button>
         <button className={workspace === "operations" ? "active" : ""} onClick={() => setWorkspace("operations")}><ShieldCheck />Continuidad, privacidad y alertas</button>
-        {workspace === "pending" && <div className="review-refresh-group">
-          <button className={`review-auto${autoRefresh ? " is-active" : ""}`} onClick={() => void toggleAutoRefresh()} aria-pressed={autoRefresh}>
-            <Clock3 />Auto · 5 min
-          </button>
-          <button className={`review-refresh${refreshing ? " is-loading" : ""}`} onClick={() => void refreshNow()} disabled={refreshing}>
-            <RefreshCw className={refreshing ? "review-spin" : undefined} />Actualizar
-          </button>
-        </div>}
       </div>
 
       {workspace === "reports" ? (
@@ -232,6 +224,14 @@ export default function ReviewDashboard({ reviewerName }: { reviewerName: string
             <button className={section === "opinion" ? "active" : ""} onClick={() => changeContext("opinion")}><MessageSquareText />Opiniones<strong>{countFor(counts.opinions, view, "opinion")}</strong></button>
             <button className={section === "news" ? "active" : ""} onClick={() => changeContext("news")}><Newspaper />Enlaces<strong>{countFor(counts.news, view, "news")}</strong></button>
             <button className={section === "correction" ? "active" : ""} onClick={() => changeContext("correction")}><ClipboardList />Correcciones<strong>{countFor(counts.corrections, view, "correction")}</strong></button>
+            <div className="review-refresh-group">
+              <button className={`review-auto${autoRefresh ? " is-active" : ""}`} onClick={() => void toggleAutoRefresh()} aria-pressed={autoRefresh}>
+                <Clock3 />Auto · 5 min
+              </button>
+              <button className={`review-refresh${refreshing ? " is-loading" : ""}`} onClick={() => void refreshNow()} disabled={refreshing}>
+                <RefreshCw className={refreshing ? "review-spin" : undefined} />Actualizar
+              </button>
+            </div>
           </nav>
           <div className="review-toolbar">
             <form onSubmit={(event) => { event.preventDefault(); setCursor(""); setHistory([]); setAppliedQuery(query.trim()); }}>
