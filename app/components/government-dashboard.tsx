@@ -9,12 +9,12 @@ import {
   CircleAlert,
   FileCheck2,
   Landmark,
-  MapPinned,
   Scale,
   UsersRound,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { campaignPromises } from "../data/campaign-promises";
+import ColombiaTerritoryMap from "./colombia-territory-map";
 import {
   accountabilitySources,
   budgetOverview,
@@ -22,7 +22,6 @@ import {
   executiveDecisions,
   governmentAgenda,
   policyDossiers,
-  territorialCoverage,
 } from "../data/government-accountability";
 
 function Status({ children }: { children: string }) {
@@ -98,7 +97,7 @@ export default function GovernmentDashboard() {
 
       <TabsContent value="territorio">
         <header className="accountability-section-heading"><div><p className="section-kicker">IMPACTO TERRITORIAL</p><h2>Comparar sin fabricar rankings</h2></div><p>Las comparaciones departamentales requerirán inversión, obras y resultados normalizados por población y presupuesto.</p></header>
-        <div className="territory-grid">{territorialCoverage.map((item) => <article key={item.region}><MapPinned /><h3>{item.region}</h3><div><span>Inversión</span><strong>—</strong></div><div><span>Obras</span><strong>—</strong></div><div><span>Visitas</span><strong>—</strong></div><p>{item.evidence}</p></article>)}</div>
+        <ColombiaTerritoryMap />
         <div className="territory-method"><Building2 /><div><strong>Condiciones para publicar</strong><p>Entidad ejecutora, código territorial, fecha, monto comprometido, monto pagado, población de referencia y fuente primaria.</p></div><CalendarClock /><div><strong>Próximo corte</strong><p>El módulo se habilitará cuando exista una base comparable para al menos dos territorios.</p></div></div>
       </TabsContent>
     </Tabs>
