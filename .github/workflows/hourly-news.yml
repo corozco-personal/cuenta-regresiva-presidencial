@@ -18,8 +18,9 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           test -n "$CRON_SECRET"
-          response="$(curl --fail-with-body --silent --show-error --max-time 540 \
+          curl --fail-with-body --silent --show-error --max-time 540 \
             -H "x-cron-secret: $CRON_SECRET" \
             -H "user-agent: CuentaPublica-GitHub-Scheduler/1.0" \
-            'https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/api/noticias-v2?refresh=1')"
-          RESPONSE="$response" node -e 'const d=JSON.parse(process.env.RESPONSE); if(typeof d.updatedAt!=="string"||typeof d.provider!=="string"||!Array.isArray(d.items)) process.exit(1); console.log(`Actualización ${d.updatedAt}: ${d.items.length} noticias mediante ${d.provider}`)'
+            'https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/api/noticias-v2?refresh=1' \
+            --output /tmp/noticias-v2.json
+          node -e 'const fs=require("node:fs"); const d=JSON.parse(fs.readFileSync("/tmp/noticias-v2.json","utf8")); if(typeof d.updatedAt!=="string"||typeof d.provider!=="string"||!Array.isArray(d.items)) process.exit(1); console.log(`Actualización ${d.updatedAt}: ${d.items.length} noticias mediante ${d.provider}`)'
