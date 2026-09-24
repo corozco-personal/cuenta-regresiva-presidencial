@@ -53,7 +53,7 @@ export default function DailyBriefing() {
       <article><BellRing /><strong>{previousVisit ? newItems : "—"}</strong><span>{previousVisit ? "noticias nuevas" : "primera visita"}</span></article>
       <article><History /><strong>{previousVisit ? promiseChanges : "—"}</strong><span>promesas revisadas</span></article>
       <article><FileText /><strong>{items.filter((item) => item.evidenceLevel === "Documento oficial").length}</strong><span>fuentes primarias activas</span></article>
-      <a href="/resumen">Ver resumen semanal <ArrowUpRight size={15} /></a>
+      <div className="briefing-links"><a href="/resumen">Ver resumen semanal <ArrowUpRight size={15} /></a><a href="/alertas"><BellRing size={15} /> Recibir por correo</a></div>
     </div>
     <div className="briefing-columns">
       {(["Nacional", "Internacional"] as const).map((scope) => <section className="briefing-column" key={scope} aria-labelledby={`briefing-${scope.toLowerCase()}`}><header><span>{scope === "Nacional" ? "CO" : "INT"}</span><div><h3 id={`briefing-${scope.toLowerCase()}`}>{scope}</h3><p>{scope === "Nacional" ? "Entidades y medios colombianos" : "Cobertura publicada fuera de Colombia"}</p></div></header><div className="briefing-list briefing-card-list">{latestByScope[scope].length ? latestByScope[scope].map((item) => <article className="news-card briefing-news-card" id={`resumen-${item.id}`} key={item.id}>

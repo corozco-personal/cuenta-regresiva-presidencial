@@ -22,6 +22,7 @@ export const navigationGroups = [
       { label: "Expedientes", href: "/temas" },
       { label: "Comparador", href: "/comparador" },
       { label: "Resumen semanal", href: "/resumen" },
+      { label: "Alertas por correo", href: "/alertas", className: "more-priority-3" },
     ],
   },
   {

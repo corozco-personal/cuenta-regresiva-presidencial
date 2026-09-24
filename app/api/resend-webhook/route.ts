@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { newsSubmissions, opinions } from "../../../db/schema";
+import { newsletterSubscriptions, newsSubmissions, opinions } from "../../../db/schema";
 import { sendOperationalAlert } from "../../data/review-email";
 
 function decodeBase64(value: string) {
@@ -38,6 +38,12 @@ export async function POST(request: Request) {
     const updates = await Promise.all([
       db.update(opinions).set({ emailDeliveryStatus: deliveryStatus, emailLastError: error }).where(eq(opinions.emailMessageId, messageId)),
       db.update(newsSubmissions).set({ emailDeliveryStatus: deliveryStatus, emailLastError: error }).where(eq(newsSubmissions.emailMessageId, messageId)),
+      db.update(newsletterSubscriptions).set({
+        deliveryStatus,
+        lastError: error,
+        ...(["bounced", "complained", "suppressed"].includes(deliveryStatus) ? { status: "suppressed" } : {}),
+        updatedAt: new Date().toISOString(),
+      }).where(eq(newsletterSubscriptions.lastMessageId, messageId)),
     ]);
     const matched = updates.some((result) => Number(result.meta?.changes ?? 0) > 0);
     if (matched && error) await sendOperationalAlert({ subject: `falló una notificación de revisión (${error})`, detail: `Resend informó el estado ${deliveryStatus} para una notificación de moderación. Identificador del mensaje: ${messageId}.` }).catch(() => undefined);

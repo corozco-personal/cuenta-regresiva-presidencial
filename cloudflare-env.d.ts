@@ -9,6 +9,8 @@ declare namespace Cloudflare {
     RESEND_API_KEY?: string;
     REVIEW_NOTIFICATION_EMAIL?: string;
     REVIEW_FROM_EMAIL?: string;
+    NEWSLETTER_FROM_EMAIL?: string;
+    NEWSLETTER_REPLY_TO_EMAIL?: string;
     AUDIT_ENCRYPTION_KEY?: string;
     RESEND_WEBHOOK_SECRET?: string;
   }

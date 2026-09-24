@@ -31,12 +31,33 @@ async function runHourlyNewsRefresh(env: WorkerEnvironment, context: ExecutionCo
   });
 }
 
+async function runDailyNewsletter(env: WorkerEnvironment, context: ExecutionContext) {
+  if (!env.CRON_SECRET) throw new Error("CRON_SECRET no está configurado");
+  const request = new Request("https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/api/boletin/enviar", {
+    method: "POST",
+    headers: {
+      "x-cron-secret": env.CRON_SECRET,
+      "user-agent": "CuentaPublica-Cloudflare-Cron/1.0",
+    },
+  });
+  const response = await handler.fetch(request, env, context);
+  if (!response.ok) throw new Error(`El resumen diario respondió ${response.status}`);
+  const payload = await response.json() as { localDate?: string; localHour?: number; sent?: number; failed?: number };
+  console.log("newsletter-digest", "Ejecución horaria completada", payload);
+}
+
+async function runScheduledJobs(env: WorkerEnvironment, context: ExecutionContext) {
+  try { await runHourlyNewsRefresh(env, context); }
+  catch (error) { console.error("news-monitor", error); }
+  await runDailyNewsletter(env, context);
+}
+
 const worker = {
   fetch(request: Request, env: WorkerEnvironment, context: ExecutionContext) {
     return handler.fetch(request, env, context);
   },
   scheduled(_controller: unknown, env: WorkerEnvironment, context: ExecutionContext) {
-    context.waitUntil(runHourlyNewsRefresh(env, context));
+    context.waitUntil(runScheduledJobs(env, context));
   },
 };
 

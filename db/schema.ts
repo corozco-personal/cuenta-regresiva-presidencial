@@ -212,3 +212,28 @@ export const securityOperations = sqliteTable("security_operations", {
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const newsletterSubscriptions = sqliteTable("newsletter_subscriptions", {
+  id: text("id").primaryKey(),
+  emailHash: text("email_hash").notNull(),
+  emailCiphertext: text("email_ciphertext").notNull(),
+  preferredHour: integer("preferred_hour").notNull(),
+  timezone: text("timezone").notNull().default("America/Bogota"),
+  status: text("status").notNull().default("pending"),
+  confirmationTokenHash: text("confirmation_token_hash"),
+  unsubscribeTokenHash: text("unsubscribe_token_hash").notNull(),
+  unsubscribeTokenCiphertext: text("unsubscribe_token_ciphertext").notNull(),
+  verifiedAt: text("verified_at"),
+  unsubscribedAt: text("unsubscribed_at"),
+  lastSentLocalDate: text("last_sent_local_date"),
+  lastMessageId: text("last_message_id"),
+  deliveryStatus: text("delivery_status").notNull().default("not_sent"),
+  lastError: text("last_error"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("newsletter_subscriptions_email_hash_unique").on(table.emailHash),
+  uniqueIndex("newsletter_subscriptions_unsubscribe_token_unique").on(table.unsubscribeTokenHash),
+  index("newsletter_subscriptions_schedule_idx").on(table.status, table.preferredHour, table.lastSentLocalDate),
+  index("newsletter_subscriptions_message_idx").on(table.lastMessageId),
+]);

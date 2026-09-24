@@ -122,6 +122,8 @@ La clave pública se entrega al navegador mediante `/api/seguridad`; el secreto 
 
 Las notificaciones de revisión pueden usar Resend con `RESEND_API_KEY`, `REVIEW_NOTIFICATION_EMAIL`, `REVIEW_FROM_EMAIL` y `RESEND_WEBHOOK_SECRET`. El webhook firmado registra entrega o rebote sin hacer pública la dirección del revisor.
 
+El resumen diario reutiliza `RESEND_API_KEY` y admite `NEWSLETTER_FROM_EMAIL` y `NEWSLETTER_REPLY_TO_EMAIL`. Las altas requieren confirmación, el correo se conserva cifrado y el cron horario entrega a cada suscriptor según la hora elegida en `America/Bogota`.
+
 No agregues claves reales al repositorio. Los archivos `.env*` están ignorados por Git y los secretos de producción deben configurarse en la plataforma de alojamiento.
 
 ## Comandos disponibles
