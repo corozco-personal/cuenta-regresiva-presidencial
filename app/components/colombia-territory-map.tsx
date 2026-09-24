@@ -62,7 +62,12 @@ export default function ColombiaTerritoryMap() {
     return [...groups.entries()].sort((a, b) => (DEPARTMENTS[a[0]] ?? a[0]).localeCompare(DEPARTMENTS[b[0]] ?? b[0], "es"));
   }, [national]);
 
-  const activeFeatures = useMemo(() => (selectedDepartment && detail?.features?.length ? detail.features as MapFeature[] : national?.features as MapFeature[] ?? []), [detail, national, selectedDepartment]);
+  const activeFeatures = useMemo(
+    () => selectedDepartment
+      ? (detail?.features as MapFeature[] ?? [])
+      : (national?.features as MapFeature[] ?? []),
+    [detail, national, selectedDepartment],
+  );
   const selectedFeature = selectedMunicipality ? activeFeatures.find((feature) => feature.properties.MPIO_CDPMP === selectedMunicipality) : null;
   const projection = useMemo(() => {
     const target: FeatureCollection<Geometry> | Feature<Geometry> = selectedFeature ?? { type: "FeatureCollection", features: activeFeatures };
@@ -99,9 +104,9 @@ export default function ColombiaTerritoryMap() {
               const name = DEPARTMENTS[code] ?? code; const count = departmentStats(stats, name); const collection: FeatureCollection<Geometry> = { type: "FeatureCollection", features };
               return <path key={code} d={path(collection) ?? undefined} className={`colombia-department ${count && count.opinions + count.contributions > 0 ? "has-data" : ""}`} onClick={() => chooseDepartment(code)}><title>{name} · {(count?.opinions ?? 0) + (count?.contributions ?? 0)} aportes públicos georreferenciados</title></path>;
             })}
-            {selectedDepartment && activeFeatures.map((feature) => {
-              const code = feature.properties.MPIO_CDPMP ?? ""; const municipalityName = feature.properties.MPIO_CNMBR ?? "Municipio"; const count = municipalityStats(selectedDepartmentStats, municipalityName); const active = selectedMunicipality === code;
-              return <path key={code} d={path(feature) ?? undefined} className={`colombia-municipality ${active ? "active" : ""} ${count && count.opinions + count.contributions > 0 ? "has-data" : ""}`} onClick={() => { setSelectedMunicipality(code); setZoom(1); }}><title>{municipalityName} · {(count?.opinions ?? 0) + (count?.contributions ?? 0)} aportes públicos georreferenciados</title></path>;
+            {selectedDepartment && activeFeatures.map((feature, index) => {
+              const code = feature.properties.MPIO_CDPMP ?? `${selectedDepartment}-${index}`; const municipalityName = feature.properties.MPIO_CNMBR ?? "Municipio"; const count = municipalityStats(selectedDepartmentStats, municipalityName); const active = selectedMunicipality === code;
+              return <path key={code} d={path(feature) ?? undefined} className={`colombia-municipality ${active ? "active" : ""} ${count && count.opinions + count.contributions > 0 ? "has-data" : ""}`} onClick={() => { if (feature.properties.MPIO_CDPMP) setSelectedMunicipality(feature.properties.MPIO_CDPMP); setZoom(1); }}><title>{municipalityName} · {(count?.opinions ?? 0) + (count?.contributions ?? 0)} aportes públicos georreferenciados</title></path>;
             })}
           </g>
         </svg>}
