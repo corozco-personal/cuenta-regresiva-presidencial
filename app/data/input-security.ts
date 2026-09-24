@@ -25,7 +25,19 @@ export function httpsUrl(value: unknown) {
 }
 
 export function safeEmail(value: unknown) {
-  const email = plainText(value, { max: 254, optional: true }).toLowerCase();
-  if (email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) throw new Error("invalid-contact");
+  const raw = String(value ?? "");
+  if (/[\r\n\u0000-\u001f\u007f]/.test(raw)) throw new Error("invalid-contact");
+  const email = plainText(raw, { max: 254, optional: true }).toLowerCase();
+  if (!email) return email;
+  if (!/^[\x21-\x7e]+$/.test(email) || email.includes("<") || email.includes(">")) throw new Error("invalid-contact");
+  const parts = email.split("@");
+  if (parts.length !== 2) throw new Error("invalid-contact");
+  const [local, domain] = parts;
+  if (!local || local.length > 64 || local.startsWith(".") || local.endsWith(".") || local.includes("..") || !/^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+$/i.test(local)) throw new Error("invalid-contact");
+  if (!domain || domain.length > 253 || domain.includes("..")) throw new Error("invalid-contact");
+  const labels = domain.split(".");
+  if (labels.length < 2 || labels.some((label) => !label || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label))) throw new Error("invalid-contact");
+  const topLevel = labels.at(-1) ?? "";
+  if (!/^(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$/i.test(topLevel)) throw new Error("invalid-contact");
   return email;
 }
