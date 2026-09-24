@@ -24,6 +24,10 @@ export type CampaignPromise = {
   measurement?: string;
   baseline?: string;
   budget?: string;
+  progressMethod?: string;
+  milestones?: Array<{ label: string; status: "Verificado" | "Pendiente"; evidence?: string }>;
+  history?: Array<{ date: string; status: PromiseStatus; reason: string }>;
+  contraryEvidence?: Array<{ label: string; url: string }>;
 };
 
 export const campaignPromises: CampaignPromise[] = [
@@ -43,6 +47,9 @@ export const campaignPromises: CampaignPromise[] = [
     measurement: "Entrega documentada de cada salario recibido durante el mandato",
     baseline: "Salario presidencial legalmente asignado",
     budget: "No aplica; corresponde a una decisión personal sobre la remuneración",
+    progressMethod: "1 de 1 hito inicial verificado. El seguimiento mensual continúa porque la promesa cubre todo el mandato.",
+    milestones: [{ label: "Entrega documentada del primer salario", status: "Verificado", evidence: "Europa Press" }, { label: "Verificar continuidad durante el mandato", status: "Pendiente" }],
+    history: [{ date: "2026-09-22", status: "Cumplida", reason: "Se documentó la entrega del primer salario; el estado se limita a ese acto y seguirá revisándose." }],
   },
   {
     id: "choque-salud",
@@ -60,6 +67,9 @@ export const campaignPromises: CampaignPromise[] = [
     measurement: "Medidas ejecutadas, recursos desembolsados y resultados de atención publicados",
     baseline: "Pendiente de una línea base oficial consolidada",
     budget: "Pendiente de soporte presupuestal verificable",
+    progressMethod: "1 de 4 hitos documentales verificado; el porcentaje anterior se conserva como referencia editorial, no como resultado sanitario.",
+    milestones: [{ label: "Anuncio oficial de inicio", status: "Verificado", evidence: "Presidencia" }, { label: "Medidas y responsables publicados", status: "Pendiente" }, { label: "Recursos desembolsados", status: "Pendiente" }, { label: "Resultados de atención comparables", status: "Pendiente" }],
+    history: [{ date: "2026-09-22", status: "En ejecución", reason: "La Presidencia anunció el inicio; faltan ejecución presupuestal y resultados." }],
   },
   {
     id: "recuperar-territorios",
@@ -77,6 +87,9 @@ export const campaignPromises: CampaignPromise[] = [
     measurement: "Territorios definidos en la promesa con indicadores comparables de control y seguridad",
     baseline: "No publicada de forma suficientemente precisa",
     budget: "No identificado",
+    progressMethod: "0 de 3 condiciones verificadas.",
+    milestones: [{ label: "Territorios y línea base definidos", status: "Pendiente" }, { label: "Estrategia y recursos publicados", status: "Pendiente" }, { label: "Resultado territorial comparable", status: "Pendiente" }],
+    history: [{ date: "2026-09-22", status: "Pendiente", reason: "El plazo continúa abierto y no existe línea base pública suficiente." }],
   },
   {
     id: "reducir-burocracia",
@@ -87,6 +100,8 @@ export const campaignPromises: CampaignPromise[] = [
     deadline: "Durante el mandato",
     progress: 0,
     assessment: "No se identificó una línea base pública, un indicador oficial comparable ni evidencia suficiente para calcular avance sin especular.",
+    progressMethod: "No calculable hasta definir universo, línea base y fórmula.",
+    milestones: [{ label: "Definir qué cargos integran la burocracia", status: "Pendiente" }, { label: "Publicar línea base", status: "Pendiente" }, { label: "Medir reducción neta comparable", status: "Pendiente" }],
     campaignSource: { label: "Propuestas de campaña", url: "https://propuestas.abelardopresidente.com.co/" },
     evidence: [],
     lastReviewed: "2026-09-22",

@@ -4,6 +4,12 @@ import SubpageHeader from "../components/subpage-header";
 export const metadata: Metadata = { title: "Metodología · Cuenta pública", description: "Políticas de admisión, verificación, corrección, clasificación y moderación.", alternates: { canonical: "/metodologia" } };
 
 const policies = [
+  ["Cadena de gestión", "El seguimiento separa promesa, anuncio, acto normativo, apropiación, compromiso, obligación, pago y resultado. Ningún eslabón sustituye automáticamente al siguiente."],
+  ["Atribución presidencial", "Los indicadores nacionales describen contexto. Solo se vinculan causalmente con una decisión presidencial cuando existe una hipótesis, periodo, mecanismo y evidencia suficientes para hacerlo."],
+  ["Presupuesto heredado", "El presupuesto aprobado antes de la posesión se identifica como heredado. Sus modificaciones y su ejecución se registran por separado para evitar atribuir al Gobierno actual toda la programación anual."],
+  ["Porcentajes de promesas", "Un porcentaje debe provenir de hitos explícitos o de una fórmula reproducible. Cuando no existe unidad comparable, el portal muestra el número de hitos verificados o se abstiene de calcular."],
+  ["Encuestas profesionales", "La opinión autoseleccionada del portal permanece separada de las encuestas. Una encuesta requiere firma, muestra, fechas de campo, margen de error, patrocinador y acceso a la ficha técnica."],
+  ["Comparación territorial", "No se publican rankings territoriales sin normalizar población, presupuesto, periodo y cobertura. Los vacíos se muestran como ausencia de datos y no como cero."],
   ["Admisión de fuentes", "Se consideran entidades oficiales y medios incluidos en el directorio público. Ser admitido permite el monitoreo, pero no certifica todas las afirmaciones de una fuente."],
   ["Descubrimiento mundial", "El radar localiza cobertura en múltiples países e idiomas. Los dominios nuevos permanecen en evaluación hasta que su procedencia pueda clasificarse."],
   ["Verificación", "El enlace debe usar HTTPS, responder, referirse directamente al mandatario y conservar acceso a la fuente original."],

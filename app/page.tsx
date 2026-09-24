@@ -380,7 +380,7 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a>
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
-          <a className="nav-priority nav-priority-2" href="/presidente" onClick={() => setMenuOpen(false)}>Presidente</a>
+          <a className="nav-priority nav-priority-2" href="/gestion" onClick={() => setMenuOpen(false)}>Así va</a>
           <a className="nav-priority nav-priority-3" href="/indicadores" onClick={() => setMenuOpen(false)}>Indicadores</a>
           <a className="nav-priority nav-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
           <details className="nav-more">
@@ -476,7 +476,7 @@ export default function Home() {
               <div className="daily-pulse-heading"><div><span>PULSO DE HOY</span><strong>Día {mandateDay} del mandato</strong></div><button onClick={sharePulse}><Share2 size={15} /> {sharedId === "pulse" ? "Copiado" : "Compartir pulso"}</button></div>
               <div className="daily-pulse-grid">
                 <a href="#monitoreo"><strong>{todayNews}</strong><span>noticias en 24 h</span></a>
-                <a href="/promesas"><strong>{completedPromises}/{campaignPromises.length}</strong><span>promesas cumplidas</span></a>
+                <a href="/gestion"><strong>{completedPromises}/{campaignPromises.length}</strong><span>balance verificable</span></a>
                 <a href="/comparador"><strong>{news.filter((item) => item.sources.length > 1).length}</strong><span>hechos con varias fuentes</span></a>
                 <a href="/nombramientos"><strong>{news.filter((item) => /nombr(?:a|amiento)|design(?:a|ación)|contrat(?:a|ación)|consejo de sabios|consejo asesor|asesor para|\btaps\b|\bappoints?\b/i.test(item.title)).length}</strong><span>nombramientos y asesores</span></a>
               </div>

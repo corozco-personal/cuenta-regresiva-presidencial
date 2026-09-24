@@ -3,12 +3,13 @@ export const navigationGroups = [
     title: "Seguimiento presidencial",
     description: "Mandato, compromisos y equipo",
     items: [
+      { label: "Así va el Gobierno", href: "/gestion", className: "more-priority-2" },
       { label: "Sobre el presidente", href: "/presidente", className: "more-priority-2" },
       { label: "Promesas", href: "/promesas" },
       { label: "Nombramientos", href: "/nombramientos" },
       { label: "Congreso", href: "/congreso" },
       { label: "Indicadores del país", href: "/indicadores", className: "more-priority-3" },
-      { label: "Favorabilidad", href: "/favorabilidad" },
+      { label: "Opinión y encuestas", href: "/favorabilidad" },
     ],
   },
   {

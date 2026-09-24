@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
+import { professionalPolls } from "../data/government-accountability";
 
 type Indicators = {
   updatedAt: string;
@@ -52,13 +53,18 @@ export default function FavorabilityDashboard() {
 
   return <div className="indicator-dashboard">
     <div className="indicator-summary">
-      <article><small>Sentimiento de participantes</small><strong>{directional ? `${favorability}%` : "—"}</strong><p>Entre aportes aprobados que tomaron posición a favor o en contra.</p></article>
+      <article><small>Opinión de participantes</small><strong>{directional ? `${favorability}%` : "—"}</strong><p>Entre aportes aprobados que tomaron posición a favor o en contra.</p></article>
       <article><small>Muestra de opiniones</small><strong>{indicators.opinions.total}</strong><p>Un aporte único por navegador.</p></article>
       <article><small>Noticias analizadas</small><strong>{toneTotal}</strong><p>Titulares admitidos en la actualización actual.</p></article>
       <article><small>Aportes de noticias</small><strong>{indicators.contributions.total}</strong><p>Enlaces enviados por la comunidad.</p></article>
     </div>
 
     <div className="sample-warning"><AlertCircle size={18} /><p><strong>No es una encuesta ni mide favorabilidad nacional.</strong> Es una muestra autoseleccionada de participantes del portal; no tiene diseño probabilístico ni representa a la población colombiana.{!enoughSample && " Además, contiene menos de 10 opiniones aprobadas."}</p></div>
+
+    <section className="professional-polls" aria-labelledby="professional-polls-title">
+      <div><p className="section-kicker">ENCUESTAS PROFESIONALES</p><h2 id="professional-polls-title">Aprobación presidencial, en una serie separada</h2><p>Solo se incorporan mediciones que publiquen firma, muestra, fechas de campo, margen de error, patrocinador y enlace al estudio.</p></div>
+      {professionalPolls.length ? <div>{professionalPolls.map((poll) => <article key={poll.id}><strong>{poll.firm}</strong><span>{poll.favorable}% favorable · {poll.unfavorable}% desfavorable</span><small>{poll.fieldwork} · n={poll.sample} · margen {poll.margin} · {poll.sponsor}</small><a href={poll.source}>Ver estudio</a></article>)}</div> : <div className="polls-empty"><strong>Sin encuestas incorporadas en este corte.</strong><p>El portal no transformará opiniones de visitantes ni tono de titulares en una cifra de aprobación nacional.</p></div>}
+    </section>
 
     <div className="indicator-grid">
       <section><p className="section-kicker">OPINIONES CIUDADANAS</p><h2>Distribución de posturas</h2><Bars rows={[
