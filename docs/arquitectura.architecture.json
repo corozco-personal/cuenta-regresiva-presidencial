@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Cuenta pública · arquitectura observada",
+    "output": "arquitectura-sistema.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1315,
+      564
+    ],
+    "repository": {
+      "url": "https://git.chatgpt-team.site/bba7f3db-b6f8-434c-8465-6c862415f77e/appgprj_6ab1c2a2bd588191a4112b986e7376e4.git",
+      "link_mode": "local-only",
+      "revision": "f1cb136faac9b1b2a8db4915f560f70696b936bc"
+    },
+    "views": [
+      {
+        "id": "lectura-publica",
+        "label": "Lectura pública",
+        "focus": [
+          "visitantes",
+          "paginas",
+          "api",
+          "d1"
+        ],
+        "note": "Trayecto de una visita: la página pide la caché de noticias y el Worker la sirve desde D1."
+      },
+      {
+        "id": "ingesta",
+        "label": "Ingesta de noticias",
+        "focus": [
+          "cron",
+          "gha",
+          "monitor",
+          "fuentes",
+          "d1"
+        ],
+        "note": "Dos programadores distintos llaman al mismo monitor, que consulta proveedores y escribe el archivo."
+      },
+      {
+        "id": "zona-privada",
+        "label": "Moderación privada",
+        "focus": [
+          "sitesAuth",
+          "panel",
+          "api",
+          "d1",
+          "turnstile"
+        ],
+        "note": "Ningún aporte se publica sin decisión manual del revisor autorizado."
+      },
+      {
+        "id": "correo",
+        "label": "Correo y boletín",
+        "focus": [
+          "cron",
+          "api",
+          "resend",
+          "d1"
+        ],
+        "note": "El cron horario envía el resumen a quienes eligieron esa hora en Bogotá."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "visitantes",
+      "type": "external",
+      "label": "Visitantes",
+      "sublabel": "Navegador · PWA",
+      "pos": [
+        40,
+        310
+      ],
+      "size": [
+        150,
+        70
+      ]
+    },
+    {
+      "id": "sitesAuth",
+      "type": "security",
+      "label": "OpenAI Sites",
+      "sublabel": "identidad delegada",
+      "tag": "REVIEWER_EMAIL",
+      "pos": [
+        40,
+        160
+      ],
+      "size": [
+        150,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app/chatgpt-auth.ts",
+          "label": "cabeceras de identidad"
+        },
+        {
+          "path": "app/data/reviewer-auth.ts",
+          "label": "lista blanca"
+        }
+      ]
+    },
+    {
+      "id": "panel",
+      "type": "frontend",
+      "label": "Centro de cotejo",
+      "sublabel": "panel privado",
+      "pos": [
+        270,
+        160
+      ],
+      "size": [
+        185,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app/cotejo-7d41e9c2/page.tsx"
+        },
+        {
+          "path": "app/components/review-dashboard.tsx"
+        }
+      ]
+    },
+    {
+      "id": "paginas",
+      "type": "frontend",
+      "label": "Páginas públicas",
+      "sublabel": "React 19 · App Router",
+      "pos": [
+        270,
+        310
+      ],
+      "size": [
+        185,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app/page.tsx"
+        },
+        {
+          "path": "app/components/community.tsx"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Route handlers",
+      "sublabel": "app/api/**",
+      "tag": "26 rutas",
+      "pos": [
+        535,
+        310
+      ],
+      "size": [
+        185,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app/api/opiniones/route.ts"
+        },
+        {
+          "path": "app/api/boletin/enviar/route.ts"
+        }
+      ]
+    },
+    {
+      "id": "monitor",
+      "type": "backend",
+      "label": "Monitor de noticias",
+      "sublabel": "reglas editoriales",
+      "tag": "/api/noticias-v2",
+      "pos": [
+        800,
+        160
+      ],
+      "size": [
+        185,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app/api/noticias/route.ts",
+          "label": "admisión y agrupación"
+        }
+      ]
+    },
+    {
+      "id": "cron",
+      "type": "cloud",
+      "label": "Cron del Worker",
+      "sublabel": "0 * * * *",
+      "pos": [
+        535,
+        40
+      ],
+      "size": [
+        185,
+        60
+      ],
+      "sources": [
+        {
+          "path": "worker/index.ts"
+        }
+      ]
+    },
+    {
+      "id": "gha",
+      "type": "cloud",
+      "label": "GitHub Actions",
+      "sublabel": "horario y respaldo",
+      "pos": [
+        1065,
+        40
+      ],
+      "size": [
+        185,
+        60
+      ],
+      "sources": [
+        {
+          "path": ".github/workflows/hourly-news.yml"
+        },
+        {
+          "path": ".github/workflows/monitor-and-backup.yml"
+        }
+      ]
+    },
+    {
+      "id": "d1",
+      "type": "database",
+      "label": "Cloudflare D1",
+      "sublabel": "SQLite · Drizzle",
+      "tag": "13 tablas",
+      "pos": [
+        800,
+        310
+      ],
+      "size": [
+        185,
+        70
+      ],
+      "sources": [
+        {
+          "path": "db/schema.ts"
+        },
+        {
+          "path": "drizzle/0010_left_gorilla_man.sql"
+        }
+      ]
+    },
+    {
+      "id": "fuentes",
+      "type": "external",
+      "label": "Proveedores de noticias",
+      "sublabel": "Google News RSS · GDELT · NewsAPI",
+      "pos": [
+        1065,
+        160
+      ],
+      "size": [
+        210,
+        70
+      ]
+    },
+    {
+      "id": "resend",
+      "type": "external",
+      "label": "Resend",
+      "sublabel": "correo transaccional",
+      "pos": [
+        1065,
+        460
+      ],
+      "size": [
+        210,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app/data/newsletter-email.ts"
+        },
+        {
+          "path": "app/api/resend-webhook/route.ts"
+        }
+      ]
+    },
+    {
+      "id": "oficiales",
+      "type": "external",
+      "label": "Fuentes oficiales",
+      "sublabel": "DANE · BanRep · Cámara",
+      "pos": [
+        535,
+        460
+      ],
+      "size": [
+        185,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app/api/contexto-pais/route.ts"
+        },
+        {
+          "path": "app/api/geografia/route.ts"
+        }
+      ]
+    },
+    {
+      "id": "turnstile",
+      "type": "security",
+      "label": "Turnstile",
+      "sublabel": "antibots",
+      "tag": "límite en D1",
+      "pos": [
+        270,
+        460
+      ],
+      "size": [
+        185,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app/data/edge-security.ts"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cloudflare · Worker y base de datos D1 (Next.js 16 sobre Vinext)",
+      "wraps": [
+        "cron",
+        "panel",
+        "paginas",
+        "api",
+        "monitor",
+        "d1"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "zona privada · un revisor autorizado",
+      "wraps": [
+        "panel"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "visita",
+      "from": "visitantes",
+      "to": "paginas",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "lectura-api",
+      "from": "paginas",
+      "to": "api",
+      "label": "GET /api/noticias-v2",
+      "variant": "emphasis",
+      "labelDy": -35,
+      "labelDx": 60
+    },
+    {
+      "id": "persistencia",
+      "from": "api",
+      "to": "d1",
+      "label": "SQL parametrizado",
+      "variant": "emphasis",
+      "labelDy": -35
+    },
+    {
+      "id": "identidad",
+      "from": "sitesAuth",
+      "to": "panel",
+      "label": "cabeceras de identidad",
+      "variant": "security",
+      "labelDy": 55
+    },
+    {
+      "id": "moderacion",
+      "from": "panel",
+      "to": "api",
+      "label": "aprueba o rechaza"
+    },
+    {
+      "id": "cron-monitor",
+      "from": "cron",
+      "to": "monitor",
+      "label": "refresco horario",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "gha-monitor",
+      "from": "gha",
+      "to": "monitor",
+      "label": "x-cron-secret",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "consulta-fuentes",
+      "from": "monitor",
+      "to": "fuentes",
+      "label": "descubre menciones",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 55
+    },
+    {
+      "id": "archivo",
+      "from": "monitor",
+      "to": "d1",
+      "label": "upsert news_articles",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 45
+    },
+    {
+      "id": "boletin",
+      "from": "cron",
+      "to": "api",
+      "label": "boletín diario",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 50
+    },
+    {
+      "id": "correo",
+      "from": "api",
+      "to": "resend",
+      "label": "envía y recibe webhook",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "indicadores",
+      "from": "api",
+      "to": "oficiales",
+      "label": "indicadores y mapas",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 50,
+      "labelDx": -50
+    },
+    {
+      "id": "antibots",
+      "from": "turnstile",
+      "to": "api",
+      "label": "verifica el token",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Lectura pública",
+      "items": [
+        "La portada y 23 páginas más son componentes cliente que consultan la API propia",
+        "El archivo de noticias se sirve desde la caché en D1 con s-maxage de 300 s"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Ingesta",
+      "items": [
+        "El cron del Worker y GitHub Actions llaman al mismo endpoint cada hora",
+        "Solo se admiten dominios del directorio editorial con enlace HTTPS y fecha válida"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Moderación y seguridad",
+      "items": [
+        "Ningún aporte ciudadano se publica sin decisión manual del revisor",
+        "Turnstile y el límite por ventana viven en D1; sin claves, Turnstile queda desactivado"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Puntos frágiles observados",
+      "items": [
+        "D1 es punto único de fallo: su caída bloquea las escrituras públicas",
+        "GET /api/noticias dispara un refresco completo sin secreto"
+      ]
+    }
+  ]
+}
