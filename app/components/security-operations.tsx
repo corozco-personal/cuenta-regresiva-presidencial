@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Archive, CheckCircle2, KeyRound, MailCheck, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import AdminJobsPanel from "./admin-jobs-panel";
 
 type Status = {
   controls: Record<string, boolean>;
@@ -21,7 +22,8 @@ export default function SecurityOperations() {
   useEffect(() => { const frame = requestAnimationFrame(() => void load()); return () => cancelAnimationFrame(frame); }, [load]);
   async function run(action: string, success: string) { setBusy(action); setMessage(""); const response = await fetch("/api/cotejo-7d41e9c2/maintenance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) }); const result = await response.json().catch(() => ({})); if (response.ok) { setData(result.status); setMessage(success); } else setMessage(result.error ?? "El control no pudo completarse."); setBusy(""); }
   if (!data) return <section className="security-operations"><p>Comprobando controles operativos…</p></section>;
-  return <section className="security-operations" aria-labelledby="operations-title">
+  return <>
+  <section className="security-operations" aria-labelledby="operations-title">
     <div className="analytics-section-title"><div><p className="section-kicker">CONTROLES OPERATIVOS</p><h2 id="operations-title">Continuidad, privacidad y alertas</h2></div><ShieldCheck size={28} /></div>
     <div className="operations-controls">{Object.entries(data.controls).map(([key, ok]) => <article key={key} className={ok ? "is-ok" : "is-alert"}>{ok ? <CheckCircle2 /> : <AlertTriangle />}<span>{labels[key] ?? key}</span><strong>{ok ? "Activo" : "Requiere atención"}</strong></article>)}</div>
     <div className="operations-grid">
@@ -33,5 +35,7 @@ export default function SecurityOperations() {
     </div>
     {data.deliveryAlerts.length > 0 && <details className="operations-alerts"><summary><AlertTriangle />Alertas de correo recientes</summary><ol>{data.deliveryAlerts.map((item, index) => <li key={`${item.createdAt}-${index}`}><time>{date(item.createdAt)}</time><strong>{item.status}</strong><span>{item.error ?? "Sin detalle"}</span></li>)}</ol></details>}
     {message && <p className="review-message" role="status">{message}</p>}
-  </section>;
+  </section>
+  <AdminJobsPanel />
+  </>;
 }
