@@ -7,6 +7,9 @@ export const accountabilitySources = {
   congress: "https://www.camara.gov.co/proyectos-ley/",
   sigep: "https://www.funcionpublica.gov.co/sigep2/directorio",
   contracts: "https://www.colombiacompra.gov.co/secop/consulte-en-el-secop-ii",
+  officialCabinet: "https://www.presidencia.gov.co/contenidoVinculado/pre26-gabinete-mesa.html",
+  publicCv: "https://dapre.presidencia.gov.co/AtencionCiudadana/tramites-servicios-dapre/publicacion-hojas-vida",
+  dapreOfficials: "https://dapre.presidencia.gov.co/dapre/conozca-el-dapre/funcionarios",
 };
 
 export const executiveDecisions = [
@@ -117,6 +120,37 @@ export const cabinetRegistry = [
     source: "https://wapp.registraduria.gov.co/electoral/2026/presidente-de-la-republica-segunda-vuelta/registro-candidatos.html",
     disclosure: "La ficha se ampliará con acto de posesión, hoja de vida y declaraciones públicas verificables.",
   },
+  ...[
+    ["omar-bula", "Omar Bula Escobar", "Ministro de Relaciones Exteriores", "Ministerio de Relaciones Exteriores"],
+    ["indalecio-dangond", "Indalecio Dangond", "Ministro de Agricultura y Desarrollo Rural", "Ministerio de Agricultura y Desarrollo Rural"],
+    ["rodrigo-lara", "Rodrigo Lara Restrepo", "Ministro del Interior", "Ministerio del Interior"],
+    ["maria-nohemi-arboleda", "María Nohemí Arboleda", "Ministra de Minas y Energía", "Ministerio de Minas y Energía"],
+    ["fabio-arjona", "Fabio Alberto Arjona", "Ministro de Ambiente y Desarrollo Sostenible", "Ministerio de Ambiente y Desarrollo Sostenible"],
+    ["viviane-morales", "Viviane Morales", "Ministra de Educación Nacional", "Ministerio de Educación Nacional"],
+    ["juliana-gutierrez", "Juliana Gutiérrez", "Ministra del Deporte", "Ministerio del Deporte"],
+    ["elsa-noguera", "Elsa Margarita Noguera", "Ministra de Transporte", "Ministerio de Transporte"],
+    ["paola-holguin", "Paola Andrea Holguín", "Ministra de las Culturas, las Artes y los Saberes", "Ministerio de las Culturas"],
+    ["mauricio-gomez-amin", "Mauricio Gómez Amín", "Ministro de Comercio, Industria y Turismo", "Ministerio de Comercio, Industria y Turismo"],
+    ["jaime-beltran", "Jaime Andrés Beltrán", "Ministro de Vivienda, Ciudad y Territorio", "Ministerio de Vivienda, Ciudad y Territorio"],
+    ["alexandra-falla", "Alexandra Falla", "Ministra de Tecnologías de la Información y las Comunicaciones", "Ministerio TIC"],
+    ["ivan-cancino", "Iván Alfonso Cancino", "Ministro de Justicia y del Derecho", "Ministerio de Justicia y del Derecho"],
+    ["jorge-mora", "Jorge Eduardo Mora", "Ministro de Defensa Nacional", "Ministerio de Defensa Nacional"],
+    ["miguel-gomez", "Miguel Gómez Martínez", "Ministro de Hacienda y Crédito Público", "Ministerio de Hacienda y Crédito Público"],
+    ["ana-maria-vesga", "Ana María Vesga", "Ministra de Salud y Protección Social", "Ministerio de Salud y Protección Social"],
+    ["natalia-lopez", "Natalia López Fuentes", "Ministra del Trabajo", "Ministerio del Trabajo"],
+  ].map(([id, person, office, entity]) => ({
+    id,
+    person,
+    office,
+    entity,
+    startedAt: "2026-08-07",
+    endedAt: null,
+    basis: "Listado oficial de Gabinete Ministerial Presidencial 2026",
+    status: "Activo",
+    source: accountabilitySources.officialCabinet,
+    cvSource: accountabilitySources.publicCv,
+    disclosure: "Registro tomado del gabinete oficial. Hoja de vida y soportes deben cotejarse en publicaciones DAPRE, SIGEP y actos administrativos.",
+  })),
 ];
 
 export const policyDossiers = [

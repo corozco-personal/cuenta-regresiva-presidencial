@@ -213,12 +213,28 @@ export const securityOperations = sqliteTable("security_operations", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const dataRefreshRuns = sqliteTable("data_refresh_runs", {
+  key: text("key").primaryKey(),
+  label: text("label").notNull(),
+  cadence: text("cadence").notNull(),
+  status: text("status").notNull(),
+  lastStartedAt: text("last_started_at").notNull(),
+  lastCompletedAt: text("last_completed_at"),
+  lastSuccessAt: text("last_success_at"),
+  recordCount: integer("record_count"),
+  error: text("error"),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [
+  index("data_refresh_runs_status_idx").on(table.status, table.lastCompletedAt),
+]);
+
 export const newsletterSubscriptions = sqliteTable("newsletter_subscriptions", {
   id: text("id").primaryKey(),
   emailHash: text("email_hash").notNull(),
   emailCiphertext: text("email_ciphertext").notNull(),
   preferredHour: integer("preferred_hour").notNull(),
   timezone: text("timezone").notNull().default("America/Bogota"),
+  interestsJson: text("interests_json").notNull().default("[]"),
   status: text("status").notNull().default("pending"),
   confirmationTokenHash: text("confirmation_token_hash"),
   unsubscribeTokenHash: text("unsubscribe_token_hash").notNull(),

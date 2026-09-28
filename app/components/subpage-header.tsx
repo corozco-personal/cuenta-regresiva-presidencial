@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Leaf } from "lucide-react";
+import { BellRing, Leaf } from "lucide-react";
 import Link from "./native-link";
 import CompactPresence from "./compact-presence";
 import NavigationCatalog from "./navigation-catalog";
@@ -29,9 +29,10 @@ export default function SubpageHeader() {
       <Link className="brand" href="/"><span className="brand-mark">07</span><span>Cuenta pública</span></Link>
       <nav aria-label="Navegación principal">
         <Link href="/">Inicio</Link><Link href="/#monitoreo">Noticias</Link>
-        <Link className="nav-priority nav-priority-2" href="/gestion">Así va</Link>
+        <Link className="nav-priority nav-priority-2" href="/gestion">Así va el Gobierno</Link>
         <Link className="nav-priority nav-priority-3" href="/indicadores">Indicadores</Link>
         <Link className="nav-priority nav-priority-4" href="/archivo">Archivo</Link>
+        <Link className="nav-alert-link" href="/alertas"><BellRing size={14} /> Alertas</Link>
         <details className="nav-more">
           <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
           <NavigationCatalog />

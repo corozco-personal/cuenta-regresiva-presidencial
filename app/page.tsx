@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpRight,
+  BellRing,
   CheckCircle2,
   ChevronDown,
   CircleX,
@@ -380,9 +381,10 @@ export default function Home() {
         <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Navegación principal">
           <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a>
           <a href="#monitoreo" onClick={() => setMenuOpen(false)}>Noticias</a>
-          <a className="nav-priority nav-priority-2" href="/gestion" onClick={() => setMenuOpen(false)}>Así va</a>
+          <a className="nav-priority nav-priority-2" href="/gestion" onClick={() => setMenuOpen(false)}>Así va el Gobierno</a>
           <a className="nav-priority nav-priority-3" href="/indicadores" onClick={() => setMenuOpen(false)}>Indicadores</a>
           <a className="nav-priority nav-priority-4" href="/archivo" onClick={() => setMenuOpen(false)}>Archivo</a>
+          <a className="nav-alert-link" href="/alertas" onClick={() => setMenuOpen(false)}><BellRing size={14} /> Alertas</a>
           <details className="nav-more">
             <summary><span className="hamburger-lines" aria-hidden="true" /> Más</summary>
             <NavigationCatalog onNavigate={() => setMenuOpen(false)} />

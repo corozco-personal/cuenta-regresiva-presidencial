@@ -46,18 +46,41 @@ async function runDailyNewsletter(env: WorkerEnvironment, context: ExecutionCont
   console.log("newsletter-digest", "Ejecución horaria completada", payload);
 }
 
-async function runScheduledJobs(env: WorkerEnvironment, context: ExecutionContext) {
+async function runDailyDataRefresh(env: WorkerEnvironment, context: ExecutionContext) {
+  if (!env.CRON_SECRET) throw new Error("CRON_SECRET no está configurado");
+  const request = new Request("https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site/api/actualizaciones/diarias", {
+    method: "POST",
+    headers: {
+      "x-cron-secret": env.CRON_SECRET,
+      "user-agent": "CuentaPublica-Cloudflare-Cron/1.0",
+    },
+  });
+  const response = await handler.fetch(request, env, context);
+  if (!response.ok) throw new Error(`La actualización diaria respondió ${response.status}`);
+  console.log("daily-refresh", "Actualización diaria completada", await response.json());
+}
+
+async function runHourlyJobs(env: WorkerEnvironment, context: ExecutionContext) {
   try { await runHourlyNewsRefresh(env, context); }
   catch (error) { console.error("news-monitor", error); }
   await runDailyNewsletter(env, context);
+}
+
+async function runScheduledJobs(controller: { cron?: string } | undefined, env: WorkerEnvironment, context: ExecutionContext) {
+  if (controller?.cron === "5 5 * * *") {
+    try { await runDailyDataRefresh(env, context); }
+    catch (error) { console.error("daily-refresh", error); }
+    return;
+  }
+  await runHourlyJobs(env, context);
 }
 
 const worker = {
   fetch(request: Request, env: WorkerEnvironment, context: ExecutionContext) {
     return handler.fetch(request, env, context);
   },
-  scheduled(_controller: unknown, env: WorkerEnvironment, context: ExecutionContext) {
-    context.waitUntil(runScheduledJobs(env, context));
+  scheduled(controller: { cron?: string }, env: WorkerEnvironment, context: ExecutionContext) {
+    context.waitUntil(runScheduledJobs(controller, env, context));
   },
 };
 

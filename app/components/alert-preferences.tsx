@@ -5,6 +5,7 @@ import { Bell, Check, Copy, Mail, Rss } from "lucide-react";
 import TurnstileWidget from "./turnstile-widget";
 
 const topics = ["Todas las noticias", "Justicia y control", "Seguridad y defensa", "Economía", "Relaciones exteriores", "Elecciones", "Derechos", "Gobierno"];
+const emailInterests = ["Justicia y control", "Seguridad y defensa", "Economía", "Relaciones exteriores", "Elecciones", "Derechos", "Gobierno", "Nombramientos"];
 const hours = Array.from({ length: 24 }, (_, hour) => hour);
 
 function hourLabel(hour: number) {
@@ -19,6 +20,7 @@ export default function AlertPreferences() {
   const [copied, setCopied] = useState("");
   const [email, setEmail] = useState("");
   const [preferredHour, setPreferredHour] = useState(18);
+  const [interests, setInterests] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileEnabled, setTurnstileEnabled] = useState(false);
@@ -60,13 +62,14 @@ export default function AlertPreferences() {
       const response = await fetch("/api/suscripciones", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, preferredHour, consent, turnstileToken }),
+        body: JSON.stringify({ email, preferredHour, interests, consent, turnstileToken }),
       });
       const data = await response.json() as { message?: string; error?: string };
       if (!response.ok) throw new Error(data.error || "No fue posible registrar la suscripción.");
       setSubmitState("sent");
       setMessage(data.message ?? "Revisa tu correo para confirmar la suscripción.");
       setEmail("");
+      setInterests([]);
       setConsent(false);
     } catch (error) {
       setSubmitState("error");
@@ -74,6 +77,10 @@ export default function AlertPreferences() {
     } finally {
       setResetSignal((value) => value + 1);
     }
+  }
+
+  function toggleInterest(value: string) {
+    setInterests((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
   const channels = [
@@ -91,10 +98,11 @@ export default function AlertPreferences() {
         <Mail size={26} />
         <p className="section-kicker">RESUMEN POR CORREO</p>
         <h2>Las noticias del día, a la hora que elijas</h2>
-        <p>Recibe una lista compacta con el titular, el medio y el enlace a cada noticia incorporada ese día.</p>
+        <p>Recibe una lista compacta con el titular, el medio y el enlace a cada noticia incorporada durante las últimas 24 horas.</p>
         <form className="newsletter-form" onSubmit={subscribe}>
           <label><span>Correo electrónico</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="nombre@correo.com" required maxLength={254} /></label>
           <label><span>Hora de envío · Colombia</span><select value={preferredHour} onChange={(event) => setPreferredHour(Number(event.target.value))}>{hours.map((hour) => <option value={hour} key={hour}>{hourLabel(hour)}</option>)}</select></label>
+          <fieldset className="newsletter-interest-grid"><legend>Temas de interés</legend><p>Si no marcas ninguno, recibirás todas las noticias verificadas.</p>{emailInterests.map((item) => <label key={item}><input type="checkbox" checked={interests.includes(item)} onChange={() => toggleInterest(item)} /><span>{item}</span></label>)}</fieldset>
           <label className="newsletter-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required /><span>Acepto recibir un resumen diario. Puedo cancelar la suscripción desde cualquier correo.</span></label>
           <TurnstileWidget action="newsletter_subscribe" resetSignal={resetSignal} onToken={onToken} onEnabled={onEnabled} />
           <button type="submit" disabled={submitState === "sending" || !consent || (turnstileEnabled && !turnstileToken)}><Bell size={17} /> {submitState === "sending" ? "Registrando…" : "Quiero recibir el resumen"}</button>

@@ -5,11 +5,13 @@ import { Activity, CalendarDays, Download, Eye, MousePointerClick, RefreshCw, Us
 import ActivityChart from "./activity-chart";
 
 type Row = { day: string; users: number; pageviews: number; interactions: number };
+type HourRow = { hour: string; users: number; pageviews: number; interactions: number };
 type Ranked = { page?: string; name?: string; value: number };
 type Report = {
   liveUsers: number;
-  today: { users: number; pageviews: number; interactions: number };
+  today: { users: number; pageviews: number; interactions: number; uniquePages: number; pagesPerUser: number; interactionRate: number; topPage: { page?: string; value?: number } | null };
   daily: Row[];
+  todayHourly: HourRow[];
   topPages: Ranked[];
   topInteractions: Ranked[];
   generatedAt: string;
@@ -83,10 +85,22 @@ export default function AnalyticsDashboard() {
       {state === "loading" && !data ? <p className="analytics-loading">Preparando el reporte…</p> : data && (
         <>
           <section className="analytics-period-summary">
-            <div><span>Periodo</span><strong>{range} días</strong></div>
-            <div><span>Visitantes diarios acumulados</span><strong>{number.format(totals.users)}</strong></div>
+            <div><span>Páginas activas hoy</span><strong>{number.format(data.today.uniquePages)}</strong></div>
+            <div><span>Vistas por visitante hoy</span><strong>{number.format(data.today.pagesPerUser)}</strong></div>
+            <div><span>Tasa de interacción hoy</span><strong>{number.format(data.today.interactionRate)}%</strong></div>
+            <div><span>Página más activa hoy</span><strong>{data.today.topPage?.page ? pageLabel(String(data.today.topPage.page)) : "—"}</strong></div>
+          </section>
+
+          <section className="analytics-period-summary analytics-period-secondary">
+            <div><span>Periodo histórico</span><strong>{range} días</strong></div>
+            <div><span>Visitantes acumulados</span><strong>{number.format(totals.users)}</strong></div>
             <div><span>Vistas</span><strong>{number.format(totals.pageviews)}</strong></div>
             <div><span>Interacciones</span><strong>{number.format(totals.interactions)}</strong></div>
+          </section>
+
+          <section className="analytics-chart" aria-labelledby="today-chart-title">
+            <div className="analytics-section-title"><div><p className="section-kicker">HOY EN VIVO</p><h2 id="today-chart-title">Actividad por hora</h2></div></div>
+            {data.todayHourly.length ? <div className="hourly-bars">{data.todayHourly.map((row) => <article key={row.hour}><span>{row.hour}:00</span><i style={{ height: `${Math.max(8, Number(row.pageviews) / Math.max(...data.todayHourly.map((item) => Number(item.pageviews)), 1) * 100)}%` }} /><strong>{number.format(Number(row.pageviews))}</strong></article>)}</div> : <p className="analytics-empty">Aún no hay actividad registrada hoy.</p>}
           </section>
 
           <section className="analytics-chart" aria-labelledby="activity-chart-title">

@@ -16,7 +16,7 @@ const managedLinux = readExecutionProfile() === "managed-linux";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  triggers: { crons: ["0 * * * *"] },
+  triggers: { crons: ["0 * * * *", "5 5 * * *"] },
   d1_databases: d1
     ? [
         {

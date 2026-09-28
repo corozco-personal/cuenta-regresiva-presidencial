@@ -5,6 +5,13 @@ import { safeEmail } from "../../data/input-security";
 import { sendNewsletterConfirmation } from "../../data/newsletter-email";
 import { createNewsletterToken, encryptNewsletterValue, hashNewsletterValue } from "../../data/newsletter-security";
 
+const ALLOWED_INTERESTS = new Set(["Justicia y control", "Seguridad y defensa", "Economía", "Relaciones exteriores", "Elecciones", "Derechos", "Gobierno", "Nombramientos"]);
+
+function cleanInterests(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((item) => String(item)).filter((item) => ALLOWED_INTERESTS.has(item)))].slice(0, 8);
+}
+
 export async function POST(request: Request) {
   const limited = await enforceRateLimit(request, "newsletter-subscribe", 5, 3_600);
   if (limited) return limited;
@@ -18,6 +25,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Escribe una dirección de correo válida." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
   const preferredHour = Number(body.preferredHour);
+  const interests = cleanInterests(body.interests);
   if (!email || !Number.isInteger(preferredHour) || preferredHour < 0 || preferredHour > 23 || body.consent !== true) {
     return Response.json({ error: "Completa el correo, la hora y la autorización de envío." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
@@ -36,6 +44,7 @@ export async function POST(request: Request) {
       emailCiphertext: await encryptNewsletterValue(email),
       preferredHour,
       timezone: "America/Bogota",
+      interestsJson: JSON.stringify(interests),
       status: "pending",
       confirmationTokenHash: await hashNewsletterValue(confirmationToken),
       unsubscribeTokenHash: await hashNewsletterValue(unsubscribeToken),
@@ -55,6 +64,7 @@ export async function POST(request: Request) {
         emailCiphertext: values.emailCiphertext,
         preferredHour,
         timezone: values.timezone,
+        interestsJson: values.interestsJson,
         status: "pending",
         confirmationTokenHash: values.confirmationTokenHash,
         unsubscribeTokenHash: values.unsubscribeTokenHash,

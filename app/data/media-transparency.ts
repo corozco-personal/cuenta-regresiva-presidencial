@@ -21,6 +21,14 @@ const UNKNOWN: MediaTransparencyProfile = {
 };
 
 const PROFILES: Record<string, MediaTransparencyProfile> = {
+  "efe": {
+    bias: "Centro",
+    factuality: "Alta",
+    ownership: "Gobierno",
+    owner: "SEPI · Estado español",
+    ratingSource: "https://ground.news/interest/efe",
+    ownershipSource: "https://verifica.efe.com/que-es-efe-verifica/",
+  },
   "agencia efe": {
     bias: "Centro",
     factuality: "Alta",
@@ -53,13 +61,54 @@ const PROFILES: Record<string, MediaTransparencyProfile> = {
     ratingSource: "https://ground.news/interest/associated-press-news",
     ownershipSource: "https://www.ap.org/about/",
   },
+  "ap news": {
+    bias: "Centro izquierda",
+    factuality: "Alta",
+    ownership: "Independiente",
+    owner: "Cooperativa de medios Associated Press",
+    ratingSource: "https://ground.news/interest/associated-press-news",
+    ownershipSource: "https://www.ap.org/about/",
+  },
+  "reuters": {
+    bias: "Centro",
+    factuality: "Muy alta",
+    ownership: "Corporación",
+    owner: "Thomson Reuters",
+    ratingSource: "https://ground.news/interest/reuters",
+    ownershipSource: "https://www.thomsonreuters.com/en/about-us.html",
+  },
+  "bbc news": {
+    bias: "Centro",
+    factuality: "Alta",
+    ownership: "Gobierno",
+    owner: "British Broadcasting Corporation",
+    ratingSource: "https://ground.news/interest/bbc",
+    ownershipSource: "https://www.bbc.com/aboutthebbc",
+  },
+  "bbc mundo": {
+    bias: "Centro",
+    factuality: "Alta",
+    ownership: "Gobierno",
+    owner: "British Broadcasting Corporation",
+    ratingSource: "https://ground.news/interest/bbc",
+    ownershipSource: "https://www.bbc.com/aboutthebbc",
+  },
+  "france 24": {
+    bias: "Centro",
+    factuality: "Alta",
+    ownership: "Gobierno",
+    owner: "France Médias Monde",
+    ratingSource: "https://ground.news/interest/france-24",
+    ownershipSource: "https://www.francemediasmonde.com/en/group/",
+  },
   "dw español": {
-    bias: "Sin datos",
-    factuality: "Sin datos",
+    bias: "Centro",
+    factuality: "Alta",
     ownership: "Gobierno",
     owner: "Radiodifusora pública alemana financiada con presupuesto federal",
+    ratingSource: "https://ground.news/interest/deutsche-welle",
     ownershipSource: "https://corporate.dw.com/de/%C3%BCber-die-deutsche-welle/a-71848692",
-    note: "La fuente institucional declara independencia editorial; el tipo de financiación no equivale a una orientación política.",
+    note: "La financiación pública no equivale por sí sola a orientación política; se usa rating externo para el marcador editorial.",
   },
   "noticias caracol": {
     bias: "Sin datos",
@@ -98,4 +147,13 @@ export function biasGroup(bias: BiasRating): "left" | "center" | "right" | "unkn
   if (bias === "Centro") return "center";
   if (bias === "Derecha" || bias === "Centro derecha") return "right";
   return "unknown";
+}
+
+export function biasScore(bias: BiasRating) {
+  if (bias === "Izquierda") return 0;
+  if (bias === "Centro izquierda") return 25;
+  if (bias === "Centro") return 50;
+  if (bias === "Centro derecha") return 75;
+  if (bias === "Derecha") return 100;
+  return null;
 }

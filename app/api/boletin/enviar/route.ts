@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { and, desc, eq, gte, isNull, lt, ne, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, ne, or } from "drizzle-orm";
 import { getDb } from "../../../../db";
 import { newsletterSubscriptions, newsArticles } from "../../../../db/schema";
 import { sendNewsletterDigestBatch } from "../../../data/newsletter-email";
@@ -18,9 +18,11 @@ function colombiaClock(now = new Date()) {
   return { localDate: `${value.year}-${value.month}-${value.day}`, localHour: Number(value.hour) };
 }
 
-function dayRange(localDate: string) {
-  const start = new Date(`${localDate}T00:00:00-05:00`);
-  return { start: start.toISOString(), end: new Date(start.getTime() + 86_400_000).toISOString() };
+function parseInterests(value: string | null | undefined) {
+  try {
+    const parsed = JSON.parse(value || "[]");
+    return Array.isArray(parsed) ? parsed.map((item) => String(item)).filter(Boolean) : [];
+  } catch { return []; }
 }
 
 export async function POST(request: Request) {
@@ -30,18 +32,18 @@ export async function POST(request: Request) {
 
   const db = getDb();
   const { localDate, localHour } = colombiaClock();
-  const range = dayRange(localDate);
+  const since = new Date(Date.now() - 86_400_000).toISOString();
   const [subscriptions, articles] = await Promise.all([
     db.select().from(newsletterSubscriptions).where(and(
       eq(newsletterSubscriptions.status, "active"),
       eq(newsletterSubscriptions.preferredHour, localHour),
       or(isNull(newsletterSubscriptions.lastSentLocalDate), ne(newsletterSubscriptions.lastSentLocalDate, localDate)),
     )).limit(500),
-    db.select({ title: newsArticles.title, source: newsArticles.source, url: newsArticles.url, finalUrl: newsArticles.finalUrl, publishedAt: newsArticles.publishedAt })
+    db.select({ title: newsArticles.title, source: newsArticles.source, url: newsArticles.url, finalUrl: newsArticles.finalUrl, publishedAt: newsArticles.publishedAt, category: newsArticles.category })
       .from(newsArticles)
-      .where(and(gte(newsArticles.publishedAt, range.start), lt(newsArticles.publishedAt, range.end)))
+      .where(gte(newsArticles.publishedAt, since))
       .orderBy(desc(newsArticles.publishedAt))
-      .limit(40),
+      .limit(120),
   ]);
 
   const safeArticles = articles.map((article) => ({
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
     source: article.source,
     url: /^https:\/\//i.test(article.finalUrl ?? "") ? article.finalUrl! : article.url,
     publishedAt: article.publishedAt,
+    category: article.category,
   }));
   let sent = 0;
   let failed = 0;
@@ -59,8 +62,13 @@ export async function POST(request: Request) {
       const recipients = await Promise.all(chunk.map(async (subscription) => ({
         email: await decryptNewsletterValue(subscription.emailCiphertext),
         unsubscribeToken: await decryptNewsletterValue(subscription.unsubscribeTokenCiphertext),
+        interests: parseInterests(subscription.interestsJson),
       })));
-      const messageIds = await sendNewsletterDigestBatch(recipients, safeArticles, localDate);
+      const messageIds = await sendNewsletterDigestBatch(recipients.map((recipient) => ({
+        email: recipient.email,
+        unsubscribeToken: recipient.unsubscribeToken,
+        articles: recipient.interests.length ? safeArticles.filter((article) => recipient.interests.some((interest) => new RegExp(interest.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(`${article.title} ${article.category ?? ""}`))).slice(0, 40) : safeArticles.slice(0, 40),
+      })), safeArticles, localDate);
       await Promise.all(chunk.map((subscription, index) => db.update(newsletterSubscriptions).set({
         lastSentLocalDate: localDate,
         lastMessageId: messageIds[index],

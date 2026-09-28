@@ -1,6 +1,9 @@
+import { getRefreshRun } from "../../data/refresh-runs";
+
 type Indicator = {
   id: string; label: string; value: number; unit: string; period: string; frequency: string;
   comparison?: { label: string; value: number; direction: "up" | "down" | "flat" };
+  previousGovernment?: { label: string; value: number | null; note?: string };
   detail: string; source: string; url: string; category: "Precios" | "Empleo" | "Actividad" | "Bienestar" | "Mercados";
   baseline?: { label: string; value: number };
   target?: string;
@@ -11,9 +14,9 @@ const DANE_URL = "https://www.dane.gov.co/";
 const TRM_URL = "https://www.banrep.gov.co/es/glosario/tasa-cambio-trm";
 
 const fallback: Indicator[] = [
-  { id: "ipc-anual", label: "Inflación anual", value: 6.24, unit: "%", period: "Agosto de 2026", frequency: "Mensual", comparison: { label: "Agosto de 2025: 5,10%", value: 5.1, direction: "up" }, baseline: { label: "Inicio del mandato · dato disponible", value: 6.24 }, target: "Sin meta oficial del Gobierno incorporada", series: [{ period: "Ago 2025", value: 5.1 }, { period: "Ago 2026", value: 6.24 }], detail: "Variación anual del Índice de Precios al Consumidor.", source: "DANE · IPC", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos/indice-de-precios-al-consumidor-ipc/ipc-informacion-tecnica", category: "Precios" },
+  { id: "ipc-anual", label: "Inflación anual", value: 6.24, unit: "%", period: "Agosto de 2026", frequency: "Mensual", comparison: { label: "Agosto de 2025: 5,10%", value: 5.1, direction: "up" }, previousGovernment: { label: "Cierre gobierno anterior · dato disponible al inicio", value: 6.24 }, baseline: { label: "Inicio del mandato · dato disponible", value: 6.24 }, target: "Sin meta oficial del Gobierno incorporada", series: [{ period: "Ago 2025", value: 5.1 }, { period: "Ago 2026", value: 6.24 }], detail: "Variación anual del Índice de Precios al Consumidor.", source: "DANE · IPC", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos/indice-de-precios-al-consumidor-ipc/ipc-informacion-tecnica", category: "Precios" },
   { id: "ipc-mensual", label: "Inflación mensual", value: 0.39, unit: "%", period: "Agosto de 2026", frequency: "Mensual", detail: "Variación del IPC frente al mes inmediatamente anterior.", source: "DANE · IPC", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos/indice-de-precios-al-consumidor-ipc/ipc-informacion-tecnica", category: "Precios" },
-  { id: "desocupacion", label: "Tasa de desocupación", value: 8.1, unit: "%", period: "Julio de 2026", frequency: "Mensual", comparison: { label: "Julio de 2025: 8,8%", value: 8.8, direction: "down" }, baseline: { label: "Dato previo a la posesión", value: 8.1 }, target: "Sin meta oficial del Gobierno incorporada", series: [{ period: "Jul 2025", value: 8.8 }, { period: "Jul 2026", value: 8.1 }], detail: "Porcentaje de la fuerza laboral que se encuentra desocupada.", source: "DANE · GEIH", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/empleo-y-desempleo", category: "Empleo" },
+  { id: "desocupacion", label: "Tasa de desocupación", value: 8.1, unit: "%", period: "Julio de 2026", frequency: "Mensual", comparison: { label: "Julio de 2025: 8,8%", value: 8.8, direction: "down" }, previousGovernment: { label: "Último corte antes del 7 ago 2026", value: 8.1 }, baseline: { label: "Dato previo a la posesión", value: 8.1 }, target: "Sin meta oficial del Gobierno incorporada", series: [{ period: "Jul 2025", value: 8.8 }, { period: "Jul 2026", value: 8.1 }], detail: "Porcentaje de la fuerza laboral que se encuentra desocupada.", source: "DANE · GEIH", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/empleo-y-desempleo", category: "Empleo" },
   { id: "ocupacion", label: "Tasa de ocupación", value: 59.5, unit: "%", period: "Julio de 2026", frequency: "Mensual", comparison: { label: "Julio de 2025: 58,9%", value: 58.9, direction: "up" }, detail: "Proporción de personas ocupadas dentro de la población en edad de trabajar.", source: "DANE · GEIH", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/empleo-y-desempleo", category: "Empleo" },
   { id: "pib", label: "PIB real", value: 3.5, unit: "%", period: "Segundo trimestre de 2026", frequency: "Trimestral", detail: "Variación anual preliminar del producto interno bruto en volumen.", source: "DANE · Cuentas nacionales", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/cuentas-nacionales/cuentas-nacionales-trimestrales/pib-informacion-tecnica", category: "Actividad" },
   { id: "ipp", label: "Precios al productor", value: -0.33, unit: "%", period: "Agosto de 2026", frequency: "Mensual", detail: "Variación mensual del Índice de Precios del Productor.", source: "DANE · IPP", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos/indice-de-precios-del-productor-ipp", category: "Precios" },
@@ -31,6 +34,7 @@ function numberFrom(match: RegExpMatchArray | null) {
 export async function GET() {
   const indicators = fallback.map((item) => ({ ...item }));
   const notes: string[] = [];
+  const refresh = await getRefreshRun("indicadores").catch(() => null);
   try {
     const [daneResponse, trmResponse] = await Promise.all([
       fetch(DANE_URL, { headers: { "user-agent": "CuentaPublica-Indicadores/1.0" }, cf: { cacheTtl: 3600, cacheEverything: true } }),
@@ -52,5 +56,5 @@ export async function GET() {
       if (value) indicators.find((item) => item.id === "trm")!.value = value;
     } else notes.push("Banco de la República no respondió durante este barrido; se conservó el último dato verificado.");
   } catch { notes.push("Una fuente oficial no respondió; los valores mostrados corresponden al último corte verificado."); }
-  return Response.json({ updatedAt: new Date().toISOString(), indicators, notes, methodology: "Las cifras describen el contexto del país. No atribuyen causalidad automática al Gobierno ni sustituyen las publicaciones oficiales." }, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } });
+  return Response.json({ updatedAt: refresh?.lastSuccessAt ?? new Date().toISOString(), refresh, indicators: indicators.map((item) => ({ ...item, previousGovernment: item.previousGovernment ?? { label: "Contraparte del gobierno anterior", value: null, note: "Pendiente de un corte oficial comparable." } })), notes, methodology: "Las cifras describen el contexto del país. No atribuyen causalidad automática al Gobierno ni sustituyen las publicaciones oficiales." }, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } });
 }

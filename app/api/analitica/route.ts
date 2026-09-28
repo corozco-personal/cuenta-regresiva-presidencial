@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     const start = startDay(range);
     const activeSince = new Date(Date.now() - 5 * 60_000).toISOString();
     const db = getD1();
-    const [live, todayMetrics, daily, topPages, topInteractions] = await db.batch([
+    const [live, todayMetrics, todayPages, todayTopPage, hourly, daily, topPages, topInteractions] = await db.batch([
       db.prepare("SELECT COUNT(*) AS value FROM analytics_sessions WHERE last_seen_at >= ?").bind(activeSince),
       db.prepare(`
         SELECT
@@ -72,6 +72,15 @@ export async function GET(request: Request) {
           SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
           SUM(CASE WHEN event_type = 'interaction' THEN 1 ELSE 0 END) AS interactions
         FROM analytics_events WHERE day = ?
+      `).bind(today),
+      db.prepare("SELECT COUNT(DISTINCT page) AS pages FROM analytics_events WHERE day = ? AND event_type = 'pageview'").bind(today),
+      db.prepare("SELECT page, COUNT(*) AS value FROM analytics_events WHERE day = ? AND event_type = 'pageview' GROUP BY page ORDER BY value DESC LIMIT 1").bind(today),
+      db.prepare(`
+        SELECT strftime('%H', datetime(occurred_at, '-5 hours')) AS hour,
+          COUNT(DISTINCT session_id) AS users,
+          SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+          SUM(CASE WHEN event_type = 'interaction' THEN 1 ELSE 0 END) AS interactions
+        FROM analytics_events WHERE day = ? GROUP BY hour ORDER BY hour ASC
       `).bind(today),
       db.prepare(`
         SELECT day,
@@ -93,9 +102,20 @@ export async function GET(request: Request) {
     ]);
 
     const todayRow = (todayMetrics.results?.[0] ?? {}) as Record<string, number>;
+    const pageviews = Number(todayRow.pageviews ?? 0);
+    const interactions = Number(todayRow.interactions ?? 0);
+    const users = Number(todayRow.users ?? 0);
     const summary = {
       liveUsers: Number((live.results?.[0] as Record<string, number> | undefined)?.value ?? 0),
-      today: { users: Number(todayRow.users ?? 0), pageviews: Number(todayRow.pageviews ?? 0), interactions: Number(todayRow.interactions ?? 0) },
+      today: {
+        users,
+        pageviews,
+        interactions,
+        uniquePages: Number((todayPages.results?.[0] as Record<string, number> | undefined)?.pages ?? 0),
+        pagesPerUser: users ? Number((pageviews / users).toFixed(2)) : 0,
+        interactionRate: pageviews ? Number((interactions / pageviews * 100).toFixed(1)) : 0,
+        topPage: (todayTopPage.results?.[0] as Record<string, string | number> | undefined) ?? null,
+      },
       activeWindowMinutes: 5,
       generatedAt: new Date().toISOString(),
     };
@@ -106,6 +126,7 @@ export async function GET(request: Request) {
     return Response.json({
       ...summary,
       daily: daily.results ?? [],
+      todayHourly: hourly.results ?? [],
       topPages: topPages.results ?? [],
       topInteractions: topInteractions.results ?? [],
       range,
