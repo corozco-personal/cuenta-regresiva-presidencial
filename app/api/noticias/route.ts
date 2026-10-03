@@ -548,6 +548,42 @@ function articleDateFromHtml(html: string, url: string) {
   return Number.isNaN(timestamp) ? "" : new Date(timestamp).toISOString();
 }
 
+function newsItemFromGoogleRssItem(item: string): CandidateNews[] {
+  try {
+    const title = cleanExternalTitle(xmlTag(item, "title").replace(/\s+-\s+[^-]+$/, ""));
+    if (!SUBJECT_PATTERN.test(title)) return [];
+    const url = xmlTag(item, "link");
+    const sourceMatch = item.match(/<source[^>]*url="([^"]+)"[^>]*>([\s\S]*?)<\/source>/i);
+    const sourceUrl = decodeXml(sourceMatch?.[1] ?? "");
+    const hostname = new URL(sourceUrl || url).hostname;
+    const profile = profileFor(hostname);
+    const publishedAt = new Date(xmlTag(item, "pubDate")).toISOString();
+    if (Date.parse(publishedAt) < Date.parse(CAMPAIGN_START)) return [];
+    return [{
+      id: idFor(url),
+      title,
+      source: profile?.label ?? decodeXml(sourceMatch?.[2] ?? hostname),
+      url,
+      publishedAt,
+      kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+      scope: profile?.scope ?? "Internacional",
+      trustedSource: Boolean(profile),
+      country: profile?.country ?? (profile?.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+      language: "Español",
+      domain: hostname.replace(/^www\./, ""),
+    }];
+  } catch { return []; }
+}
+
+async function fetchGoogleNewsRss(query: string, hl = "es-419", gl = "CO", ceid = "CO:es-419", timeoutMs = 7500) {
+  const params = new URLSearchParams({ q: query, hl, gl, ceid });
+  const response = await fetchWithTimeout(`https://news.google.com/rss/search?${params}`, {
+    headers: { "User-Agent": "CuentaPublica/1.5 (global media sweep)" },
+  }, timeoutMs);
+  if (!response.ok) throw new Error(`Google News RSS ${response.status}`);
+  return response.text();
+}
+
 async function fromGoogleNews(): Promise<CandidateNews[]> {
   const recent = recentDateForQuery(10);
   const feedsToSearch = [
@@ -562,43 +598,27 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
     { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "es", gl: "ES", ceid: "ES:es" },
   ];
   const feeds = await Promise.allSettled(feedsToSearch.map(async ({ query, hl, gl, ceid }) => {
-    const params = new URLSearchParams({ q: query, hl, gl, ceid });
-    const response = await fetchWithTimeout(`https://news.google.com/rss/search?${params}`, {
-      headers: { "User-Agent": "CuentaPublica/1.3 (documentary monitoring)" },
-    });
-    if (!response.ok) throw new Error(`Google News RSS ${response.status}`);
-    return response.text();
+    return fetchGoogleNewsRss(query, hl, gl, ceid);
   }));
 
   return feeds.flatMap((feed) => {
     if (feed.status !== "fulfilled") return [];
-    return [...feed.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => {
-      try {
-        const item = match[1];
-        const title = normalizeTitle(xmlTag(item, "title").replace(/\s+-\s+[^-]+$/, ""));
-        if (!SUBJECT_PATTERN.test(title)) return [];
-        const url = xmlTag(item, "link");
-        const sourceMatch = item.match(/<source[^>]*url="([^"]+)"[^>]*>([\s\S]*?)<\/source>/i);
-        const sourceUrl = decodeXml(sourceMatch?.[1] ?? "");
-        const hostname = new URL(sourceUrl || url).hostname;
-        const profile = profileFor(hostname);
-        const publishedAt = new Date(xmlTag(item, "pubDate")).toISOString();
-        if (Date.parse(publishedAt) < Date.parse(CAMPAIGN_START)) return [];
-        return [{
-          id: idFor(url),
-          title,
-          source: profile?.label ?? decodeXml(sourceMatch?.[2] ?? hostname),
-          url,
-          publishedAt,
-          kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
-          scope: profile?.scope ?? "Internacional",
-          trustedSource: Boolean(profile),
-          country: profile?.country ?? (profile?.scope === "Nacional" ? "Colombia" : "Sin identificar"),
-          language: "Español",
-          domain: hostname.replace(/^www\./, ""),
-        }];
-      } catch { return []; }
-    });
+    return [...feed.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => newsItemFromGoogleRssItem(match[1]));
+  });
+}
+
+async function fromGlobalMediaDirectory(extraSources: SourceProfile[] = []): Promise<CandidateNews[]> {
+  const recent = recentDateForQuery(14);
+  const domains = [...new Set([...SOURCE_PROFILES, ...extraSources].map((source) => source.domain.toLowerCase()).filter(Boolean))];
+  const batches: string[][] = [];
+  for (let index = 0; index < domains.length; index += 8) batches.push(domains.slice(index, index + 8));
+  const feeds = await Promise.allSettled(batches.map((batch) => {
+    const sourceFilter = batch.map((domain) => `site:${domain}`).join(" OR ");
+    return fetchGoogleNewsRss(`${MONITOR_QUERY} (${sourceFilter}) after:${recent}`, "es-419", "CO", "CO:es-419", 9000);
+  }));
+  return feeds.flatMap((feed) => {
+    if (feed.status !== "fulfilled") return [];
+    return [...feed.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => newsItemFromGoogleRssItem(match[1]));
   });
 }
 
@@ -822,8 +842,10 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   let provider = "curated";
   let discovered: CandidateNews[] = [];
   const apiKey = process.env.NEWS_API_KEY;
+  const communitySources = await approvedCommunitySources();
   const providers = [
     { name: "Google News RSS", request: fromGoogleNews() },
+    { name: "Barrido global de medios", request: fromGlobalMediaDirectory(communitySources) },
     { name: "Índices directos de medios", request: fromSourceIndexes() },
     { name: "GDELT", request: fromGdelt() },
     ...(apiKey ? [{ name: "NewsAPI", request: fromNewsApi(apiKey) }] : []),
@@ -863,7 +885,6 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
     policyVersion: "1.2",
   };
   const baseSourceDirectory = sourceDirectoryBase();
-  const communitySources = await approvedCommunitySources();
   const sourceDirectory = Array.from(new Map([...baseSourceDirectory, ...communitySources].map((source) => [source.domain, source])).values());
   const domainCounts = discovered.reduce<Record<string, number>>((counts, item) => {
     const domain = item.domain ?? new URL(item.url).hostname.replace(/^www\./, "");
