@@ -294,6 +294,12 @@ function normalizeTitle(title: string) {
   return title.trim().replace(/\s+/g, " ").replace(/([!?])\1+/g, "$1");
 }
 
+function cleanExternalTitle(title: string) {
+  return normalizeTitle(title)
+    .replace(/\s+\|\s+[^|]+$/i, "")
+    .replace(/\s+-\s+(?:Semana|NTN24\.COM|La FM|La República|El Heraldo|El País|El Cronista)$/i, "");
+}
+
 function processStatus(title: string): PublicNews["processStatus"] {
   if (/sentencia|condena|absoluci|fallo definitivo/i.test(title)) return "Decisión judicial";
   if (/imputa|imputación/i.test(title)) return "Imputación";
@@ -494,6 +500,8 @@ async function fromGdelt(): Promise<CandidateNews[]> {
 function decodeXml(value: string) {
   return value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 10)))
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
@@ -634,7 +642,7 @@ async function fromSourceIndexes(): Promise<CandidateNews[]> {
     }, 9000);
     if (!response.ok) throw new Error(`Article ${response.status}`);
     const html = await response.text();
-    const title = normalizeTitle(metaContent(html, ["og:title", "twitter:title"]) || stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || fallbackTitle);
+    const title = cleanExternalTitle(metaContent(html, ["og:title", "twitter:title"]) || stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || fallbackTitle);
     const publishedAt = articleDateFromHtml(html, url);
     if (!publishedAt || Date.parse(publishedAt) < Date.parse(CAMPAIGN_START) || !SUBJECT_PATTERN.test(title)) return null;
     const hostname = new URL(url).hostname;
