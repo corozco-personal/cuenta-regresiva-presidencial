@@ -295,7 +295,7 @@ function normalizeTitle(title: string) {
 }
 
 function cleanExternalTitle(title: string) {
-  return normalizeTitle(title)
+  return normalizeTitle(decodeXml(title))
     .replace(/\s+\|\s+[^|]+$/i, "")
     .replace(/\s+-\s+(?:Semana|NTN24\.COM|La FM|La República|El Heraldo|El País|El Cronista)$/i, "");
 }
