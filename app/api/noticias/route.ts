@@ -31,7 +31,9 @@ export type SourceProfile = { domain: string; scope: Scope; official?: boolean; 
 const CAMPAIGN_START = "2025-07-16T00:00:00-05:00";
 const ELECTION_DAY = new Date("2026-06-21T23:59:59-05:00").getTime();
 const INAUGURATION_DAY = new Date("2026-08-07T00:00:00-05:00").getTime();
-const SUBJECT_PATTERN = /abelardo(?:\s+gabriel)?\s+de\s+la\s+espriella|de\s+la\s+espriella|defensores\s+de\s+la\s+patria/i;
+const NEWS_CACHE_MAX_AGE_MS = 70 * 60 * 1000;
+const MONITOR_QUERY = '("Abelardo de la Espriella" OR "Abelardo Gabriel de la Espriella" OR "De la Espriella" OR "presidente Abelardo" OR "gobierno de la Espriella" OR "administración de la Espriella" OR "Defensores de la Patria")';
+const SUBJECT_PATTERN = /abelardo(?:\s+gabriel)?\s+de\s+la\s+espriella|de\s+la\s+espriella|presidente\s+abelardo|gobierno\s+(?:de\s+la\s+|de\s+)?espriella|administraci[oó]n\s+(?:de\s+la\s+|de\s+)?espriella|defensores\s+de\s+la\s+patria/i;
 
 const SOURCE_PROFILES: SourceProfile[] = [
   ...globalMediaProfiles,
@@ -59,6 +61,10 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "lasillavacia.com", scope: "Nacional", label: "La Silla Vacía" },
   { domain: "cuestionpublica.com", scope: "Nacional", label: "Cuestión Pública" },
   { domain: "noticiasrcn.com", scope: "Nacional", label: "Noticias RCN" },
+  { domain: "lafm.com.co", scope: "Nacional", label: "La FM", country: "Colombia", region: "Colombia" },
+  { domain: "larepublica.co", scope: "Nacional", label: "La República", country: "Colombia", region: "Colombia" },
+  { domain: "elheraldo.co", scope: "Nacional", label: "El Heraldo", country: "Colombia", region: "Colombia" },
+  { domain: "ntn24.com", scope: "Nacional", label: "NTN24", country: "Colombia", region: "Colombia" },
   { domain: "eluniversal.com.co", scope: "Nacional", label: "El Universal", country: "Colombia", region: "Colombia" },
   { domain: "semana.com", scope: "Nacional", label: "Semana", country: "Colombia", region: "Colombia" },
   { domain: "wradio.com.co", scope: "Nacional", label: "W Radio", country: "Colombia", region: "Colombia" },
@@ -75,6 +81,7 @@ const SOURCE_PROFILES: SourceProfile[] = [
   { domain: "cnn.com", scope: "Internacional", label: "CNN en Español" },
   { domain: "elpais.com", scope: "Internacional", label: "El País" },
   { domain: "efe.com", scope: "Internacional", label: "Agencia EFE", country: "España", region: "Europa" },
+  { domain: "cronista.com", scope: "Internacional", label: "El Cronista", country: "Argentina", region: "América Latina" },
   { domain: "theguardian.com", scope: "Internacional", label: "The Guardian" },
   { domain: "aljazeera.com", scope: "Internacional", label: "Al Jazeera" },
   { domain: "lanacion.com.ar", scope: "Internacional", label: "La Nación", country: "Argentina", region: "América Latina" },
@@ -412,8 +419,8 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 
 async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
-    q: '("Abelardo de la Espriella" OR "De la Espriella" OR "Defensores de la Patria")',
-    from: CAMPAIGN_START.slice(0, 10),
+    q: MONITOR_QUERY,
+    from: recentDateForQuery(14),
     sortBy: "publishedAt",
     pageSize: "100",
   });
@@ -448,11 +455,12 @@ async function fromNewsApi(apiKey: string): Promise<CandidateNews[]> {
 
 async function fromGdelt(): Promise<CandidateNews[]> {
   const params = new URLSearchParams({
-    query: '("Abelardo de la Espriella" OR "Abelardo Gabriel de la Espriella" OR "De la Espriella" OR "Defensores de la Patria")',
+    query: MONITOR_QUERY,
     mode: "ArtList",
     maxrecords: "250",
     format: "json",
     sort: "DateDesc",
+    timespan: "7d",
   });
   const response = await fetchWithTimeout(`https://api.gdeltproject.org/api/v2/doc/doc?${params}`, {
     headers: { "User-Agent": "CuentaPublica/1.1 (documentary monitoring)" },
@@ -497,9 +505,49 @@ function xmlTag(item: string, tag: string) {
   return decodeXml(item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1]?.trim() ?? "");
 }
 
+function recentDateForQuery(days: number) {
+  const date = new Date(Date.now() - days * 86_400_000);
+  return date.toISOString().slice(0, 10);
+}
+
+function stripHtml(value: string) {
+  return decodeXml(value.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function metaContent(html: string, names: string[]) {
+  for (const name of names) {
+    const pattern = new RegExp(`<meta[^>]+(?:property|name)=["']${name.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}["'][^>]+content=["']([^"']+)["'][^>]*>`, "i");
+    const match = html.match(pattern) ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${name.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}["'][^>]*>`, "i"));
+    if (match?.[1]) return decodeXml(match[1]);
+  }
+  return "";
+}
+
+function dateFromUrl(url: string) {
+  const match = url.match(/\/(20\d{2})[/-](\d{2})[/-](\d{2})(?:\/|$)/);
+  if (!match) return "";
+  return new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00-05:00`).toISOString();
+}
+
+function articleDateFromHtml(html: string, url: string) {
+  const value = metaContent(html, ["article:published_time", "datePublished", "date", "pubdate"]) ||
+    decodeXml(html.match(/"datePublished"\s*:\s*"([^"]+)"/i)?.[1] ?? "") ||
+    decodeXml(html.match(/"dateCreated"\s*:\s*"([^"]+)"/i)?.[1] ?? "") ||
+    dateFromUrl(url);
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? "" : new Date(timestamp).toISOString();
+}
+
 async function fromGoogleNews(): Promise<CandidateNews[]> {
+  const recent = recentDateForQuery(10);
   const feedsToSearch = [
+    { query: `${MONITOR_QUERY} after:${recent}`, hl: "es-419", gl: "CO", ceid: "CO:es-419" },
     { query: '"Abelardo de la Espriella" after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '"De la Espriella" Colombia after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '"presidente Abelardo" Colombia after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
+    { query: '"gobierno de la Espriella" after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
     { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-07-15 before:2026-01-01', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
     { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-12-31 before:2026-08-07', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
     { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "en-US", gl: "US", ceid: "US:en" },
@@ -544,6 +592,70 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
       } catch { return []; }
     });
   });
+}
+
+async function fromSourceIndexes(): Promise<CandidateNews[]> {
+  const indexPages = [
+    "https://www.semana.com/noticias/abelardo-de-la-espriella/",
+    "https://www.lafm.com.co/noticias/abelardo-de-la-espriella",
+    "https://www.larepublica.co/abelardo-de-la-espriella",
+    "https://www.ntn24.com/temas/abelardo-de-la-espriella",
+    "https://www.cronista.com/tema/abelardo-de-la-espriella/",
+    "https://elpais.com/noticias/abelardo-de-la-espriella/",
+    "https://www.elheraldo.co/tags/abelardo-de-la-espriella",
+  ];
+  const pages = await Promise.allSettled(indexPages.map(async (url) => {
+    const response = await fetchWithTimeout(url, {
+      headers: { "User-Agent": "CuentaPublica/1.4 (source index monitoring)" },
+    }, 9000);
+    if (!response.ok) throw new Error(`Source index ${response.status}`);
+    return { url, html: await response.text() };
+  }));
+  const links = new Map<string, string>();
+  for (const page of pages) {
+    if (page.status !== "fulfilled") continue;
+    const base = page.value.url;
+    for (const match of page.value.html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+      try {
+        const url = new URL(decodeXml(match[1]), base).toString().split("#")[0];
+        const title = stripHtml(match[2]);
+        if (!/^https:\/\//i.test(url)) continue;
+        if (!SUBJECT_PATTERN.test(`${title} ${url.replace(/[-_/]+/g, " ")}`)) continue;
+        const profile = profileFor(new URL(url).hostname);
+        if (!profile) continue;
+        links.set(url, title);
+      } catch { /* descarta enlaces relativos mal formados */ }
+    }
+  }
+
+  const articles = await Promise.allSettled([...links.entries()].slice(0, 32).map(async ([url, fallbackTitle]) => {
+    const response = await fetchWithTimeout(url, {
+      headers: { "User-Agent": "CuentaPublica/1.4 (article metadata monitoring)" },
+    }, 9000);
+    if (!response.ok) throw new Error(`Article ${response.status}`);
+    const html = await response.text();
+    const title = normalizeTitle(metaContent(html, ["og:title", "twitter:title"]) || stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || fallbackTitle);
+    const publishedAt = articleDateFromHtml(html, url);
+    if (!publishedAt || Date.parse(publishedAt) < Date.parse(CAMPAIGN_START) || !SUBJECT_PATTERN.test(title)) return null;
+    const hostname = new URL(url).hostname;
+    const profile = profileFor(hostname);
+    if (!profile) return null;
+    return {
+      id: idFor(url),
+      title,
+      source: profile.label ?? hostname,
+      url,
+      publishedAt,
+      kind: profile.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+      scope: profile.scope,
+      trustedSource: true,
+      country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+      language: "Español",
+      domain: hostname.replace(/^www\./, ""),
+    };
+  }));
+
+  return articles.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : []);
 }
 
 type StoredNewsRow = Omit<PublicNews, "sources" | "linkCheck" | "evidenceLevel"> & {
@@ -703,6 +815,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   const apiKey = process.env.NEWS_API_KEY;
   const providers = [
     { name: "Google News RSS", request: fromGoogleNews() },
+    { name: "Índices directos de medios", request: fromSourceIndexes() },
     { name: "GDELT", request: fromGdelt() },
     ...(apiKey ? [{ name: "NewsAPI", request: fromNewsApi(apiKey) }] : []),
   ];
@@ -710,6 +823,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   discovered = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
   provider = providers.filter((_, index) => results[index].status === "fulfilled").map(({ name }) => name).join(" + ") || "curated";
   const providerErrors = results.flatMap((result, index) => result.status === "rejected" ? [`${providers[index].name}: no disponible`] : []);
+  if (!discovered.length) providerErrors.push("Sin hallazgos externos recientes: se conservó el archivo validado existente");
   providerErrors.forEach((message) => console.warn("news-monitor", message));
 
   const candidates = Array.from(
@@ -774,7 +888,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   const storedItems = await storeAndLoadNews(currentItems, {
     startedAt, completedAt, providers: provider, discovered: discovered.length, published: currentItems.length,
     rejected: review.rejected, countries: globalStats.countries, languages: globalStats.languages,
-    status: providerErrors.length === providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo",
+    status: providerErrors.length >= providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo",
     errors: providerErrors.length ? providerErrors.join("; ") : null,
   });
   const items = groupCoverage(Array.from(new Map([...currentItems, ...storedItems].map((item) => [item.url, item])).values()))
@@ -790,7 +904,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
       coverage: { startsAt: CAMPAIGN_START, stages: ["Campaña", "Transición", "Presidencia"] },
       updatedAt: new Date().toISOString(),
       provider,
-      monitor: { startedAt, completedAt, status: providerErrors.length === providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo", errors: providerErrors },
+      monitor: { startedAt, completedAt, status: providerErrors.length >= providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo", errors: providerErrors },
     },
     { headers: { "Cache-Control": cacheControl, "X-Data-Source": "global-refresh" } },
   );
@@ -810,6 +924,11 @@ export async function GET(request: Request) {
   }
   const isPublicRead = requestUrl.pathname.endsWith("/noticias-v2");
   if (cached && isPublicRead && !forceRefresh) {
+    const cacheAge = Date.now() - Date.parse(cached.updatedAt);
+    if (!Number.isNaN(cacheAge) && cacheAge > NEWS_CACHE_MAX_AGE_MS) {
+      console.warn("news-monitor", `Caché público vencido por ${Math.round(cacheAge / 60000)} minutos; se intenta refresco en lectura`);
+      return refreshNews("public, s-maxage=300, stale-while-revalidate=3600");
+    }
     return NextResponse.json(cached, {
       headers: {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=21600",

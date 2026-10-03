@@ -72,6 +72,11 @@ async function runScheduledJobs(controller: { cron?: string } | undefined, env: 
     catch (error) { console.error("daily-refresh", error); }
     return;
   }
+  const now = new Date();
+  if (controller?.cron === "0 * * * *" && now.getUTCHours() === 5) {
+    try { await runDailyDataRefresh(env, context); }
+    catch (error) { console.error("daily-refresh", error); }
+  }
   await runHourlyJobs(env, context);
 }
 
