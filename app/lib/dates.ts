@@ -7,5 +7,5 @@ export function formatPublishedAt(value: string) {
 }
 
 export function publicationTimeLabel(value: string) {
-  return `Publicado: ${formatPublishedAt(value)}`;
+  return `Publicado: ${formatPublishedAt(value)} hora Colombia (UTC-5)`;
 }
