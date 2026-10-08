@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ExternalLink, FileSearch2, Globe2, Info, Layers3, Scale, Share2 } from "lucide-react";
 import { biasGroup, getMediaProfile } from "../data/media-transparency";
 import { analyzeHeadlineFrame, contrastLevel, headlineDistance } from "../data/coverage-methodology";
+import { publicationTimeLabel } from "../lib/dates";
 
 type Source = { source: string; title?: string; url: string; kind: string };
 type Item = { id: string; title: string; source: string; url: string; publishedAt: string; scope: string; category: string; evidenceLevel: string; sources: Source[] };
@@ -61,7 +62,7 @@ export default function CoverageComparator() {
     <div className="comparison-result-count"><strong>{grouped.length}</strong> historias analizadas · mostrando {Math.min(limit, grouped.length)}</div>
     <div className="comparison-list">{grouped.length ? grouped.slice(0, limit).map(item => <article id={`comparacion-${item.id}`} key={item.id}>
       <header><div><span>{item.category}</span><h2>{item.title}</h2></div><button onClick={() => share(item)} aria-label="Compartir comparación"><Share2 size={17} /></button></header>
-      <div className="comparison-summary"><span><Globe2 size={15} />{item.sources.length} {item.sources.length === 1 ? "fuente" : "fuentes"}</span><span>{item.evidenceLevel}</span><span>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(item.publishedAt))}</span></div>
+      <div className="comparison-summary"><span><Globe2 size={15} />{item.sources.length} {item.sources.length === 1 ? "fuente" : "fuentes"}</span><span>{item.evidenceLevel}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div>
       <ContrastMatrix item={item} />
       <PerspectiveBar sources={item.sources} />
       <div className="comparison-sources">{item.sources.map(source => { const profile = getMediaProfile(source.source, source.kind); const frame = analyzeHeadlineFrame(source.title || item.title); return <article key={source.url} className="source-rating-card">

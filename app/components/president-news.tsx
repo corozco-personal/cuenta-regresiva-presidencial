@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, Globe2, Search } from "lucide-react";
+import { publicationTimeLabel } from "../lib/dates";
 import ShareOptions from "./share-options";
 
 type NewsItem = {
@@ -81,7 +82,7 @@ export default function PresidentNews() {
             <div className="president-news-grid">
               {filtered.slice(0, limit).map((item) => (
                 <article key={item.id} id={`noticia-${item.id}`}>
-                  <div className="president-news-meta"><span>{item.stage}</span><span>{item.scope}</span><time>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</time></div>
+                  <div className="president-news-meta"><span>{item.stage}</span><span>{item.scope}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div>
                   <h3>{item.title}</h3>
                   <div className="president-news-tags"><span>{item.category}</span><span>{item.evidenceLevel}</span><span>{item.processStatus}</span></div>
                   <div className="president-news-actions">

@@ -32,6 +32,7 @@ import { campaignPromises } from "./data/campaign-promises";
 import { clientPlainText } from "./data/client-input";
 import DailyBriefing from "./components/daily-briefing";
 import WorldNewsMap from "./components/world-news-map";
+import { publicationTimeLabel } from "./lib/dates";
 
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 type NewsItem = {
@@ -619,7 +620,7 @@ export default function Home() {
             <div className="news-grid">
               {nationalNews.map((item) => (
                 <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
-                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                  <div className="news-card-top"><span>{item.source}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div>
                   <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.stage}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
@@ -637,7 +638,7 @@ export default function Home() {
             <div className="news-grid">
               {internationalNews.map((item) => (
                 <article className="news-card" id={`noticia-${item.id}`} key={item.id}>
-                  <div className="news-card-top"><span>{item.source}</span><span>{new Date(item.publishedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                  <div className="news-card-top"><span>{item.source}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div>
                   <div className="decision-row"><span className={`decision decision-${item.decision.toLocaleLowerCase("es")}`}>{item.decision === "Admitido" ? "Admitido para monitoreo" : item.decision}</span><span>{item.stage}</span><span>{item.category}</span></div>
                   <h3>{item.title}</h3>
                   <p className="decision-reason">{item.decisionReason}</p>
