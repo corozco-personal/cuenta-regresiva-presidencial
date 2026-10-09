@@ -6,7 +6,7 @@ import PwaRegister from "./components/pwa-register";
 export const metadata: Metadata = {
   metadataBase: new URL("https://cuenta-regresiva-presidencial.carlos940807.chatgpt.site"),
   title: {
-    default: "Tiempo restante para que el presidente Abelardo Gabriel De La Espriella Otero deje la presidencia",
+    default: "Tiempo restante para que el presidente Abelardo Gabriel De La Espriella Otero termine el periodo presidencial",
     template: "%s · Cuenta pública",
   },
   description: "Cuenta regresiva, radar mundial de medios y archivo documental del periodo presidencial de Colombia. Proyecto creado por Carlos Orozco.",
