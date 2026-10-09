@@ -7,5 +7,14 @@ export function formatPublishedAt(value: string) {
 }
 
 export function publicationTimeLabel(value: string) {
-  return `Publicado: ${formatPublishedAt(value)} hora Colombia (UTC-5)`;
+  const date = new Date(value);
+  return `Publicado: ${formatPublishedAt(value)} hora Colombia (UTC-5) · ${date.toISOString().replace(".000Z", "Z")} UTC`;
+}
+
+export function utcTimestamp(value: string) {
+  return new Date(value).toISOString().replace(".000Z", "Z");
+}
+
+export function dualTimeLabel(value: string) {
+  return `${formatPublishedAt(value)} Colombia · ${utcTimestamp(value)} UTC`;
 }

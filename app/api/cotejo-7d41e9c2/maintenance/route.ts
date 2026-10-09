@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { desc, isNotNull, lt } from "drizzle-orm";
-import { getDb } from "../../../../db";
+import { getD1, getDb } from "../../../../db";
 import {
   analyticsEvents, analyticsSessions, correctionRequests, edgeRateLimits, moderationActions, moderationBackups,
   newsSubmissions, opinions, securityEvents, securityOperations, submissionAuditProfiles,
@@ -18,11 +18,31 @@ async function operation(key: string, value: string) {
 
 async function status() {
   const db = getDb();
-  const [operations, latestBackup, opinionFailures, newsFailures] = await Promise.all([
+  const raw = getD1();
+  const [operations, latestBackup, opinionFailures, newsFailures, newsletterSummary, jobSummary] = await Promise.all([
     db.select().from(securityOperations),
     db.select({ createdAt: moderationBackups.createdAt, itemCount: moderationBackups.itemCount }).from(moderationBackups).orderBy(desc(moderationBackups.createdAt)).limit(1),
     db.select({ status: opinions.emailDeliveryStatus, error: opinions.emailLastError, createdAt: opinions.createdAt }).from(opinions).where(isNotNull(opinions.emailLastError)).orderBy(desc(opinions.createdAt)).limit(20),
     db.select({ status: newsSubmissions.emailDeliveryStatus, error: newsSubmissions.emailLastError, createdAt: newsSubmissions.createdAt }).from(newsSubmissions).where(isNotNull(newsSubmissions.emailLastError)).orderBy(desc(newsSubmissions.createdAt)).limit(20),
+    raw.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN status = 'suppressed' THEN 1 ELSE 0 END) AS suppressed,
+        SUM(CASE WHEN delivery_status = 'failed' THEN 1 ELSE 0 END) AS failed,
+        MAX(updated_at) AS updatedAt,
+        MAX(last_sent_local_date) AS lastSentLocalDate
+      FROM newsletter_subscriptions
+    `).first(),
+    raw.prepare(`
+      SELECT
+        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+        SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running,
+        MIN(last_success_at) AS oldestSuccessAt,
+        MAX(last_completed_at) AS latestCompletedAt
+      FROM data_refresh_runs
+    `).first(),
   ]);
   const map = Object.fromEntries(operations.map((row) => [row.key, row.updatedAt]));
   const age = (value?: string) => value ? Math.floor((Date.now() - Date.parse(value)) / DAY) : null;
@@ -38,6 +58,12 @@ async function status() {
     backup: { lastAt: latestBackup[0]?.createdAt ?? null, itemCount: latestBackup[0]?.itemCount ?? 0, ageDays: age(latestBackup[0]?.createdAt), due: age(latestBackup[0]?.createdAt) === null || Number(age(latestBackup[0]?.createdAt)) >= policy.backupIntervalDays },
     retention: { lastAt: map.retention_run ?? null, ageDays: age(map.retention_run), due: age(map.retention_run) === null || Number(age(map.retention_run)) >= 1 },
     deliveryAlerts: [...opinionFailures, ...newsFailures].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20),
+    newsletter: newsletterSummary ?? { total: 0, active: 0, pending: 0, suppressed: 0, failed: 0, updatedAt: null, lastSentLocalDate: null },
+    jobs: {
+      ...(jobSummary ?? { failed: 0, running: 0, oldestSuccessAt: null, latestCompletedAt: null }),
+      newsMaxAgeHours: 2,
+      dailyMaxAgeHours: 30,
+    },
   };
 }
 

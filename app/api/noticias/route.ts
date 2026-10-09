@@ -24,6 +24,7 @@ type PublicNews = BaseNews & {
   linkCheck?: { status: "Disponible" | "Retirado" | "No comprobado"; checkedAt: string; lastModified?: string; finalUrl?: string };
   country?: string;
   language?: string;
+  ingestedAt?: string;
 };
 
 export type SourceProfile = { domain: string; scope: Scope; official?: boolean; label?: string; country?: string; region?: string };
@@ -719,7 +720,7 @@ async function storeAndLoadNews(items: PublicNews[], monitor: {
       decision_reason AS decisionReason,evidence_level AS evidenceLevel,process_status AS processStatus,sources_json,country,language,
       link_status,final_url,last_seen_at FROM news_articles ORDER BY published_at DESC LIMIT 600`).all<StoredNewsRow>();
     return stored.results.flatMap((row) => {
-      try { return [{ ...row, title: cleanExternalTitle(row.title), country: resolvedCountry(row.source, row.url, row.country, row.scope), evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined } } as PublicNews]; }
+      try { return [{ ...row, title: cleanExternalTitle(row.title), country: resolvedCountry(row.source, row.url, row.country, row.scope), evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel, sources: JSON.parse(row.sources_json), linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined }, ingestedAt: row.last_seen_at } as PublicNews]; }
       catch { return []; }
     });
   } catch (error) {
@@ -741,6 +742,7 @@ async function loadStoredNews(limit = 600) {
         evidenceLevel: row.evidenceLevel === "Confirmado por varias fuentes" ? "Reportado por varias fuentes" : row.evidenceLevel,
         sources: JSON.parse(row.sources_json),
         linkCheck: { status: row.link_status || "No comprobado", checkedAt: row.last_seen_at, finalUrl: row.final_url || undefined },
+        ingestedAt: row.last_seen_at,
       } as PublicNews];
     } catch { return []; }
   });

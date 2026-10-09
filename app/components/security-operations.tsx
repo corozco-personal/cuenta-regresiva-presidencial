@@ -11,6 +11,8 @@ type Status = {
   retention: { lastAt: string | null; ageDays: number | null; due: boolean };
   deliveryAlerts: Array<{ status: string; error: string | null; createdAt: string }>;
   policy: Record<string, number>;
+  newsletter?: { total?: number; active?: number; pending?: number; suppressed?: number; failed?: number; updatedAt?: string | null; lastSentLocalDate?: string | null };
+  jobs?: { failed?: number; running?: number; oldestSuccessAt?: string | null; latestCompletedAt?: string | null; newsMaxAgeHours?: number; dailyMaxAgeHours?: number };
 };
 
 const labels: Record<string, string> = { turnstile: "Turnstile", email: "Correo y webhook", auditEncryption: "Cifrado de auditoría", rateLimitSalt: "Seudonimización y límites" };
@@ -26,6 +28,10 @@ export default function SecurityOperations() {
   <section className="security-operations" aria-labelledby="operations-title">
     <div className="analytics-section-title"><div><p className="section-kicker">CONTROLES OPERATIVOS</p><h2 id="operations-title">Continuidad, privacidad y alertas</h2></div><ShieldCheck size={28} /></div>
     <div className="operations-controls">{Object.entries(data.controls).map(([key, ok]) => <article key={key} className={ok ? "is-ok" : "is-alert"}>{ok ? <CheckCircle2 /> : <AlertTriangle />}<span>{labels[key] ?? key}</span><strong>{ok ? "Activo" : "Requiere atención"}</strong></article>)}</div>
+    <div className="operations-live-summary">
+      <article><span>Newsletter</span><strong>{Number(data.newsletter?.active ?? 0).toLocaleString("es-CO")} activas</strong><p>{Number(data.newsletter?.pending ?? 0)} pendientes · {Number(data.newsletter?.failed ?? 0)} fallidas · último envío local: {data.newsletter?.lastSentLocalDate ?? "sin registro"}</p></article>
+      <article className={Number(data.jobs?.failed ?? 0) ? "is-alert" : ""}><span>Jobs diarios</span><strong>{Number(data.jobs?.failed ?? 0) ? `${data.jobs?.failed} con error` : "Sin errores activos"}</strong><p>{Number(data.jobs?.running ?? 0)} en ejecución · último completado: {date(data.jobs?.latestCompletedAt ?? null)}</p></article>
+    </div>
     <div className="operations-grid">
       <article><KeyRound /><h3>Rotación de secretos</h3><p>Revisión cada 90 días. El registro no cambia las llaves: confirma que fueron rotadas también en Cloudflare y Resend.</p><strong>{data.rotation.due ? "Rotación pendiente" : `Registrada · ${date(data.rotation.lastRegisteredAt)}`}</strong><button disabled={busy !== ""} onClick={() => void run("rotation-ack", "Rotación registrada en la bitácora.")}><CheckCircle2 />Registrar rotación completada</button></article>
       <article><Archive /><h3>Respaldo privado</h3><p>Copia restaurable de la cola, decisiones y eventos, sin tokens, huellas ni datos de contacto.</p><strong>{data.backup.lastAt ? `${data.backup.itemCount} registros · ${date(data.backup.lastAt)}` : "Aún no existe un respaldo"}</strong><button disabled={busy !== ""} onClick={() => void run("backup", "Respaldo privado creado.")}><Archive />Crear respaldo ahora</button></article>

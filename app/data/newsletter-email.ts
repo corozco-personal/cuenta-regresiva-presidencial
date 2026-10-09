@@ -86,16 +86,21 @@ export async function sendNewsletterConfirmation(input: { email: string; token: 
   return result.id ?? null;
 }
 
+function articleTime(value: string) {
+  const date = new Date(value);
+  return `${new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(date)} Colombia · ${date.toISOString().replace(".000Z", "Z")} UTC`;
+}
+
 function digestHtml(articles: DigestArticle[], localDate: string, unsubscribeToken: string) {
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeZone: "America/Bogota" }).format(new Date(`${localDate}T12:00:00-05:00`));
   const list = articles.length
-    ? articles.map((article) => `<li style="padding:18px 0;border-top:1px solid #d9ddd5"><p style="margin:0 0 7px;color:#687571;font-size:12px">${escapeHtml(article.source)}</p><h2 style="margin:0 0 10px;font-family:Georgia,serif;font-size:21px;font-weight:400;line-height:1.25">${escapeHtml(article.title)}</h2><a href="${escapeHtml(article.url)}" style="color:#143f37;font-size:13px;font-weight:700">Leer la noticia →</a></li>`).join("")
+    ? articles.map((article) => `<li style="padding:18px 0;border-top:1px solid #d9ddd5"><p style="margin:0 0 7px;color:#687571;font-size:12px">${escapeHtml(article.source)}</p><h2 style="margin:0 0 10px;font-family:Georgia,serif;font-size:21px;font-weight:400;line-height:1.25">${escapeHtml(article.title)}</h2><p style="margin:0 0 10px;color:#687571;font-size:12px">Publicado: ${escapeHtml(articleTime(article.publishedAt))}</p><a href="${escapeHtml(article.url)}" style="color:#143f37;font-size:13px;font-weight:700">Leer la noticia →</a></li>`).join("")
     : `<li style="padding:20px 0;border-top:1px solid #d9ddd5">No se incorporaron noticias nuevas de tus temas durante las últimas 24 horas.</li>`;
   return `<div style="background:#edf0e8;padding:28px;font-family:Arial,sans-serif;color:#122b27"><div style="max-width:650px;margin:auto;background:#fff;padding:30px;border:1px solid #c9cec3"><p style="margin:0 0 10px;color:#687571;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Cuenta pública · ${escapeHtml(date)}</p><h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:32px;font-weight:400">Noticias de las últimas 24 horas</h1><p style="margin:0 0 24px;color:#687571;line-height:1.5">${articles.length} ${articles.length === 1 ? "noticia incorporada" : "noticias incorporadas"}, con el medio y el enlace a la publicación original.</p><ol style="margin:0;padding:0;list-style:none">${list}</ol><p style="margin:26px 0 8px;color:#687571;font-size:12px;line-height:1.5">Este correo se envía porque confirmaste una suscripción a Cuenta pública. Puedes responder a este mensaje si necesitas ayuda.</p><a href="${unsubscribeUrl(unsubscribeToken)}" style="color:#7f342e;font-size:12px">Cancelar suscripción</a></div></div>`;
 }
 
 function digestText(articles: DigestArticle[], localDate: string, unsubscribeToken: string) {
-  const body = articles.length ? articles.map((article) => `${article.title}\n${article.source}\n${article.url}`).join("\n\n") : "No se incorporaron noticias nuevas de tus temas durante las últimas 24 horas.";
+  const body = articles.length ? articles.map((article) => `${article.title}\n${article.source}\nPublicado: ${articleTime(article.publishedAt)}\n${article.url}`).join("\n\n") : "No se incorporaron noticias nuevas de tus temas durante las últimas 24 horas.";
   return `CUENTA PÚBLICA · NOTICIAS DE LAS ÚLTIMAS 24 HORAS · ${localDate}\n\n${body}\n\nCancelar suscripción: ${unsubscribeUrl(unsubscribeToken)}`;
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, Globe2, Search } from "lucide-react";
-import { publicationTimeLabel } from "../lib/dates";
+import { dualTimeLabel, publicationTimeLabel } from "../lib/dates";
 import ShareOptions from "./share-options";
 
 type NewsItem = {
@@ -16,6 +16,9 @@ type NewsItem = {
   category: string;
   evidenceLevel: string;
   processStatus: string;
+  linkCheck?: { status: string; checkedAt?: string; finalUrl?: string };
+  sources?: Array<{ source: string; url: string; kind?: string }>;
+  ingestedAt?: string;
 };
 
 export default function PresidentNews() {
@@ -84,7 +87,8 @@ export default function PresidentNews() {
                 <article key={item.id} id={`noticia-${item.id}`}>
                   <div className="president-news-meta"><span>{item.stage}</span><span>{item.scope}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div>
                   <h3>{item.title}</h3>
-                  <div className="president-news-tags"><span>{item.category}</span><span>{item.evidenceLevel}</span><span>{item.processStatus}</span></div>
+                  <div className="president-news-tags"><span>{item.category}</span><span>{item.evidenceLevel}</span><span>{item.processStatus}</span><span>{item.linkCheck?.status ?? "Enlace no comprobado"}</span></div>
+                  <p className="president-news-trace">{item.sources?.length ? `${item.sources.length} fuente${item.sources.length === 1 ? "" : "s"} agrupada${item.sources.length === 1 ? "" : "s"}` : "Fuente única"} · incorporada: {item.ingestedAt ? dualTimeLabel(item.ingestedAt) : "pendiente de trazabilidad"}.</p>
                   <div className="president-news-actions">
                     <a href={item.url} target="_blank" rel="noreferrer"><span>{item.source}</span><ArrowUpRight size={16} /></a>
                     <ShareOptions title={item.title} url={`/presidente#noticia-${item.id}`} context="news" />

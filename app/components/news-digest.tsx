@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, FileDown, RefreshCw } from "lucide-react";
-import { formatPublishedAt, publicationTimeLabel } from "../lib/dates";
+import { dualTimeLabel, formatPublishedAt, publicationTimeLabel } from "../lib/dates";
 
 type Item = { id: string; title: string; source: string; url: string; publishedAt: string; scope: string; category: string; stage: string; sources: Array<{ source: string; url: string }> };
 
@@ -22,7 +22,7 @@ export default function NewsDigest() {
   if (state === "error") return <p className="digest-state"><RefreshCw size={17} /> El resumen no está disponible temporalmente.</p>;
   return <>
     <section className="digest-summary"><article><strong>{recent.length}</strong><span>hechos reunidos</span></article><article><strong>{recent.filter((item) => item.scope === "Nacional").length}</strong><span>nacionales</span></article><article><strong>{recent.filter((item) => item.scope === "Internacional").length}</strong><span>internacionales</span></article><article><strong>{new Set(recent.flatMap((item) => item.sources?.map((source) => source.source) ?? [item.source])).size}</strong><span>fuentes distintas</span></article></section>
-    <div className="digest-actions"><p>Ventana móvil de siete días respecto del hallazgo más reciente. {updatedAt && <>Datos consultados el {new Date(updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}.</>}</p><button onClick={download}><FileDown size={17} /> Descargar resumen</button></div>
+    <div className="digest-actions"><p>Ventana móvil de siete días respecto del hallazgo más reciente. {updatedAt && <>Datos consultados el {dualTimeLabel(updatedAt)}.</>}</p><button onClick={download}><FileDown size={17} /> Descargar resumen</button></div>
     <section className="digest-topics"><div><p className="section-kicker">TEMAS DE LA SEMANA</p><h2>Qué concentró la cobertura</h2></div><ol>{categories.slice(0, 5).map(([category, count]) => <li key={category}><span>{category}</span><strong>{count}</strong></li>)}</ol></section>
     <section className="digest-list">{recent.length ? recent.map((item) => <article key={item.id}><div><span>{item.scope} · {item.stage}</span><time dateTime={item.publishedAt}>{publicationTimeLabel(item.publishedAt)}</time></div><h2>{item.title}</h2><p>{item.sources?.length > 1 ? `${item.sources.length} coberturas agrupadas` : item.source}</p><a href={item.url} target="_blank" rel="noreferrer">Consultar fuente <ArrowUpRight size={15} /></a></article>) : <p className="digest-state">No hay registros en la ventana semanal actual.</p>}</section>
   </>;
