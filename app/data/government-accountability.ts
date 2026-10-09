@@ -189,6 +189,193 @@ export const policyDossiers = [
   },
 ];
 
+export const weightedComplianceIndex = {
+  score: 18,
+  max: 100,
+  label: "Cumplimiento ponderado verificable",
+  summary: "El indicador premia más los resultados documentados que los anuncios. Un expediente solo sube cuando existe evidencia pública trazable.",
+  dimensions: [
+    { label: "Promesa delimitada", value: 72, weight: 10, note: "Existe una formulación verificable y plazo identificable." },
+    { label: "Decisión formal", value: 30, weight: 25, note: "Faltan actos administrativos o rutas oficiales en varias promesas." },
+    { label: "Presupuesto asociado", value: 12, weight: 25, note: "No basta la apropiación general; se requiere partida, compromiso y pago." },
+    { label: "Ejecución comprobada", value: 8, weight: 25, note: "Solo cuenta cuando hay avance material, contrato, desembolso o entrega." },
+    { label: "Resultado público", value: 4, weight: 15, note: "Requiere indicador comparable antes/después y fuente primaria." },
+  ],
+};
+
+export const mandateTimeline = [
+  {
+    date: "2026-08-07",
+    type: "Inicio de mandato",
+    title: "Arranque del periodo presidencial",
+    summary: "Punto cero para separar decisiones heredadas de decisiones atribuibles al Gobierno actual.",
+    evidence: "Acto de posesión y registro institucional.",
+  },
+  {
+    date: "2026-08-30",
+    type: "Cumplimiento judicial",
+    title: "Alocución presidencial por fallo de tutela",
+    summary: "Se registra como actuación verificable, no como resultado de política pública.",
+    evidence: "Publicación oficial de Presidencia.",
+  },
+  {
+    date: "2026-09-21",
+    type: "Anuncio sectorial",
+    title: "Plan de choque en salud",
+    summary: "Abre expediente de seguimiento: norma, presupuesto, responsables, cronograma y resultados.",
+    evidence: "Declaración pública; faltan soportes presupuestales consolidados.",
+  },
+  {
+    date: "2026-11-05",
+    type: "Hito prometido",
+    title: "Plazo de 90 días para recuperación territorial",
+    summary: "El tablero exigirá línea base municipal, objetivo operativo y medición pública comparable.",
+    evidence: "Promesa en seguimiento; sin resultado atribuible antes del vencimiento.",
+  },
+];
+
+export const weeklyMandateBrief = {
+  period: "Semana de seguimiento actual",
+  updatedAt: "2026-09-24",
+  items: [
+    { type: "Dato nuevo", title: "Se estructuró el expediente de gabinete", summary: "Ministros y altos cargos quedan separados de menciones en noticias para medir rotación real.", status: "Base creada" },
+    { type: "Vacío crítico", title: "Ejecución presupuestal atribuible", summary: "Aún no hay corte homogéneo que permita convertir apropiación en pagos del mandato.", status: "Pendiente" },
+    { type: "Próxima verificación", title: "Plan de choque en salud", summary: "Debe aparecer acto administrativo, fuente presupuestal, responsables y metas de atención.", status: "En seguimiento" },
+  ],
+};
+
+export const activityManagementResults = [
+  {
+    topic: "Salud",
+    activity: "Declaraciones y anuncios sobre medidas de choque.",
+    management: "Se necesita acto administrativo, cronograma, responsables y fuente presupuestal.",
+    result: "Sin indicador comparable publicado sobre reducción de cartera, tiempos de atención o giro efectivo.",
+  },
+  {
+    topic: "Seguridad territorial",
+    activity: "Promesa de recuperación territorial en 90 días.",
+    management: "Requiere línea base por municipio, presencia institucional y reporte operativo periódico.",
+    result: "No se publica todavía un resultado verificable contra la línea base.",
+  },
+  {
+    topic: "Austeridad estatal",
+    activity: "Promesa de reducción de burocracia.",
+    management: "Falta definir universo: entidades, cargos, contratistas, nómina y gasto de funcionamiento.",
+    result: "Sin ahorro atribuible o reducción comprobada.",
+  },
+];
+
+export const sectorScorecards = [
+  {
+    sector: "Salud",
+    signal: "Amarillo",
+    score: 36,
+    promise: "Plan de choque y financiación extraordinaria.",
+    decision: "Anuncio público identificado.",
+    budget: "Sin partida y pagos verificables.",
+    result: "Sin resultado medible publicado.",
+    nextData: "Resolución, CONPES, giro, contrato o reporte de cartera.",
+  },
+  {
+    sector: "Seguridad y defensa",
+    signal: "Rojo",
+    score: 18,
+    promise: "Recuperación territorial en 90 días.",
+    decision: "Sin plan operativo público suficiente.",
+    budget: "Sin recursos asociados verificables.",
+    result: "Sin línea base municipal comparable.",
+    nextData: "Mapa de presencia estatal, eventos de seguridad y control institucional por municipio.",
+  },
+  {
+    sector: "Hacienda y reforma tributaria",
+    signal: "Rojo",
+    score: 14,
+    promise: "Eliminar el 4x1000 y financiar prioridades.",
+    decision: "Sin ley sancionada identificada.",
+    budget: "PGN heredado; modificaciones no consolidadas.",
+    result: "Sin efecto fiscal atribuible.",
+    nextData: "Proyecto radicado, ponencias, votaciones y Marco Fiscal actualizado.",
+  },
+  {
+    sector: "Estado y burocracia",
+    signal: "Rojo",
+    score: 10,
+    promise: "Reducir 40 % la burocracia.",
+    decision: "Sin universo ni fórmula oficial.",
+    budget: "Sin ahorro presupuestal verificable.",
+    result: "Sin reducción medible.",
+    nextData: "Línea base de cargos, contratos, nómina y gasto de funcionamiento.",
+  },
+];
+
+export const previousGovernmentComparisons = [
+  {
+    topic: "Ejecución presupuestal",
+    current: "El mandato actual aún no tiene corte de ejecución propio comparable.",
+    previous: "El gobierno anterior debe compararse con el mismo mes de su primer año y con la misma fuente presupuestal.",
+    metric: "Compromisos, obligaciones y pagos como porcentaje de apropiación vigente.",
+    caveat: "No comparar anuncios actuales contra pagos acumulados de un gobierno que ya cerró su ciclo.",
+  },
+  {
+    topic: "Gabinete",
+    current: "Se registra fecha de inicio, cargo, entidad y fuente pública.",
+    previous: "La contraparte debe medir rotación acumulada, duración promedio y sectores con más cambios.",
+    metric: "Cambios por ministerio, días en cargo y motivo documentado de salida.",
+    caveat: "La comparación exige periodos equivalentes: primeros 100 días contra primeros 100 días.",
+  },
+  {
+    topic: "Promesas de campaña",
+    current: "Cada promesa se lleva por promesa, decisión, presupuesto, ejecución y resultado.",
+    previous: "Debe reconstruirse con el mismo método para evitar sesgo de memoria o selección.",
+    metric: "Cumplidas, en ejecución, sin evidencia y descartadas con ponderación por impacto.",
+    caveat: "Una promesa pequeña no debe pesar igual que una reforma fiscal o de salud.",
+  },
+];
+
+export const riskMatrix = [
+  { area: "Presupuesto", level: "Alto", risk: "Confundir apropiación anual heredada con ejecución del Gobierno actual.", mitigation: "Mostrar apropiación, compromisos, obligaciones y pagos por separado.", owner: "Hacienda / portal de datos" },
+  { area: "Territorio", level: "Alto", risk: "Publicar rankings sin normalizar por población, presupuesto y fecha.", mitigation: "Exigir código territorial, fuente primaria y denominador comparable.", owner: "Planeación / entidades ejecutoras" },
+  { area: "Noticias", level: "Medio", risk: "Que el volumen mediático sustituya evidencia administrativa.", mitigation: "Usar noticias como alerta, no como prueba única de cumplimiento.", owner: "Radar de medios" },
+  { area: "Gabinete", level: "Medio", risk: "Confundir rumores o menciones con nombramientos.", mitigation: "Requerir acto, hoja de vida pública o fuente institucional.", owner: "DAPRE / Función Pública" },
+];
+
+export const contradictionWatch = [
+  {
+    issue: "Austeridad vs. estructura estatal",
+    promise: "Reducir burocracia estatal en 40 %.",
+    observed: "No existe aún línea base pública para saber qué entra en la medición.",
+    status: "Abierto",
+    nextCheck: "Cruzar planta, contratistas, gasto de personal y reformas administrativas.",
+  },
+  {
+    issue: "Urgencia sectorial vs. soporte presupuestal",
+    promise: "Plan de choque en salud con financiación suficiente.",
+    observed: "La urgencia fue anunciada, pero no hay cadena presupuesto-ejecución-resultado publicada.",
+    status: "Abierto",
+    nextCheck: "Buscar actos, apropiaciones, giros y métricas de atención.",
+  },
+];
+
+export const missingInformation = [
+  { topic: "Salud", missing: "Monto comprometido, monto pagado, beneficiarios, EPS/IPS receptoras y resultado esperado.", responsible: "Ministerio de Salud / Hacienda", whyItMatters: "Permite pasar de anuncio a ejecución verificable." },
+  { topic: "Seguridad territorial", missing: "Municipios priorizados, línea base y criterio de recuperación.", responsible: "Defensa / Fuerza Pública", whyItMatters: "Sin línea base no hay forma de saber si el plazo de 90 días se cumplió." },
+  { topic: "Burocracia", missing: "Universo oficial de cargos, contratos y gasto que será reducido.", responsible: "Función Pública / Hacienda", whyItMatters: "Evita que la reducción se mida con una fórmula cambiante." },
+  { topic: "Comparativos históricos", missing: "Base homologada del gobierno anterior para los mismos meses del ciclo.", responsible: "Equipo editorial / fuentes oficiales", whyItMatters: "Hace justa la comparación y evita conclusiones engañosas." },
+];
+
+export const governabilityThermometer = [
+  { dimension: "Coalición legislativa", level: "Frágil", signal: 38, evidence: "La agenda prioritaria todavía no tiene trazabilidad suficiente en proyectos aprobados.", nextCheck: "Radicación, ponencias, mayorías y votaciones nominales." },
+  { dimension: "Capacidad ejecutiva", level: "En formación", signal: 42, evidence: "Gabinete identificado, pero faltan metas y responsables por programa.", nextCheck: "Planes sectoriales, decretos y manual de seguimiento." },
+  { dimension: "Evidencia pública", level: "Baja", signal: 24, evidence: "La mayoría de resultados aún depende de soportes administrativos pendientes.", nextCheck: "Publicación de bases abiertas y cortes periódicos." },
+  { dimension: "Riesgo territorial", level: "Alto", signal: 28, evidence: "La promesa territorial requiere granularidad municipal y verificación independiente.", nextCheck: "Indicadores por municipio, departamento y fecha." },
+];
+
+export const deepDossiers = [
+  { title: "Salud", question: "¿El plan reduce deuda, tiempos de atención o barreras de acceso?", indicators: ["Giros efectivos", "Cartera por actor", "Tiempo de atención", "Tutelas en salud"], value: "Permite distinguir liquidez del sistema de mejoras al usuario." },
+  { title: "Seguridad territorial", question: "¿Qué significa recuperar un territorio y cómo se prueba?", indicators: ["Presencia estatal", "Eventos violentos", "Control institucional", "Servicios públicos activos"], value: "Convierte una promesa amplia en mediciones por municipio." },
+  { title: "Austeridad y Estado", question: "¿Se reduce gasto improductivo o capacidad operativa?", indicators: ["Cargos", "Contratos", "Nómina", "Gasto de funcionamiento"], value: "Evita celebrar recortes que deterioren servicios o esconder traslados contables." },
+];
+
 export const territorialCoverage = [
   { region: "Nacional", investments: null, works: null, visits: null, evidence: "La información disponible aún no permite una comparación departamental homogénea." },
   { region: "Departamentos", investments: null, works: null, visits: null, evidence: "Pendiente integrar proyectos de inversión, SECOP y agenda oficial con códigos territoriales." },

@@ -2,6 +2,7 @@
 
 import {
   ArrowUpRight,
+  Activity,
   Banknote,
   BookOpenCheck,
   Building2,
@@ -10,6 +11,8 @@ import {
   FileCheck2,
   Landmark,
   Scale,
+  ShieldAlert,
+  Thermometer,
   UsersRound,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,11 +20,22 @@ import { campaignPromises } from "../data/campaign-promises";
 import ColombiaTerritoryMap from "./colombia-territory-map";
 import {
   accountabilitySources,
+  activityManagementResults,
   budgetOverview,
   cabinetRegistry,
+  contradictionWatch,
+  deepDossiers,
   executiveDecisions,
+  governabilityThermometer,
   governmentAgenda,
+  mandateTimeline,
+  missingInformation,
   policyDossiers,
+  previousGovernmentComparisons,
+  riskMatrix,
+  sectorScorecards,
+  weeklyMandateBrief,
+  weightedComplianceIndex,
 } from "../data/government-accountability";
 
 function Status({ children }: { children: string }) {
@@ -48,6 +62,67 @@ export default function GovernmentDashboard() {
         <article><Scale /><strong>{governmentAgenda.length}</strong><span>asuntos legislativos</span><small>{dueSoon} promesas con plazo cercano</small></article>
         <article><Banknote /><strong>Sin corte</strong><span>ejecución del PGN</span><small>No se sustituye con la apropiación</small></article>
       </div>
+    </section>
+
+    <section className="mandate-intelligence" aria-label="Lectura editorial del mandato">
+      <article className="mandate-index-card">
+        <p className="section-kicker">ÍNDICE PONDERADO</p>
+        <div><strong>{weightedComplianceIndex.score}</strong><span>/ {weightedComplianceIndex.max}</span></div>
+        <h2>{weightedComplianceIndex.label}</h2>
+        <p>{weightedComplianceIndex.summary}</p>
+        <ul>{weightedComplianceIndex.dimensions.map((item) => <li key={item.label}><span>{item.label}</span><i><b style={{ width: `${item.value}%` }} /></i><strong>{item.value}%</strong><small>Peso {item.weight}% · {item.note}</small></li>)}</ul>
+      </article>
+      <article className="weekly-brief-card">
+        <p className="section-kicker">QUÉ CAMBIÓ ESTA SEMANA</p>
+        <h2>{weeklyMandateBrief.period}</h2>
+        <p>Último corte editorial: {new Date(`${weeklyMandateBrief.updatedAt}T12:00:00-05:00`).toLocaleDateString("es-CO", { dateStyle: "long" })}</p>
+        <div>{weeklyMandateBrief.items.map((item) => <section key={item.title}><small>{item.type}</small><h3>{item.title}</h3><p>{item.summary}</p><strong>{item.status}</strong></section>)}</div>
+      </article>
+    </section>
+
+    <section className="mandate-timeline">
+      <header className="accountability-section-heading"><div><p className="section-kicker">LÍNEA DE TIEMPO DEL MANDATO</p><h2>Hitos que cambian el balance</h2></div><p>No se mezclan anuncios, decisiones, vencimientos y resultados: cada hito conserva su tipo y evidencia disponible.</p></header>
+      <div>{mandateTimeline.map((item) => <article key={`${item.date}-${item.title}`}><time>{new Date(`${item.date}T12:00:00-05:00`).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</time><div><small>{item.type}</small><h3>{item.title}</h3><p>{item.summary}</p><strong>{item.evidence}</strong></div></article>)}</div>
+    </section>
+
+    <section className="sector-scorecards">
+      <header className="accountability-section-heading"><div><p className="section-kicker">SEMÁFORO DE GESTIÓN POR SECTOR</p><h2>Actividad, gestión y resultado no son lo mismo</h2></div><p>La calificación baja cuando falta alguno de los eslabones: decisión formal, presupuesto, ejecución y resultado público.</p></header>
+      <div>{sectorScorecards.map((item) => <article key={item.sector} className={`sector-card is-${item.signal.toLowerCase()}`}><header><span>{item.signal}</span><strong>{item.score}/100</strong></header><h3>{item.sector}</h3><dl><div><dt>Promesa</dt><dd>{item.promise}</dd></div><div><dt>Decisión</dt><dd>{item.decision}</dd></div><div><dt>Presupuesto</dt><dd>{item.budget}</dd></div><div><dt>Resultado</dt><dd>{item.result}</dd></div></dl><p><b>Dato que falta:</b> {item.nextData}</p></article>)}</div>
+    </section>
+
+    <section className="mandate-analysis-grid" aria-label="Módulos de análisis del mandato">
+      <article>
+        <header><ShieldAlert /><div><p className="section-kicker">MATRIZ DE RIESGOS</p><h2>Dónde puede fallar la lectura pública</h2></div></header>
+        <div>{riskMatrix.map((item) => <section key={`${item.area}-${item.risk}`}><small>{item.area} · Riesgo {item.level}</small><h3>{item.risk}</h3><p>{item.mitigation}</p><strong>{item.owner}</strong></section>)}</div>
+      </article>
+      <article>
+        <header><Thermometer /><div><p className="section-kicker">GOBERNABILIDAD</p><h2>Termómetro del poder de ejecutar</h2></div></header>
+        <div>{governabilityThermometer.map((item) => <section key={item.dimension}><div className="thermo-row"><span>{item.dimension}</span><strong>{item.signal}/100</strong></div><i><b style={{ width: `${item.signal}%` }} /></i><p>{item.level}: {item.evidence}</p><small>{item.nextCheck}</small></section>)}</div>
+      </article>
+      <article>
+        <header><Activity /><div><p className="section-kicker">ACTIVIDAD ≠ RESULTADO</p><h2>Qué hizo, qué gestionó y qué cambió</h2></div></header>
+        <div>{activityManagementResults.map((item) => <section key={item.topic}><h3>{item.topic}</h3><p><b>Actividad:</b> {item.activity}</p><p><b>Gestión requerida:</b> {item.management}</p><p><b>Resultado:</b> {item.result}</p></section>)}</div>
+      </article>
+    </section>
+
+    <section className="comparison-watch">
+      <header className="accountability-section-heading"><div><p className="section-kicker">CONTRAPARTE HISTÓRICA</p><h2>Comparar con el gobierno anterior sin sesgo</h2></div><p>La comparación solo se publica si usa la misma fuente, la misma ventana temporal y el mismo denominador.</p></header>
+      <div>{previousGovernmentComparisons.map((item) => <article key={item.topic}><h3>{item.topic}</h3><p><b>Actual:</b> {item.current}</p><p><b>Gobierno anterior:</b> {item.previous}</p><strong>{item.metric}</strong><small>{item.caveat}</small></article>)}</div>
+    </section>
+
+    <section className="evidence-watch">
+      <article>
+        <p className="section-kicker">OBSERVATORIO DE CONTRADICCIONES</p>
+        {contradictionWatch.map((item) => <section key={item.issue}><h3>{item.issue}</h3><p><b>Promesa:</b> {item.promise}</p><p><b>Observado:</b> {item.observed}</p><small>{item.status} · {item.nextCheck}</small></section>)}
+      </article>
+      <article>
+        <p className="section-kicker">LO QUE FALTA POR SABER</p>
+        {missingInformation.map((item) => <section key={item.topic}><h3>{item.topic}</h3><p>{item.missing}</p><small>{item.responsible} · {item.whyItMatters}</small></section>)}
+      </article>
+      <article>
+        <p className="section-kicker">DOSSIERS TEMÁTICOS</p>
+        {deepDossiers.map((item) => <section key={item.title}><h3>{item.title}</h3><p>{item.question}</p><ul>{item.indicators.map((indicator) => <li key={indicator}>{indicator}</li>)}</ul><small>{item.value}</small></section>)}
+      </article>
     </section>
 
     <Tabs defaultValue="decisiones" className="accountability-tabs">

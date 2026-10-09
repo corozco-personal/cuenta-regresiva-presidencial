@@ -1,10 +1,46 @@
-import { budgetOverview, cabinetRegistry, executiveDecisions, governmentAgenda, policyDossiers, territorialCoverage } from "../../../data/government-accountability";
+import {
+  activityManagementResults,
+  budgetOverview,
+  cabinetRegistry,
+  contradictionWatch,
+  deepDossiers,
+  executiveDecisions,
+  governabilityThermometer,
+  governmentAgenda,
+  mandateTimeline,
+  missingInformation,
+  policyDossiers,
+  previousGovernmentComparisons,
+  riskMatrix,
+  sectorScorecards,
+  territorialCoverage,
+  weeklyMandateBrief,
+  weightedComplianceIndex,
+} from "../../../data/government-accountability";
 
 export async function GET() {
   return Response.json({
     license: "CC BY 4.0",
     generatedAt: new Date().toISOString(),
     methodology: "Los conjuntos separan anuncios, documentos, presupuesto aprobado, ejecución y resultados. Los valores nulos representan datos no verificados.",
-    data: { decisions: executiveDecisions, budget: budgetOverview, legislativeAgenda: governmentAgenda, cabinet: cabinetRegistry, dossiers: policyDossiers, territories: territorialCoverage },
+    data: {
+      decisions: executiveDecisions,
+      budget: budgetOverview,
+      legislativeAgenda: governmentAgenda,
+      cabinet: cabinetRegistry,
+      dossiers: policyDossiers,
+      territories: territorialCoverage,
+      weightedCompliance: weightedComplianceIndex,
+      timeline: mandateTimeline,
+      weeklyBrief: weeklyMandateBrief,
+      activityManagementResults,
+      sectorScorecards,
+      previousGovernmentComparisons,
+      riskMatrix,
+      contradictions: contradictionWatch,
+      missingInformation,
+      governability: governabilityThermometer,
+      deepDossiers,
+    },
   });
 }
