@@ -543,6 +543,8 @@ export default function Home() {
         </div>
       </section>
 
+      <WorldNewsMap initialItems={news} updatedAt={monitorUpdatedAt} />
+
       <section className="home-today-board section-shell" aria-label="Resumen principal del día">
         <div className="home-status-strip">
           <span>Día {mandateDay} del mandato</span>
@@ -638,8 +640,6 @@ export default function Home() {
           <p>Este sitio separa noticias, anuncios, decisiones, presupuesto y resultados. Un anuncio no cuenta como cumplimiento y una apropiación no cuenta como pago ejecutado.</p>
         </div>
       </section>
-
-      <WorldNewsMap initialItems={news} updatedAt={monitorUpdatedAt} />
 
       <DailyBriefing />
 
