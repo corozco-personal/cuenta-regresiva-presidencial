@@ -115,7 +115,7 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
     })).sort((a, b) => b.count - a.count || a.continent.localeCompare(b.continent, "es"));
   }, [publications]);
 
-  return <section className="world-today section-shell" aria-labelledby="world-today-title">
+  return <section className="world-today section-shell" id="mapa-global" aria-labelledby="world-today-title">
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div></div>
     <div className="world-map-status"><span className="update-pill world-update-pill"><i /> Actualización global cada hora</span>{lastUpdate && <small>Último barrido: {new Date(lastUpdate).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}</small>}</div>
     <div className="world-map-layout" style={{ "--map-panel-height": `${mapPanelHeight}px` } as CSSProperties}>

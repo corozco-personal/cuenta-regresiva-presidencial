@@ -14,6 +14,7 @@ import {
   Globe2,
   History,
   Hourglass,
+  Landmark,
   Leaf,
   Link2,
   Menu,
@@ -376,6 +377,25 @@ export default function Home() {
   ];
   const clockMs = TARGET - (((countdown.days * 24 + countdown.hours) * 60 + countdown.minutes) * 60 + countdown.seconds) * 1000;
   const todayNews = news.filter((item) => clockMs - Date.parse(item.publishedAt) <= 86_400_000).length;
+  const recentNews = news
+    .filter((item) => clockMs - Date.parse(item.publishedAt) <= 86_400_000)
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+  const leadNews = recentNews[0] ?? news[0] ?? null;
+  const topThemes = Array.from(news.reduce((map, item) => {
+    const current = map.get(item.category) ?? { category: item.category, count: 0, official: 0, sources: new Set<string>() };
+    current.count += 1;
+    if (item.evidenceLevel === "Documento oficial" || item.kind === "Fuente primaria") current.official += 1;
+    current.sources.add(item.source);
+    map.set(item.category, current);
+    return map;
+  }, new Map<string, { category: string; count: number; official: number; sources: Set<string> }>()))
+    .map(([, item]) => ({ ...item, sources: item.sources.size }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+  const promiseUnderWatch = campaignPromises.find((item) => item.status !== "Cumplida") ?? campaignPromises[0];
+  const territoryMentions = recentNews.filter((item) => /departamento|municipio|territorio|región|bogotá|antioquia|valle|cauca|santander|atlántico|guajira|nariño|meta|arauca/i.test(`${item.title} ${item.decisionReason}`));
+  const mediaToday = new Set(recentNews.map((item) => item.source)).size;
+  const countriesToday = new Set(recentNews.map((item) => item.country).filter(Boolean)).size;
   const completedPromises = campaignPromises.filter((item) => item.status === "Cumplida").length;
   const mandateDay = Math.max(1, Math.floor((clockMs - START) / 86_400_000) + 1);
   const sharePulse = async () => {
@@ -523,10 +543,51 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="home-today-board section-shell" aria-label="Resumen principal del día">
+        <div className="home-status-strip">
+          <span>Día {mandateDay} del mandato</span>
+          <span>{progress.toFixed(1).replace(".", ",")}% transcurrido</span>
+          <span>{todayNews} noticias en 24 h</span>
+          <span>{monitorUpdatedAt ? `Último barrido ${new Date(monitorUpdatedAt).toLocaleString("es-CO", { timeStyle: "short", timeZone: "America/Bogota" })} COT` : "Esperando barrido horario"}</span>
+        </div>
+        <div className="section-heading compact">
+          <div>
+            <p className="section-kicker">01 / QUÉ CAMBIÓ HOY</p>
+            <h2>La portada debe responder qué está pasando.</h2>
+            <p>Un resumen de actividad reciente, evidencia disponible y puertas de entrada para profundizar.</p>
+          </div>
+        </div>
+        <div className="home-change-grid">
+          <article>
+            <small>NOTICIA MÁS RECIENTE</small>
+            <h3>{leadNews?.title ?? "Sin noticias recientes detectadas"}</h3>
+            <p>{leadNews ? `${leadNews.source} · ${publicationTimeLabel(leadNews.publishedAt)}` : "El monitor horario no ha publicado novedades en este corte."}</p>
+            {leadNews && <a href={leadNews.url} target="_blank" rel="noreferrer">Leer fuente <ArrowUpRight size={14} /></a>}
+          </article>
+          <article>
+            <small>DATO DE GESTIÓN</small>
+            <h3>{managementPulse ? `${managementPulse.data.weightedCompliance.score}/${managementPulse.data.weightedCompliance.max} en cumplimiento verificable` : "Consultando tablero de gestión"}</h3>
+            <p>{managementPulse ? "El valor sale del endpoint de gestión y cambia con el job diario." : "La portada usa el corte dinámico cuando el endpoint responde."}</p>
+            <a href="/gestion">Ver explicación <ArrowUpRight size={14} /></a>
+          </article>
+          <article>
+            <small>SIN CAMBIO VERIFICABLE</small>
+            <h3>{managementPulse?.data.missingInformation[0]?.topic ?? "Faltan fuentes primarias"}</h3>
+            <p>{managementPulse?.data.missingInformation[0]?.missing ?? "Cuando un dato no está comprobado, la portada debe decirlo en vez de convertirlo en conclusión."}</p>
+            <a href="/metodologia">Ver metodología <ArrowUpRight size={14} /></a>
+          </article>
+        </div>
+        <div className="home-cta-grid" aria-label="Accesos principales">
+          <a href="/gestion"><Landmark size={18} /><span>Ver cómo va el Gobierno</span><ArrowUpRight size={14} /></a>
+          <a href="#monitoreo"><Globe2 size={18} /><span>Leer noticias de hoy</span><ArrowUpRight size={14} /></a>
+          <a href="/alertas"><BellRing size={18} /><span>Recibir alertas por correo</span><ArrowUpRight size={14} /></a>
+        </div>
+      </section>
+
       <section className="home-mandate-pulse section-shell" aria-label="Pulso de gestión presidencial">
         <div className="section-heading compact">
           <div>
-            <p className="section-kicker">01 / PULSO DEL MANDATO</p>
+            <p className="section-kicker">02 / PULSO DEL MANDATO</p>
             <h2>Lo primero no debe ser solo el reloj.</h2>
             <p>Resumen vivo de cumplimiento, riesgos y datos faltantes para que la portada explique qué está pasando con el Gobierno hoy.</p>
           </div>
@@ -552,6 +613,29 @@ export default function Home() {
             <small>CONTRADICCIONES ABIERTAS</small>
             {(managementPulse?.data.contradictions ?? []).slice(0, 2).map((item) => <p key={item.issue}><b>{item.status}:</b> {item.issue}</p>)}
           </article>
+        </div>
+        <div className="home-topic-grid" aria-label="Temas calientes y promesa bajo lupa">
+          <article>
+            <small>TEMAS CALIENTES</small>
+            <div>{topThemes.map((item) => <section key={item.category}><span>{item.category}</span><strong>{item.count}</strong><p>{item.sources} fuentes · {item.official} con fuente primaria/oficial</p></section>)}</div>
+          </article>
+          <article>
+            <small>PROMESA BAJO LUPA</small>
+            <h3>{promiseUnderWatch.title}</h3>
+            <p>{promiseUnderWatch.assessment}</p>
+            <div className="home-promise-meta"><span>{promiseUnderWatch.status}</span><span>{promiseUnderWatch.deadline}</span></div>
+            <a href={`/promesas#promesa-${promiseUnderWatch.id}`}>Ver evidencia <ArrowUpRight size={14} /></a>
+          </article>
+          <article>
+            <small>MAPA DE ATENCIÓN</small>
+            <h3>{territoryMentions.length} menciones territoriales recientes</h3>
+            <p>{countriesToday} países con cobertura y {mediaToday} medios publicaron noticias en las últimas 24 horas.</p>
+            <a href="#mapa-global">Ver mapa de noticias <ArrowUpRight size={14} /></a>
+          </article>
+        </div>
+        <div className="home-method-strip">
+          <ShieldCheck size={18} />
+          <p>Este sitio separa noticias, anuncios, decisiones, presupuesto y resultados. Un anuncio no cuenta como cumplimiento y una apropiación no cuenta como pago ejecutado.</p>
         </div>
       </section>
 
