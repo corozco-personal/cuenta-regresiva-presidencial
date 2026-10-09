@@ -598,7 +598,10 @@ export default function Home() {
         <div className="home-pulse-grid">
           <article className="home-pulse-score">
             <small>ÍNDICE VERIFICABLE</small>
-            <strong>{managementPulse?.data.weightedCompliance.score ?? completedPromises}/{managementPulse?.data.weightedCompliance.max ?? campaignPromises.length}</strong>
+            <div className="home-score-meter" aria-label={`Índice verificable ${managementPulse?.data.weightedCompliance.score ?? completedPromises} de ${managementPulse?.data.weightedCompliance.max ?? campaignPromises.length}`}>
+              <strong>{managementPulse?.data.weightedCompliance.score ?? completedPromises}</strong>
+              <span>de {managementPulse?.data.weightedCompliance.max ?? campaignPromises.length}</span>
+            </div>
             <span>{managementPulse?.data.weightedCompliance.label ?? "Balance de promesas con evidencia"}</span>
             <p>Última actualización: {managementPulse?.updatedAt ? publicationTimeLabel(managementPulse.updatedAt).replace("Publicado: ", "") : "consultando información"}</p>
           </article>
