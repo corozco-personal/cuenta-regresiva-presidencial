@@ -33,6 +33,7 @@ const CAMPAIGN_START = "2025-07-16T00:00:00-05:00";
 const ELECTION_DAY = new Date("2026-06-21T23:59:59-05:00").getTime();
 const INAUGURATION_DAY = new Date("2026-08-07T00:00:00-05:00").getTime();
 const NEWS_CACHE_MAX_AGE_MS = 70 * 60 * 1000;
+const GDELT_COOLDOWN_MS = 10 * 60 * 1000;
 const MONITOR_QUERY = '("Abelardo de la Espriella" OR "Abelardo Gabriel de la Espriella" OR "De la Espriella" OR "presidente Abelardo" OR "gobierno de la Espriella" OR "administración de la Espriella" OR "Defensores de la Patria")';
 const SUBJECT_PATTERN = /abelardo(?:\s+gabriel)?\s+de\s+la\s+espriella|de\s+la\s+espriella|presidente\s+abelardo|gobierno\s+(?:de\s+la\s+|de\s+)?espriella|administraci[oó]n\s+(?:de\s+la\s+|de\s+)?espriella|defensores\s+de\s+la\s+patria/i;
 
@@ -472,7 +473,8 @@ async function fromGdelt(): Promise<CandidateNews[]> {
   const response = await fetchWithTimeout(`https://api.gdeltproject.org/api/v2/doc/doc?${params}`, {
     headers: { "User-Agent": "CuentaPublica/1.1 (documentary monitoring)" },
   });
-  if (!response.ok) throw new Error(`GDELT ${response.status}`);
+  if (response.status === 429) throw new Error("Fuente internacional temporalmente limitada por exceso de consultas");
+  if (!response.ok) throw new Error("Fuente internacional temporalmente no disponible");
   const data = (await response.json()) as { articles?: Array<Record<string, unknown>> };
   return (data.articles ?? []).flatMap((article) => {
     try {
@@ -496,6 +498,27 @@ async function fromGdelt(): Promise<CandidateNews[]> {
       }];
     } catch { return []; }
   });
+}
+
+async function gdeltInCooldown() {
+  try {
+    const row = await getD1().prepare(`
+      SELECT completed_at AS completedAt,error_summary AS errorSummary
+      FROM monitor_runs
+      WHERE error_summary LIKE '%Fuente internacional%' OR error_summary LIKE '%GDELT%'
+      ORDER BY completed_at DESC LIMIT 1
+    `).first<{ completedAt: string; errorSummary: string | null }>();
+    if (!row?.completedAt) return false;
+    return Date.now() - Date.parse(row.completedAt) < GDELT_COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+function providerErrorMessage(name: string, reason: unknown) {
+  const detail = reason instanceof Error ? reason.message : "";
+  if (name === "GDELT") return detail || "Fuente internacional temporalmente no disponible";
+  return `${name}: no disponible`;
 }
 
 function decodeXml(value: string) {
@@ -845,18 +868,24 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   let discovered: CandidateNews[] = [];
   const apiKey = process.env.NEWS_API_KEY;
   const communitySources = await approvedCommunitySources();
+  const skippedWarnings: string[] = [];
+  const skipGdelt = await gdeltInCooldown();
+  if (skipGdelt) skippedWarnings.push("Fuente internacional en pausa temporal por límite de consultas");
   const providers = [
     { name: "Google News RSS", request: fromGoogleNews() },
     { name: "Barrido global de medios", request: fromGlobalMediaDirectory(communitySources) },
     { name: "Índices directos de medios", request: fromSourceIndexes() },
-    { name: "GDELT", request: fromGdelt() },
+    ...(skipGdelt ? [] : [{ name: "GDELT", request: fromGdelt() }]),
     ...(apiKey ? [{ name: "NewsAPI", request: fromNewsApi(apiKey) }] : []),
   ];
   const results = await Promise.allSettled(providers.map(({ request }) => request));
   discovered = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
   provider = providers.filter((_, index) => results[index].status === "fulfilled").map(({ name }) => name).join(" + ") || "curated";
-  const providerErrors = results.flatMap((result, index) => result.status === "rejected" ? [`${providers[index].name}: no disponible`] : []);
-  if (!discovered.length) providerErrors.push("Sin hallazgos externos recientes: se conservó el archivo validado existente");
+  const providerErrors = [
+    ...skippedWarnings,
+    ...results.flatMap((result, index) => result.status === "rejected" ? [providerErrorMessage(providers[index].name, result.reason)] : []),
+  ];
+  if (!discovered.length) providerErrors.push("Sin hallazgos externos recientes; se conservó el archivo validado existente");
   providerErrors.forEach((message) => console.warn("news-monitor", message));
 
   const candidates = Array.from(
