@@ -78,6 +78,27 @@ a { color: inherit; }
 .accountability-refresh-note svg { flex: 0 0 auto; color: var(--forest); }
 .accountability-refresh-note strong { display: block; font-size: 12px; text-transform: uppercase; }
 .accountability-refresh-note p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.quick-read-card { margin-top: 18px; padding: clamp(22px,3vw,34px); display: grid; grid-template-columns: minmax(260px,.72fr) 1fr; gap: 24px; border: 2px solid var(--forest); background: #f9fbeb; }
+.quick-read-card h2 { margin: 0; font: 400 clamp(30px,4vw,52px)/.98 Georgia,serif; letter-spacing: -.045em; }
+.quick-read-card ol { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; list-style: none; }
+.quick-read-card li { padding: 18px; border: 1px solid rgba(20,58,50,.2); background: var(--white); }
+.quick-read-card strong { font-size: 12px; text-transform: uppercase; }
+.quick-read-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.detail-level-control { margin-top: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); background: var(--white); }
+.detail-level-control strong { font-size: 12px; text-transform: uppercase; }
+.detail-level-control p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.detail-level-control div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
+.detail-level-control button { min-height: 40px; padding: 0 14px; border: 1px solid var(--forest); background: transparent; color: var(--forest); font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+.detail-level-control button[aria-pressed="true"] { background: var(--forest); color: var(--white); }
+.progressive-section { margin-top: 26px; border: 1px solid var(--line); background: var(--white); }
+.progressive-section > summary { min-height: 76px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; list-style: none; cursor: pointer; }
+.progressive-section > summary::-webkit-details-marker { display: none; }
+.progressive-section > summary::after { content: "+"; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--forest); color: var(--forest); font-size: 22px; }
+.progressive-section[open] > summary::after { content: "−"; }
+.progressive-section > summary b { display: block; font: 400 28px/1 Georgia,serif; }
+.progressive-section > summary small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+.progressive-section[open] { padding: 0 clamp(20px,4vw,44px) clamp(24px,4vw,44px); }
+.progressive-section[open] > summary { margin: 0 calc(clamp(20px,4vw,44px) * -1) 22px; border-bottom: 1px solid var(--line); }
 .mandate-intelligence { margin-top: 26px; display: grid; grid-template-columns: minmax(320px,.9fr) minmax(420px,1.1fr); gap: 18px; }
 .mandate-index-card,.weekly-brief-card,.mandate-timeline,.sector-scorecards,.mandate-analysis-grid > article,.comparison-watch,.evidence-watch > article { border: 1px solid var(--line); background: var(--white); }
 .mandate-index-card,.weekly-brief-card { padding: clamp(24px,3vw,36px); }
@@ -315,7 +336,8 @@ a { color: inherit; }
 .government-legislative-agenda article p { color: var(--muted); font-size: 12px; line-height: 1.55; }
 
 @media (max-width: 900px) {
-  .government-intro,.accountability-overview,.accountability-section-heading { grid-template-columns: 1fr; }
+  .government-intro,.accountability-overview,.accountability-section-heading,.quick-read-card,.quick-read-card ol { grid-template-columns: 1fr; }
+  .detail-level-control { align-items: flex-start; flex-direction: column; }
   .accountability-overview { margin: 0 -20px; }
   .accountability-tabs [data-slot="tabs-list"] { grid-template-columns: repeat(3,1fr); }
   .accountability-tabs [data-slot="tabs-trigger"] { border-bottom: 1px solid var(--line); }

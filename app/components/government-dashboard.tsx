@@ -34,6 +34,7 @@ function Status({ children }: { children: string }) {
 export default function GovernmentDashboard() {
   const [snapshot, setSnapshot] = useState<GovernmentAccountabilitySnapshot>(() => buildGovernmentAccountabilitySnapshot());
   const [dataState, setDataState] = useState<"loading" | "ready" | "fallback">("loading");
+  const [detailLevel, setDetailLevel] = useState<"basico" | "intermedio" | "completo">("basico");
   useEffect(() => {
     fetch("/api/datos/gestion", { cache: "no-store" })
       .then((response) => {
@@ -67,6 +68,9 @@ export default function GovernmentDashboard() {
   const completed = campaignPromises.filter((item) => item.status === "Cumplida").length;
   const active = campaignPromises.filter((item) => ["En ejecución", "En preparación"].includes(item.status)).length;
   const dueSoon = campaignPromises.filter((item) => item.deadline.includes("2026") || item.deadline.includes("100 días")).length;
+  const topMissing = missingInformation[0];
+  const showIntermediate = detailLevel !== "basico";
+  const showComplete = detailLevel === "completo";
 
   return <div className="accountability-dashboard">
     <section className="accountability-overview" aria-label="Resumen verificable del mandato">
@@ -88,6 +92,26 @@ export default function GovernmentDashboard() {
       <div><strong>{dataState === "ready" ? "Información calculada con el último corte" : dataState === "loading" ? "Cargando información actualizada" : "Mostrando información de respaldo"}</strong><p>Última actualización de gestión: {snapshot.updatedAt ? publicationTimeLabel(snapshot.updatedAt).replace("Publicado: ", "") : "sin actualización registrada"}. Las revisiones periódicas mantienen este tablero al día.</p></div>
     </section>
 
+    <section className="quick-read-card" aria-labelledby="gestion-rapida-title">
+      <div><p className="section-kicker">LECTURA RÁPIDA</p><h2 id="gestion-rapida-title">Si tienes dos minutos, quédate con esto.</h2></div>
+      <ol>
+        <li><strong>Qué pasó</strong><p>El Gobierno tiene {executiveDecisions.length} decisiones estructuradas y {governmentAgenda.length} asuntos legislativos bajo seguimiento.</p></li>
+        <li><strong>Por qué importa</strong><p>El cumplimiento verificable está en {weightedComplianceIndex.score}/{weightedComplianceIndex.max}; los anuncios no se cuentan como resultados.</p></li>
+        <li><strong>Qué falta</strong><p>{topMissing ? `${topMissing.topic}: ${topMissing.missing}` : "Faltan cortes oficiales comparables para cerrar conclusiones."}</p></li>
+      </ol>
+    </section>
+
+    <section className="detail-level-control" aria-labelledby="detalle-title">
+      <div><strong id="detalle-title">Nivel de detalle</strong><p>Elige cuánto contenido quieres ver en esta visita.</p></div>
+      <div role="group" aria-label="Nivel de detalle del tablero">
+        {[
+          ["basico", "Básico"],
+          ["intermedio", "Intermedio"],
+          ["completo", "Completo"],
+        ].map(([value, label]) => <button key={value} type="button" aria-pressed={detailLevel === value} onClick={() => setDetailLevel(value as typeof detailLevel)}>{label}</button>)}
+      </div>
+    </section>
+
     <section className="mandate-intelligence" aria-label="Lectura editorial del mandato">
       <article className="mandate-index-card">
         <p className="section-kicker">ÍNDICE PONDERADO</p>
@@ -104,17 +128,18 @@ export default function GovernmentDashboard() {
       </article>
     </section>
 
-    <section className="mandate-timeline">
+    {showIntermediate && <details className="progressive-section mandate-timeline">
+      <summary><span><b>Línea de tiempo del mandato</b><small>Hitos, vencimientos y evidencia disponible.</small></span></summary>
       <header className="accountability-section-heading"><div><p className="section-kicker">LÍNEA DE TIEMPO DEL MANDATO</p><h2>Hitos que cambian el balance</h2></div><p>No se mezclan anuncios, decisiones, vencimientos y resultados: cada hito conserva su tipo y evidencia disponible.</p></header>
       <div>{mandateTimeline.map((item) => <article key={`${item.date}-${item.title}`}><time>{new Date(`${item.date}T12:00:00-05:00`).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</time><div><small>{item.type}</small><h3>{item.title}</h3><p>{item.summary}</p><strong>{item.evidence}</strong></div></article>)}</div>
-    </section>
+    </details>}
 
     <section className="sector-scorecards">
       <header className="accountability-section-heading"><div><p className="section-kicker">SEMÁFORO DE GESTIÓN POR SECTOR</p><h2>Actividad, gestión y resultado no son lo mismo</h2></div><p>La calificación baja cuando falta alguno de los eslabones: decisión formal, presupuesto, ejecución y resultado público.</p></header>
       <div>{sectorScorecards.map((item) => <article key={item.sector} className={`sector-card is-${item.signal.toLowerCase()}`}><header><span>{item.signal}</span><strong>{item.score}/100</strong></header><h3>{item.sector}</h3><dl><div><dt>Promesa</dt><dd>{item.promise}</dd></div><div><dt>Decisión</dt><dd>{item.decision}</dd></div><div><dt>Presupuesto</dt><dd>{item.budget}</dd></div><div><dt>Resultado</dt><dd>{item.result}</dd></div></dl><p><b>Dato que falta:</b> {item.nextData}</p></article>)}</div>
     </section>
 
-    <section className="mandate-analysis-grid" aria-label="Módulos de análisis del mandato">
+    {showIntermediate && <section className="mandate-analysis-grid" aria-label="Módulos de análisis del mandato">
       <article>
         <header><ShieldAlert /><div><p className="section-kicker">MATRIZ DE RIESGOS</p><h2>Dónde puede fallar la lectura pública</h2></div></header>
         <div>{riskMatrix.map((item) => <section key={`${item.area}-${item.risk}`}><small>{item.area} · Riesgo {item.level}</small><h3>{item.risk}</h3><p>{item.mitigation}</p><strong>{item.owner}</strong></section>)}</div>
@@ -127,14 +152,15 @@ export default function GovernmentDashboard() {
         <header><Activity /><div><p className="section-kicker">ACTIVIDAD ≠ RESULTADO</p><h2>Qué hizo, qué gestionó y qué cambió</h2></div></header>
         <div>{activityManagementResults.map((item) => <section key={item.topic}><h3>{item.topic}</h3><p><b>Actividad:</b> {item.activity}</p><p><b>Gestión requerida:</b> {item.management}</p><p><b>Resultado:</b> {item.result}</p></section>)}</div>
       </article>
-    </section>
+    </section>}
 
-    <section className="comparison-watch">
+    {showComplete && <details className="progressive-section comparison-watch">
+      <summary><span><b>Comparativo histórico</b><small>Contraste con gobierno anterior usando periodos equivalentes.</small></span></summary>
       <header className="accountability-section-heading"><div><p className="section-kicker">CONTRAPARTE HISTÓRICA</p><h2>Comparar con el gobierno anterior sin sesgo</h2></div><p>La comparación solo se publica si usa la misma fuente, la misma ventana temporal y el mismo denominador.</p></header>
       <div>{previousGovernmentComparisons.map((item) => <article key={item.topic}><h3>{item.topic}</h3><p><b>Actual:</b> {item.current}</p><p><b>Gobierno anterior:</b> {item.previous}</p><strong>{item.metric}</strong><small>{item.caveat}</small></article>)}</div>
-    </section>
+    </details>}
 
-    <section className="evidence-watch">
+    {showComplete && <section className="evidence-watch">
       <article>
         <p className="section-kicker">OBSERVATORIO DE CONTRADICCIONES</p>
         {contradictionWatch.map((item) => <section key={item.issue}><h3>{item.issue}</h3><p><b>Promesa:</b> {item.promise}</p><p><b>Observado:</b> {item.observed}</p><small>{item.status} · {item.nextCheck}</small></section>)}
@@ -147,9 +173,9 @@ export default function GovernmentDashboard() {
         <p className="section-kicker">DOSSIERS TEMÁTICOS</p>
         {deepDossiers.map((item) => <section key={item.title}><h3>{item.title}</h3><p>{item.question}</p><ul>{item.indicators.map((indicator) => <li key={indicator}>{indicator}</li>)}</ul><small>{item.value}</small></section>)}
       </article>
-    </section>
+    </section>}
 
-    <Tabs defaultValue="decisiones" className="accountability-tabs">
+    {showComplete && <Tabs defaultValue="decisiones" className="accountability-tabs">
       <TabsList variant="line" aria-label="Dimensiones del seguimiento">
         <TabsTrigger value="decisiones">Decisiones</TabsTrigger>
         <TabsTrigger value="presupuesto">Presupuesto</TabsTrigger>
@@ -199,6 +225,6 @@ export default function GovernmentDashboard() {
         <ColombiaTerritoryMap />
         <div className="territory-method"><Building2 /><div><strong>Condiciones para publicar</strong><p>Entidad ejecutora, código territorial, fecha, monto comprometido, monto pagado, población de referencia y fuente primaria.</p></div><CalendarClock /><div><strong>Próximo corte</strong><p>El módulo se habilitará cuando exista una base comparable para al menos dos territorios.</p></div></div>
       </TabsContent>
-    </Tabs>
+    </Tabs>}
   </div>;
 }
