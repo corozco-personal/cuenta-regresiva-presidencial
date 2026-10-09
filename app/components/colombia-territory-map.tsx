@@ -6,6 +6,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { ArrowLeft, ExternalLink, LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
 import { campaignPromises } from "../data/campaign-promises";
 import { executiveDecisions } from "../data/government-accountability";
+import { publicationTimeLabel } from "../lib/dates";
 
 type MunicipalityProperties = { DPTO_CCDGO: string; DPTO_CNMBRE?: string; MPIO_CCDGO?: string; MPIO_CNMBR?: string; MPIO_CDPMP?: string };
 type MapFeature = Feature<Geometry, MunicipalityProperties>;
@@ -142,6 +143,6 @@ export default function ColombiaTerritoryMap() {
         <a href={mapMetadata?.sourceUrl} target="_blank" rel="noreferrer">Cartografía: {mapMetadata?.source ?? "DANE"} <ExternalLink /></a>
       </aside>
     </div>
-    <p className="colombia-map-note">{mapMetadata?.note ?? "Los límites son de referencia."} {lastSweep ? `Último barrido: ${new Date(lastSweep).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}. ` : ""}Usa los selectores, haz clic en el mapa, acerca con +/− y arrastra para reubicar.</p>
+    <p className="colombia-map-note">{mapMetadata?.note ?? "Los límites son de referencia."} {lastSweep ? `Última actualización: ${publicationTimeLabel(lastSweep).replace("Publicado: ", "")}. ` : ""}Usa los selectores, haz clic en el mapa, acerca con +/− y arrastra para reubicar.</p>
   </section>;
 }

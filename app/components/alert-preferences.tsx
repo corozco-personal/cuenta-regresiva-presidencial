@@ -15,9 +15,9 @@ function hourLabel(hour: number) {
 }
 
 const previewItems = [
-  { title: "Titular de la noticia incorporada", source: "Medio o fuente primaria", time: "Publicado: 14:30 Colombia · 19:30 UTC" },
-  { title: "Decisión, nombramiento o indicador detectado", source: "Entidad / medio", time: "Publicado: 09:10 Colombia · 14:10 UTC" },
-  { title: "Cobertura relacionada con tus temas de interés", source: "Fuente verificada", time: "Publicado: 06:00 Colombia · 11:00 UTC" },
+  { title: "Titular de la noticia incorporada", source: "Medio o fuente primaria", time: "Publicado: 2026-10-08 14:30:00" },
+  { title: "Decisión, nombramiento o indicador detectado", source: "Entidad / medio", time: "Publicado: 2026-10-08 09:10:00" },
+  { title: "Cobertura relacionada con tus temas de interés", source: "Fuente verificada", time: "Publicado: 2026-10-08 06:00:00" },
 ];
 
 export default function AlertPreferences() {
@@ -128,9 +128,9 @@ export default function AlertPreferences() {
     <section className="newsletter-preview" aria-labelledby="newsletter-preview-title">
       <p className="section-kicker">VISTA PREVIA</p>
       <h2 id="newsletter-preview-title">Así se verá el correo diario</h2>
-      <p>El resumen incluirá solo noticias incorporadas durante las últimas 24 horas, con medio, hora publicada en Colombia y UTC, y enlace a la fuente original.</p>
+      <p>El resumen incluirá solo noticias incorporadas durante las últimas 24 horas, con medio, hora publicada y enlace a la fuente original.</p>
       <ol>{previewItems.map((item) => <li key={item.title}><span>{item.source}</span><strong>{item.title}</strong><time>{item.time}</time><a href="/alertas" aria-disabled="true">Leer la noticia →</a></li>)}</ol>
-      <small>La hora elegida se interpreta en America/Bogota. Cada correo incluye enlace de cancelación y encabezado List-Unsubscribe.</small>
+      <small>La hora elegida se interpreta como hora de Colombia. Cada correo incluye enlace de cancelación.</small>
     </section>
     <div className="alert-channel-list">{channels.map((channel) => <article key={channel.title}><div><strong>{channel.title}</strong><p>{channel.description}</p></div><a href={channel.path} target="_blank">Abrir <Rss size={14} /></a><button onClick={() => copyFeed(channel.path)}>{copied === channel.path ? <Check size={14} /> : <Copy size={14} />} {copied === channel.path ? "Copiado" : "Copiar"}</button></article>)}</div>
   </>;

@@ -7,6 +7,7 @@ import { feature } from "topojson-client";
 import world from "world-atlas/countries-110m.json";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { GeometryCollection, Topology } from "topojson-specification";
+import { publicationTimeLabel } from "../lib/dates";
 
 type NewsPoint = { id: string; title: string; source: string; url: string; publishedAt: string; country?: string; scope: "Nacional" | "Internacional"; sources?: Array<{ source: string; url: string }> };
 type Publication = NewsPoint & { source: string; url: string };
@@ -117,7 +118,7 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
 
   return <section className="world-today section-shell" id="mapa-global" aria-labelledby="world-today-title">
     <div className="world-today-heading"><div><p className="section-kicker">RADAR HORARIO</p><h2 id="world-today-title">Lo que habla el mundo hoy</h2><p>Medios identificados que publicaron hoy sobre el mandatario. La ubicación representa el país asociado al medio, no el lugar donde ocurrió el hecho.</p></div></div>
-    <div className="world-map-status"><span className="update-pill world-update-pill"><i /> Actualización global cada hora</span>{lastUpdate && <small>Último barrido: {new Date(lastUpdate).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}</small>}</div>
+    <div className="world-map-status"><span className="update-pill world-update-pill"><i /> Actualización global cada hora</span>{lastUpdate && <small>Última actualización: {publicationTimeLabel(lastUpdate).replace("Publicado: ", "")}</small>}</div>
     <div className="world-map-layout" style={{ "--map-panel-height": `${mapPanelHeight}px` } as CSSProperties}>
       <figure className="world-map-figure" ref={mapFigureRef}>
         <svg viewBox="0 0 960 500" role="img" aria-label={`Mapamundi con ${mappedCountries.length} países con publicaciones detectadas hoy`}>
@@ -126,7 +127,7 @@ export default function WorldNewsMap({ initialItems, updatedAt }: { initialItems
           <g className="world-land">{countries.features.map((country, index) => <path key={String(country.id ?? index)} d={mapPath(country) ?? undefined} />)}</g>
           {mappedCountries.map(({ item, country, newsCount, sources: countrySources }) => { const point = projectedPoint(item, 0); if (!point) return null; const [x, y] = point; return <g className="world-point" key={country} transform={`translate(${x} ${y})`}><circle r="11" /><circle r="3.5" /><title>{country}: {newsCount} {newsCount === 1 ? "noticia" : "noticias"} en {countrySources.size} {countrySources.size === 1 ? "medio" : "medios"}</title></g>; })}
         </svg>
-        <figcaption><Clock3 size={14} />Actualización cada hora · {lastUpdate ? `último barrido ${new Date(lastUpdate).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}` : "esperando el primer barrido"}</figcaption>
+        <figcaption><Clock3 size={14} />Actualización cada hora · {lastUpdate ? publicationTimeLabel(lastUpdate).replace("Publicado: ", "") : "esperando la primera actualización"}</figcaption>
       </figure>
       <div className="world-source-list"><strong>{sources.length}</strong><span>medios con publicaciones hoy</span>{sources.length ? <div className="world-source-tree">{hierarchy.map((group) => <details key={group.continent} open={hierarchy.length === 1}><summary><span>{group.continent}</span><strong>{group.count}</strong></summary><div>{group.countries.map((country) => <details key={country.country}><summary><span className="country-summary"><i aria-hidden="true">{COUNTRY_FLAGS[country.country.toLocaleLowerCase("es")] ?? "🌐"}</i>{country.country}</span><strong>{country.media.length}</strong></summary><ol>{country.media.map((medium) => <li key={medium.source}>{medium.news.length === 1 ? <a href={medium.news[0].url} target="_blank" rel="noreferrer"><span>{medium.source}</span><small className="single-news-action">Ver noticia <ArrowUpRight size={12} /></small></a> : <details className="medium-news-group"><summary><span>{medium.source}</span><small>{medium.news.length} noticias</small></summary><div className="medium-news-links">{medium.news.map((news) => <a key={`${news.url}-${news.title}`} href={news.url} target="_blank" rel="noreferrer"><span>{news.title}</span><small>{new Date(news.publishedAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })}</small></a>)}</div></details>}</li>)}</ol></details>)}</div></details>)}</div> : <p>El radar todavía no detecta publicaciones fechadas hoy.</p>}</div>
     </div>

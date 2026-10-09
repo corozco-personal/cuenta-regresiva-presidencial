@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { campaignPromises } from "../data/campaign-promises";
 import ColombiaTerritoryMap from "./colombia-territory-map";
+import { publicationTimeLabel } from "../lib/dates";
 import {
   accountabilitySources,
   buildGovernmentAccountabilitySnapshot,
@@ -84,7 +85,7 @@ export default function GovernmentDashboard() {
     </section>
     <section className="accountability-refresh-note" aria-label="Estado de actualización de gestión">
       <CalendarClock />
-      <div><strong>{dataState === "ready" ? "Datos calculados desde el último barrido" : dataState === "loading" ? "Cargando corte actualizado" : "Mostrando respaldo local"}</strong><p>Última actualización de gestión: {snapshot.updatedAt ? new Date(snapshot.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }) : "sin corte registrado"} COT. Los jobs diarios pueden regenerar este corte desde el panel de administrador.</p></div>
+      <div><strong>{dataState === "ready" ? "Información calculada con el último corte" : dataState === "loading" ? "Cargando información actualizada" : "Mostrando información de respaldo"}</strong><p>Última actualización de gestión: {snapshot.updatedAt ? publicationTimeLabel(snapshot.updatedAt).replace("Publicado: ", "") : "sin actualización registrada"}. Las revisiones periódicas mantienen este tablero al día.</p></div>
     </section>
 
     <section className="mandate-intelligence" aria-label="Lectura editorial del mandato">

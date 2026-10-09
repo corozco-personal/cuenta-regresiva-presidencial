@@ -1,20 +1,24 @@
 export function formatPublishedAt(value: string) {
-  return new Intl.DateTimeFormat("es-CO", {
-    dateStyle: "medium",
-    timeStyle: "short",
+  return new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
     timeZone: "America/Bogota",
-  }).format(new Date(value));
+  }).format(new Date(value)).replace(" ", " ");
 }
 
 export function publicationTimeLabel(value: string) {
-  const date = new Date(value);
-  return `Publicado: ${formatPublishedAt(value)} hora Colombia (UTC-5) · ${date.toISOString().replace(".000Z", "Z")} UTC`;
+  return `Publicado: ${formatPublishedAt(value)}`;
 }
 
 export function utcTimestamp(value: string) {
-  return new Date(value).toISOString().replace(".000Z", "Z");
+  return formatPublishedAt(value);
 }
 
 export function dualTimeLabel(value: string) {
-  return `${formatPublishedAt(value)} Colombia · ${utcTimestamp(value)} UTC`;
+  return formatPublishedAt(value);
 }

@@ -548,7 +548,7 @@ export default function Home() {
           <span>Día {mandateDay} del mandato</span>
           <span>{progress.toFixed(1).replace(".", ",")}% transcurrido</span>
           <span>{todayNews} noticias en 24 h</span>
-          <span>{monitorUpdatedAt ? `Último barrido ${new Date(monitorUpdatedAt).toLocaleString("es-CO", { timeStyle: "short", timeZone: "America/Bogota" })} COT` : "Esperando barrido horario"}</span>
+          <span>{monitorUpdatedAt ? `Última actualización ${publicationTimeLabel(monitorUpdatedAt).replace("Publicado: ", "")}` : "Esperando actualización"}</span>
         </div>
         <div className="section-heading compact">
           <div>
@@ -567,7 +567,7 @@ export default function Home() {
           <article>
             <small>DATO DE GESTIÓN</small>
             <h3>{managementPulse ? `${managementPulse.data.weightedCompliance.score}/${managementPulse.data.weightedCompliance.max} en cumplimiento verificable` : "Consultando tablero de gestión"}</h3>
-            <p>{managementPulse ? "El valor sale del endpoint de gestión y cambia con el job diario." : "La portada usa el corte dinámico cuando el endpoint responde."}</p>
+            <p>{managementPulse ? "El valor se recalcula con la actualización diaria de gestión." : "La portada muestra el último corte disponible cuando la información está lista."}</p>
             <a href="/gestion">Ver explicación <ArrowUpRight size={14} /></a>
           </article>
           <article>
@@ -598,12 +598,12 @@ export default function Home() {
             <small>ÍNDICE VERIFICABLE</small>
             <strong>{managementPulse?.data.weightedCompliance.score ?? completedPromises}/{managementPulse?.data.weightedCompliance.max ?? campaignPromises.length}</strong>
             <span>{managementPulse?.data.weightedCompliance.label ?? "Balance de promesas con evidencia"}</span>
-            <p>Último corte: {managementPulse?.updatedAt ? `${new Date(managementPulse.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" })} COT` : "consultando job de gestión"}</p>
+            <p>Última actualización: {managementPulse?.updatedAt ? publicationTimeLabel(managementPulse.updatedAt).replace("Publicado: ", "") : "consultando información"}</p>
           </article>
           <article>
             <small>SECTORES EN ALERTA</small>
             {(managementPulse?.data.sectorScorecards ?? []).slice(0, 3).map((item) => <div className="home-pulse-row" key={item.sector}><span>{item.sector}</span><strong>{item.signal} · {item.score}/100</strong></div>)}
-            {!managementPulse && <p>El resumen se carga desde el endpoint de gestión para evitar datos quemados.</p>}
+            {!managementPulse && <p>El resumen se carga desde el corte de gestión más reciente.</p>}
           </article>
           <article>
             <small>LO QUE FALTA PARA CONCLUIR</small>
