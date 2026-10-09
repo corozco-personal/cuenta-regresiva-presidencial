@@ -952,19 +952,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "No disponible" }, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
   }
-  const isPublicRead = requestUrl.pathname.endsWith("/noticias-v2");
+  const isPublicRead = requestUrl.pathname.endsWith("/noticias-v2") || requestUrl.pathname.endsWith("/noticias");
   if (cached && isPublicRead && !forceRefresh) {
     const cacheAge = Date.now() - Date.parse(cached.updatedAt);
     if (!Number.isNaN(cacheAge) && cacheAge > NEWS_CACHE_MAX_AGE_MS) {
-      console.warn("news-monitor", `Caché público vencido por ${Math.round(cacheAge / 60000)} minutos; se intenta refresco en lectura`);
-      return refreshNews("public, s-maxage=300, stale-while-revalidate=3600");
+      console.warn("news-monitor", `Caché público vencido por ${Math.round(cacheAge / 60000)} minutos; se sirve caché hasta el próximo cron`);
     }
     return NextResponse.json(cached, {
       headers: {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=21600",
         "X-Data-Source": "database-cache",
+        "X-Data-Stale": !Number.isNaN(cacheAge) && cacheAge > NEWS_CACHE_MAX_AGE_MS ? "1" : "0",
       },
     });
+  }
+  if (isPublicRead && !forceRefresh) {
+    return NextResponse.json(
+      { items: [], updatedAt: null, error: "El archivo de noticias aún no está disponible. Espera al próximo barrido programado." },
+      { status: 503, headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300", "X-Data-Source": "empty-cache" } },
+    );
   }
   return refreshNews(forceRefresh ? "private, no-store, max-age=0" : undefined);
 }

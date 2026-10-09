@@ -5,6 +5,10 @@ import { getAuthorizedReviewer } from "../../data/reviewer-auth";
 const SESSION_PATTERN = /^[a-f0-9-]{20,80}$/i;
 const EVENT_TYPES = new Set(["pageview", "interaction"]);
 const ACTIONS = new Set(["heartbeat", "event"]);
+const ANALYTICS_RETENTION_DAYS = 90;
+const MAX_DAILY_EVENTS = 25_000;
+const MAX_DAILY_SESSIONS = 6_000;
+const MAX_DAILY_EVENTS_PER_SESSION = 180;
 
 function clean(value: unknown, fallback: string, max = 100) {
   return String(value ?? fallback).normalize("NFKC").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max) || fallback;
@@ -20,6 +24,34 @@ function startDay(days: number) {
   return bogotaDay(date);
 }
 
+function bogotaDayStartIso(day = bogotaDay()) {
+  return new Date(`${day}T00:00:00-05:00`).toISOString();
+}
+
+async function maybeApplyAnalyticsRetention(db: ReturnType<typeof getD1>) {
+  if (Math.random() >= 0.01) return;
+  const cutoff = new Date(Date.now() - ANALYTICS_RETENTION_DAYS * 86_400_000).toISOString();
+  await db.batch([
+    db.prepare("DELETE FROM analytics_events WHERE occurred_at < ?").bind(cutoff),
+    db.prepare("DELETE FROM analytics_sessions WHERE last_seen_at < ?").bind(cutoff),
+  ]);
+}
+
+async function analyticsQuotaExceeded(db: ReturnType<typeof getD1>, sessionId: string, action: string, day: string) {
+  const todayStart = bogotaDayStartIso(day);
+  const [existingSession, dailySessions] = await Promise.all([
+    db.prepare("SELECT session_id AS sessionId FROM analytics_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ sessionId: string }>(),
+    db.prepare("SELECT COUNT(*) AS value FROM analytics_sessions WHERE first_seen_at >= ?").bind(todayStart).first<{ value: number }>(),
+  ]);
+  if (!existingSession && Number(dailySessions?.value ?? 0) >= MAX_DAILY_SESSIONS) return true;
+  if (action !== "event") return false;
+  const [dailyEvents, sessionEvents] = await Promise.all([
+    db.prepare("SELECT COUNT(*) AS value FROM analytics_events WHERE day = ?").bind(day).first<{ value: number }>(),
+    db.prepare("SELECT COUNT(*) AS value FROM analytics_events WHERE session_id = ? AND day = ?").bind(sessionId, day).first<{ value: number }>(),
+  ]);
+  return Number(dailyEvents?.value ?? 0) >= MAX_DAILY_EVENTS || Number(sessionEvents?.value ?? 0) >= MAX_DAILY_EVENTS_PER_SESSION;
+}
+
 export async function POST(request: Request) {
   try {
     const limited = await enforceRateLimit(request, "analitica", 240, 60);
@@ -33,7 +65,12 @@ export async function POST(request: Request) {
     const action = clean(payload.action, "heartbeat", 20);
     if (!ACTIONS.has(action)) return Response.json({ error: "Acción inválida." }, { status: 400 });
     const now = new Date().toISOString();
+    const day = bogotaDay();
     const db = getD1();
+    await maybeApplyAnalyticsRetention(db);
+    if (await analyticsQuotaExceeded(db, sessionId, action, day)) {
+      return Response.json({ ok: true, sampled: false }, { headers: { "Cache-Control": "no-store" } });
+    }
     await db.prepare(`
       INSERT INTO analytics_sessions (session_id, first_seen_at, last_seen_at, current_page)
       VALUES (?, ?, ?, ?)
@@ -47,9 +84,9 @@ export async function POST(request: Request) {
       await db.prepare(`
         INSERT INTO analytics_events (id, session_id, event_type, event_name, page, day, occurred_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(crypto.randomUUID(), sessionId, eventType, eventName, page, bogotaDay(), now).run();
+      `).bind(crypto.randomUUID(), sessionId, eventType, eventName, page, day, now).run();
     }
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, sampled: true }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json({ error: "La medición no está disponible temporalmente." }, { status: 503 });
   }

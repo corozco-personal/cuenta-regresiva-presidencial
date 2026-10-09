@@ -48,10 +48,20 @@ export function turnstileConfiguration() {
   return { enabled: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY), siteKey: env.TURNSTILE_SITE_KEY ?? "" };
 }
 
+function allowsLocalTurnstileBypass(request: Request) {
+  const hostname = new URL(request.url).hostname;
+  const explicitBypass = (env as { ALLOW_INSECURE_TURNSTILE_BYPASS?: string }).ALLOW_INSECURE_TURNSTILE_BYPASS === "true";
+  return explicitBypass || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "terminal.local";
+}
+
 export async function verifyTurnstile(request: Request, token: unknown, expectedAction: string) {
   const secret = env.TURNSTILE_SECRET_KEY;
   const siteKey = env.TURNSTILE_SITE_KEY;
-  if (!secret || !siteKey) return { ok: true, configured: false, reason: null };
+  if (!secret || !siteKey) {
+    return allowsLocalTurnstileBypass(request)
+      ? { ok: true, configured: false, reason: "local-bypass" }
+      : { ok: false, configured: false, reason: "configuration-missing" };
+  }
   const responseToken = String(token ?? "").trim();
   if (!responseToken || responseToken.length > 2048) return { ok: false, configured: true, reason: "missing-token" };
 

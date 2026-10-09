@@ -63,7 +63,8 @@ async function runDailyDataRefresh(env: WorkerEnvironment, context: ExecutionCon
 async function runHourlyJobs(env: WorkerEnvironment, context: ExecutionContext) {
   try { await runHourlyNewsRefresh(env, context); }
   catch (error) { console.error("news-monitor", error); }
-  await runDailyNewsletter(env, context);
+  try { await runDailyNewsletter(env, context); }
+  catch (error) { console.error("newsletter-digest", error); }
 }
 
 async function runScheduledJobs(controller: { cron?: string } | undefined, env: WorkerEnvironment, context: ExecutionContext) {
