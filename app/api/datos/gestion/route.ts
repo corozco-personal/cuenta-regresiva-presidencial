@@ -1,46 +1,26 @@
-import {
-  activityManagementResults,
-  budgetOverview,
-  cabinetRegistry,
-  contradictionWatch,
-  deepDossiers,
-  executiveDecisions,
-  governabilityThermometer,
-  governmentAgenda,
-  mandateTimeline,
-  missingInformation,
-  policyDossiers,
-  previousGovernmentComparisons,
-  riskMatrix,
-  sectorScorecards,
-  territorialCoverage,
-  weeklyMandateBrief,
-  weightedComplianceIndex,
-} from "../../../data/government-accountability";
+import { buildGovernmentAccountabilitySnapshot } from "../../../data/government-accountability";
+import { getRefreshRun, recordRefreshEnd, recordRefreshStart } from "../../../data/refresh-runs";
 
-export async function GET() {
-  return Response.json({
-    license: "CC BY 4.0",
-    generatedAt: new Date().toISOString(),
-    methodology: "Los conjuntos separan anuncios, documentos, presupuesto aprobado, ejecución y resultados. Los valores nulos representan datos no verificados.",
-    data: {
-      decisions: executiveDecisions,
-      budget: budgetOverview,
-      legislativeAgenda: governmentAgenda,
-      cabinet: cabinetRegistry,
-      dossiers: policyDossiers,
-      territories: territorialCoverage,
-      weightedCompliance: weightedComplianceIndex,
-      timeline: mandateTimeline,
-      weeklyBrief: weeklyMandateBrief,
-      activityManagementResults,
-      sectorScorecards,
-      previousGovernmentComparisons,
-      riskMatrix,
-      contradictions: contradictionWatch,
-      missingInformation,
-      governability: governabilityThermometer,
-      deepDossiers,
-    },
-  });
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const isRefresh = url.searchParams.get("refresh") === "1";
+  if (isRefresh) await recordRefreshStart("gestion");
+  try {
+    const refresh = await getRefreshRun("gestion");
+    const snapshot = buildGovernmentAccountabilitySnapshot({
+      generatedAt: new Date().toISOString(),
+      lastRefreshAt: refresh?.lastSuccessAt ?? refresh?.lastCompletedAt ?? null,
+      refresh,
+    });
+    if (isRefresh) {
+      const recordCount = Object.values(snapshot.data).reduce((count, value) => count + (Array.isArray(value) ? value.length : 1), 0);
+      await recordRefreshEnd("gestion", { ok: true, recordCount });
+      const updatedRefresh = await getRefreshRun("gestion");
+      return Response.json(buildGovernmentAccountabilitySnapshot({ generatedAt: new Date().toISOString(), lastRefreshAt: updatedRefresh?.lastSuccessAt ?? null, refresh: updatedRefresh }), { headers: { "Cache-Control": "no-store" } });
+    }
+    return Response.json(snapshot, { headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=86400" } });
+  } catch (error) {
+    if (isRefresh) await recordRefreshEnd("gestion", { ok: false, error: error instanceof Error ? error.message : "unknown" });
+    return Response.json({ error: "No fue posible actualizar gestión.", detail: error instanceof Error ? error.message : "unknown" }, { status: 500, headers: { "Cache-Control": "no-store" } });
+  }
 }

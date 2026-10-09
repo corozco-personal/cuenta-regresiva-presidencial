@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   Activity,
@@ -20,22 +21,8 @@ import { campaignPromises } from "../data/campaign-promises";
 import ColombiaTerritoryMap from "./colombia-territory-map";
 import {
   accountabilitySources,
-  activityManagementResults,
-  budgetOverview,
-  cabinetRegistry,
-  contradictionWatch,
-  deepDossiers,
-  executiveDecisions,
-  governabilityThermometer,
-  governmentAgenda,
-  mandateTimeline,
-  missingInformation,
-  policyDossiers,
-  previousGovernmentComparisons,
-  riskMatrix,
-  sectorScorecards,
-  weeklyMandateBrief,
-  weightedComplianceIndex,
+  buildGovernmentAccountabilitySnapshot,
+  type GovernmentAccountabilitySnapshot,
 } from "../data/government-accountability";
 
 function Status({ children }: { children: string }) {
@@ -44,6 +31,38 @@ function Status({ children }: { children: string }) {
 }
 
 export default function GovernmentDashboard() {
+  const [snapshot, setSnapshot] = useState<GovernmentAccountabilitySnapshot>(() => buildGovernmentAccountabilitySnapshot());
+  const [dataState, setDataState] = useState<"loading" | "ready" | "fallback">("loading");
+  useEffect(() => {
+    fetch("/api/datos/gestion", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("No disponible");
+        return response.json() as Promise<GovernmentAccountabilitySnapshot>;
+      })
+      .then((payload) => {
+        setSnapshot(payload);
+        setDataState("ready");
+      })
+      .catch(() => setDataState("fallback"));
+  }, []);
+  const {
+    activityManagementResults,
+    budget: budgetOverview,
+    cabinet: cabinetRegistry,
+    contradictions: contradictionWatch,
+    deepDossiers,
+    decisions: executiveDecisions,
+    governability: governabilityThermometer,
+    legislativeAgenda: governmentAgenda,
+    timeline: mandateTimeline,
+    missingInformation,
+    dossiers: policyDossiers,
+    previousGovernmentComparisons,
+    riskMatrix,
+    sectorScorecards,
+    weeklyBrief: weeklyMandateBrief,
+    weightedCompliance: weightedComplianceIndex,
+  } = snapshot.data;
   const completed = campaignPromises.filter((item) => item.status === "Cumplida").length;
   const active = campaignPromises.filter((item) => ["En ejecución", "En preparación"].includes(item.status)).length;
   const dueSoon = campaignPromises.filter((item) => item.deadline.includes("2026") || item.deadline.includes("100 días")).length;
@@ -62,6 +81,10 @@ export default function GovernmentDashboard() {
         <article><Scale /><strong>{governmentAgenda.length}</strong><span>asuntos legislativos</span><small>{dueSoon} promesas con plazo cercano</small></article>
         <article><Banknote /><strong>Sin corte</strong><span>ejecución del PGN</span><small>No se sustituye con la apropiación</small></article>
       </div>
+    </section>
+    <section className="accountability-refresh-note" aria-label="Estado de actualización de gestión">
+      <CalendarClock />
+      <div><strong>{dataState === "ready" ? "Datos calculados desde el último barrido" : dataState === "loading" ? "Cargando corte actualizado" : "Mostrando respaldo local"}</strong><p>Última actualización de gestión: {snapshot.updatedAt ? new Date(snapshot.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }) : "sin corte registrado"} COT. Los jobs diarios pueden regenerar este corte desde el panel de administrador.</p></div>
     </section>
 
     <section className="mandate-intelligence" aria-label="Lectura editorial del mandato">

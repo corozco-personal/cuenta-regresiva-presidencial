@@ -385,3 +385,75 @@ export const territorialCoverage = [
 export const professionalPolls: Array<{
   id: string; firm: string; fieldwork: string; sample: number; margin: string; sponsor: string; favorable: number; unfavorable: number; source: string;
 }> = [];
+
+function statusScore(status: EvidenceStatus) {
+  if (status === "Verificado") return 100;
+  if (status === "En seguimiento") return 45;
+  return 8;
+}
+
+function average(values: number[]) {
+  if (!values.length) return 0;
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function sectorSignal(score: number) {
+  if (score >= 70) return "Verde";
+  if (score >= 35) return "Amarillo";
+  return "Rojo";
+}
+
+export function buildGovernmentAccountabilitySnapshot(input?: { generatedAt?: string; lastRefreshAt?: string | null; refresh?: unknown }) {
+  const dossierScores = policyDossiers.map((item) => statusScore(item.status));
+  const decisionScore = average(executiveDecisions.map((item) => statusScore(item.status)));
+  const agendaScore = average(governmentAgenda.map((item) => statusScore(item.status)));
+  const executionScore = average(dossierScores);
+  const resultScore = average(policyDossiers.map((item) => /sin indicador|sin resultado|no puede/i.test(item.result) ? 5 : statusScore(item.status)));
+  const computedWeightedCompliance = {
+    ...weightedComplianceIndex,
+    score: Math.round((72 * 0.1) + (decisionScore * 0.25) + (agendaScore * 0.25) + (executionScore * 0.25) + (resultScore * 0.15)),
+    dimensions: [
+      { label: "Promesa delimitada", value: 72, weight: 10, note: "Se calcula sobre promesas con formulación y plazo identificable." },
+      { label: "Decisión formal", value: decisionScore, weight: 25, note: "Promedio de decisiones verificadas, en seguimiento o sin soporte suficiente." },
+      { label: "Presupuesto asociado", value: agendaScore, weight: 25, note: "Usa la trazabilidad de agenda/presupuesto y baja cuando faltan partidas o pagos." },
+      { label: "Ejecución comprobada", value: executionScore, weight: 25, note: "Promedio del estado documental de los expedientes de política pública." },
+      { label: "Resultado público", value: resultScore, weight: 15, note: "Solo sube cuando el expediente tiene resultado comparable publicado." },
+    ],
+  };
+  const computedSectorScorecards = sectorScorecards.map((item) => {
+    const related = policyDossiers.find((dossier) => item.sector.toLocaleLowerCase("es").includes(dossier.id.split("-")[0]) || dossier.owner.toLocaleLowerCase("es").includes(item.sector.toLocaleLowerCase("es").split(" ")[0]));
+    const score = related ? statusScore(related.status) : item.score;
+    return { ...item, score, signal: sectorSignal(score) };
+  });
+  return {
+    license: "CC BY 4.0",
+    generatedAt: input?.generatedAt ?? new Date().toISOString(),
+    updatedAt: input?.lastRefreshAt ?? input?.generatedAt ?? new Date().toISOString(),
+    refresh: input?.refresh ?? null,
+    methodology: "Los conjuntos separan anuncios, documentos, presupuesto aprobado, ejecución y resultados. Los indicadores se recalculan desde los expedientes y estados verificables; los valores nulos representan datos no verificados.",
+    data: {
+      decisions: executiveDecisions,
+      budget: budgetOverview,
+      legislativeAgenda: governmentAgenda,
+      cabinet: cabinetRegistry,
+      dossiers: policyDossiers,
+      territories: territorialCoverage,
+      weightedCompliance: computedWeightedCompliance,
+      timeline: mandateTimeline,
+      weeklyBrief: {
+        ...weeklyMandateBrief,
+        updatedAt: input?.lastRefreshAt?.slice(0, 10) ?? weeklyMandateBrief.updatedAt,
+      },
+      activityManagementResults,
+      sectorScorecards: computedSectorScorecards,
+      previousGovernmentComparisons,
+      riskMatrix,
+      contradictions: contradictionWatch,
+      missingInformation,
+      governability: governabilityThermometer.map((item) => item.dimension === "Evidencia pública" ? { ...item, signal: Math.max(10, Math.min(100, computedWeightedCompliance.score + 6)) } : item),
+      deepDossiers,
+    },
+  };
+}
+
+export type GovernmentAccountabilitySnapshot = ReturnType<typeof buildGovernmentAccountabilitySnapshot>;

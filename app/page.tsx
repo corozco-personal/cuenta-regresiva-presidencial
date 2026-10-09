@@ -57,6 +57,15 @@ type ReviewStats = { admitted: number; corrected: number; rejected: number; poli
 type SourceEntry = { domain: string; label: string; scope: string; kind: string; criterion: string; country: string; region: string };
 type GlobalRadarItem = { id: string; title: string; source: string; domain: string; url: string; publishedAt: string; country: string; language: string; status: string; signal: string };
 type GlobalStats = { results: number; countries: number; languages: number; domains: number; catalogSources: number };
+type ManagementPulse = {
+  updatedAt: string;
+  data: {
+    weightedCompliance: { score: number; max: number; label: string };
+    sectorScorecards: Array<{ sector: string; signal: string; score: number; nextData: string }>;
+    missingInformation: Array<{ topic: string; missing: string }>;
+    contradictions: Array<{ issue: string; status: string }>;
+  };
+};
 
 const START = new Date("2026-08-07T00:00:00-05:00").getTime();
 const TARGET = new Date("2030-08-07T00:00:00-05:00").getTime();
@@ -254,6 +263,7 @@ export default function Home() {
   const [sourceQuery, setSourceQuery] = useState("");
   const [monitorUpdatedAt, setMonitorUpdatedAt] = useState<string | null>(null);
   const [newsState, setNewsState] = useState<"loading" | "ready" | "error">("loading");
+  const [managementPulse, setManagementPulse] = useState<ManagementPulse | null>(null);
 
   useEffect(() => {
     const storedEcoMode = window.localStorage.getItem("cuenta-publica-eco") === "true";
@@ -289,6 +299,13 @@ export default function Home() {
         setNewsState("ready");
       })
       .catch(() => setNewsState("error"));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/datos/gestion", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => setManagementPulse(payload))
+      .catch(() => setManagementPulse(null));
   }, []);
 
   const filtered = useMemo(() => {
@@ -503,6 +520,38 @@ export default function Home() {
             <a className="promises-all" href="/promesas">Ver todas, comparar plazos y fuentes <ArrowUpRight size={14} /></a>
             <p className="promises-note">El inicio de una acción no equivale a su cumplimiento. Consulta la metodología de cada estado.</p>
           </aside>
+        </div>
+      </section>
+
+      <section className="home-mandate-pulse section-shell" aria-label="Pulso de gestión presidencial">
+        <div className="section-heading compact">
+          <div>
+            <p className="section-kicker">01 / PULSO DEL MANDATO</p>
+            <h2>Lo primero no debe ser solo el reloj.</h2>
+            <p>Resumen vivo de cumplimiento, riesgos y datos faltantes para que la portada explique qué está pasando con el Gobierno hoy.</p>
+          </div>
+          <a className="section-action" href="/gestion">Ver tablero completo <ArrowUpRight size={15} /></a>
+        </div>
+        <div className="home-pulse-grid">
+          <article className="home-pulse-score">
+            <small>ÍNDICE VERIFICABLE</small>
+            <strong>{managementPulse?.data.weightedCompliance.score ?? completedPromises}/{managementPulse?.data.weightedCompliance.max ?? campaignPromises.length}</strong>
+            <span>{managementPulse?.data.weightedCompliance.label ?? "Balance de promesas con evidencia"}</span>
+            <p>Último corte: {managementPulse?.updatedAt ? `${new Date(managementPulse.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" })} COT` : "consultando job de gestión"}</p>
+          </article>
+          <article>
+            <small>SECTORES EN ALERTA</small>
+            {(managementPulse?.data.sectorScorecards ?? []).slice(0, 3).map((item) => <div className="home-pulse-row" key={item.sector}><span>{item.sector}</span><strong>{item.signal} · {item.score}/100</strong></div>)}
+            {!managementPulse && <p>El resumen se carga desde el endpoint de gestión para evitar datos quemados.</p>}
+          </article>
+          <article>
+            <small>LO QUE FALTA PARA CONCLUIR</small>
+            {(managementPulse?.data.missingInformation ?? []).slice(0, 2).map((item) => <p key={item.topic}><b>{item.topic}:</b> {item.missing}</p>)}
+          </article>
+          <article>
+            <small>CONTRADICCIONES ABIERTAS</small>
+            {(managementPulse?.data.contradictions ?? []).slice(0, 2).map((item) => <p key={item.issue}><b>{item.status}:</b> {item.issue}</p>)}
+          </article>
         </div>
       </section>
 
