@@ -609,20 +609,14 @@ async function fetchGoogleNewsRss(query: string, hl = "es-419", gl = "CO", ceid 
 }
 
 async function fromGoogleNews(): Promise<CandidateNews[]> {
-  const recent = recentDateForQuery(10);
+  const recent = recentDateForQuery(7);
+  // Consolidamos en 2 consultas principales en lugar de 9 peticiones simultáneas
   const feedsToSearch = [
     { query: `${MONITOR_QUERY} after:${recent}`, hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '"Abelardo de la Espriella" after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '"De la Espriella" Colombia after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '"presidente Abelardo" Colombia after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '"gobierno de la Espriella" after:2026-08-06', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-07-15 before:2026-01-01', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '("Abelardo de la Espriella" OR "Defensores de la Patria") after:2025-12-31 before:2026-08-07', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
-    { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "en-US", gl: "US", ceid: "US:en" },
-    { query: '"Abelardo de la Espriella" Colombia after:2025-07-15', hl: "es", gl: "ES", ceid: "ES:es" },
+    { query: '"Abelardo de la Espriella" Colombia', hl: "es-419", gl: "CO", ceid: "CO:es-419" },
   ];
   const feeds = await Promise.allSettled(feedsToSearch.map(async ({ query, hl, gl, ceid }) => {
-    return fetchGoogleNewsRss(query, hl, gl, ceid);
+    return fetchGoogleNewsRss(query, hl, gl, ceid, 12000);
   }));
 
   return feeds.flatMap((feed) => {
@@ -632,18 +626,26 @@ async function fromGoogleNews(): Promise<CandidateNews[]> {
 }
 
 async function fromGlobalMediaDirectory(extraSources: SourceProfile[] = []): Promise<CandidateNews[]> {
-  const recent = recentDateForQuery(14);
-  const domains = [...new Set([...SOURCE_PROFILES, ...extraSources].map((source) => source.domain.toLowerCase()).filter(Boolean))];
-  const batches: string[][] = [];
-  for (let index = 0; index < domains.length; index += 8) batches.push(domains.slice(index, index + 8));
-  const feeds = await Promise.allSettled(batches.map((batch) => {
-    const sourceFilter = batch.map((domain) => `site:${domain}`).join(" OR ");
-    return fetchGoogleNewsRss(`${MONITOR_QUERY} (${sourceFilter}) after:${recent}`, "es-419", "CO", "CO:es-419", 9000);
-  }));
-  return feeds.flatMap((feed) => {
-    if (feed.status !== "fulfilled") return [];
-    return [...feed.value.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => newsItemFromGoogleRssItem(match[1]));
-  });
+  // Obtenemos todos los dominios disponibles del directorio editorial y aportes comunitarios
+  const allDomains = [...new Set([...SOURCE_PROFILES, ...extraSources].map((s) => s.domain.toLowerCase()).filter(Boolean))];
+  if (!allDomains.length) return [];
+
+  // Implementamos una cola rotativa por hora: cada hora se selecciona un lote distinto
+  // cubriendo ordenadamente la totalidad de los medios a lo largo del día sin saturar
+  const currentHour = new Date().getUTCHours();
+  const batchSize = 10;
+  const totalBatches = Math.ceil(allDomains.length / batchSize);
+  const selectedBatchIndex = currentHour % totalBatches;
+  const activeDomains = allDomains.slice(selectedBatchIndex * batchSize, (selectedBatchIndex + 1) * batchSize);
+
+  const recent = recentDateForQuery(10);
+  const sourceFilter = activeDomains.map((d) => `site:${d}`).join(" OR ");
+  try {
+    const rss = await fetchGoogleNewsRss(`${MONITOR_QUERY} (${sourceFilter}) after:${recent}`, "es-419", "CO", "CO:es-419", 12000);
+    return [...rss.matchAll(/<item>([\s\S]*?)<\/item>/gi)].flatMap((match) => newsItemFromGoogleRssItem(match[1]));
+  } catch {
+    return [];
+  }
 }
 
 async function fromSourceIndexes(): Promise<CandidateNews[]> {
@@ -680,34 +682,41 @@ async function fromSourceIndexes(): Promise<CandidateNews[]> {
     }
   }
 
-  const articles = await Promise.allSettled([...links.entries()].slice(0, 32).map(async ([url, fallbackTitle]) => {
-    const response = await fetchWithTimeout(url, {
-      headers: { "User-Agent": "CuentaPublica/1.4 (article metadata monitoring)" },
-    }, 9000);
-    if (!response.ok) throw new Error(`Article ${response.status}`);
-    const html = await response.text();
-    const title = cleanExternalTitle(metaContent(html, ["og:title", "twitter:title"]) || stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || fallbackTitle);
-    const publishedAt = articleDateFromHtml(html, url);
-    if (!publishedAt || Date.parse(publishedAt) < Date.parse(CAMPAIGN_START) || !SUBJECT_PATTERN.test(title)) return null;
-    const hostname = new URL(url).hostname;
-    const profile = profileFor(hostname);
-    if (!profile) return null;
-    return {
-      id: idFor(url),
-      title,
-      source: profile.label ?? hostname,
-      url,
-      publishedAt,
-      kind: profile.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
-      scope: profile.scope,
-      trustedSource: true,
-      country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Sin identificar"),
-      language: "Español",
-      domain: hostname.replace(/^www\./, ""),
-    };
-  }));
+  // Tomamos máximo 6 artículos de índices directos y los consultamos secuencialmente con pausa
+  const targetLinks = [...links.entries()].slice(0, 6);
+  const discoveredArticles: CandidateNews[] = [];
+  for (const [url, fallbackTitle] of targetLinks) {
+    try {
+      const response = await fetchWithTimeout(url, {
+        headers: { "User-Agent": "CuentaPublica/1.4 (article metadata monitoring)" },
+      }, 7000);
+      if (!response.ok) continue;
+      const html = await response.text();
+      const title = cleanExternalTitle(metaContent(html, ["og:title", "twitter:title"]) || stripHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || fallbackTitle);
+      const publishedAt = articleDateFromHtml(html, url);
+      if (!publishedAt || Date.parse(publishedAt) < Date.parse(CAMPAIGN_START) || !SUBJECT_PATTERN.test(title)) continue;
+      const hostname = new URL(url).hostname;
+      const profile = profileFor(hostname);
+      if (!profile) continue;
+      discoveredArticles.push({
+        id: idFor(url),
+        title,
+        source: profile.label ?? hostname,
+        url,
+        publishedAt,
+        kind: profile.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
+        scope: profile.scope,
+        trustedSource: true,
+        country: profile.country ?? (profile.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+        language: "Español",
+        domain: hostname.replace(/^www\./, ""),
+      });
+    } catch {
+      /* Continúa con el siguiente enlace si uno falla */
+    }
+  }
 
-  return articles.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : []);
+  return discoveredArticles;
 }
 
 type StoredNewsRow = Omit<PublicNews, "sources" | "linkCheck" | "evidenceLevel"> & {
@@ -888,8 +897,10 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
   if (!discovered.length) providerErrors.push("Sin hallazgos externos recientes; se conservó el archivo validado existente");
   providerErrors.forEach((message) => console.warn("news-monitor", message));
 
+  const storedBeforeRefresh = await loadStoredNews(600);
   const candidates = Array.from(
     new Map([
+      ...storedBeforeRefresh.map((item) => ({ ...item, trustedSource: true })),
       ...discovered,
       ...CURATED_CHANNELS.map((item) => ({ ...item, trustedSource: true, curated: true })),
     ].map((item) => [item.url, item])).values(),
@@ -900,7 +911,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
     .slice(0, 600);
   const grouped = groupCoverage(publishable);
-  const stageLimits: Record<PublicNews["stage"], number> = { Presidencia: 50, Transición: 50, Campaña: 80 };
+  const stageLimits: Record<PublicNews["stage"], number> = { Presidencia: 80, Transición: 60, Campaña: 100 };
   const selected = (["Presidencia", "Transición", "Campaña"] as const)
     .flatMap((stage) => grouped.filter((item) => item.stage === stage).slice(0, stageLimits[stage]))
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
@@ -922,7 +933,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
     counts[domain] = (counts[domain] ?? 0) + 1;
     return counts;
   }, {});
-  const globalRadar = discovered.slice(0, 80).map((item) => ({
+  const globalRadar = (discovered.length ? discovered : currentItems).slice(0, 80).map((item) => ({
     id: item.id,
     title: item.title,
     source: item.source,
@@ -946,10 +957,17 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
     catalogSources: sourceDirectory.length,
   };
   const completedAt = new Date().toISOString();
+  // El estado solo es degradado si fallaron todos los proveedores; si consultó y conservó datos válidos, es operativo
+  const executionStatus = results.every((r) => r.status === "rejected")
+    ? "degradado"
+    : results.some((r) => r.status === "rejected")
+      ? "parcial"
+      : "operativo";
+
   const storedItems = await storeAndLoadNews(currentItems, {
     startedAt, completedAt, providers: provider, discovered: discovered.length, published: currentItems.length,
     rejected: review.rejected, countries: globalStats.countries, languages: globalStats.languages,
-    status: providerErrors.length >= providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo",
+    status: executionStatus,
     errors: providerErrors.length ? providerErrors.join("; ") : null,
   });
   const items = groupCoverage(Array.from(new Map([...currentItems, ...storedItems].map((item) => [item.url, item])).values()))
@@ -965,7 +983,7 @@ async function refreshNews(cacheControl = "public, s-maxage=3600, stale-while-re
       coverage: { startsAt: CAMPAIGN_START, stages: ["Campaña", "Transición", "Presidencia"] },
       updatedAt: new Date().toISOString(),
       provider,
-      monitor: { startedAt, completedAt, status: providerErrors.length >= providers.length ? "degradado" : providerErrors.length ? "parcial" : "operativo", errors: providerErrors },
+      monitor: { startedAt, completedAt, status: executionStatus, errors: providerErrors },
     },
     { headers: { "Cache-Control": cacheControl, "X-Data-Source": "global-refresh" } },
   );
