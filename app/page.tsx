@@ -376,9 +376,15 @@ export default function Home() {
     [number.format(countdown.seconds), "seg"],
   ];
   const clockMs = TARGET - (((countdown.days * 24 + countdown.hours) * 60 + countdown.minutes) * 60 + countdown.seconds) * 1000;
-  const todayNews = news.filter((item) => clockMs - Date.parse(item.publishedAt) <= 86_400_000).length;
+  const todayNews = news.filter((item) => {
+    const age = clockMs - Date.parse(item.publishedAt);
+    return age >= -3_600_000 && age <= 86_400_000;
+  }).length;
   const recentNews = news
-    .filter((item) => clockMs - Date.parse(item.publishedAt) <= 86_400_000)
+    .filter((item) => {
+      const age = clockMs - Date.parse(item.publishedAt);
+      return age >= -3_600_000 && age <= 86_400_000;
+    })
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
   const leadNews = recentNews[0] ?? news[0] ?? null;
   const topThemes = Array.from(news.reduce((map, item) => {

@@ -229,6 +229,12 @@ export function profileFor(hostname: string) {
   return SOURCE_PROFILES.find(({ domain }) => normalized === domain || normalized.endsWith(`.${domain}`));
 }
 
+export function profileForLabel(label: string) {
+  const clean = label.trim().toLowerCase();
+  if (!clean) return undefined;
+  return SOURCE_PROFILES.find((p) => p.label?.toLowerCase() === clean || clean.includes(p.label?.toLowerCase() ?? "") || (p.label?.toLowerCase() ?? "").includes(clean));
+}
+
 const SOURCE_COUNTRIES: Record<string, string> = {
   "el país": "España", "dw español": "Alemania", reuters: "Reino Unido", "noticias caracol": "Colombia",
   "bbc mundo": "Reino Unido", "france 24": "Francia", "cnn en español": "Estados Unidos",
@@ -579,22 +585,29 @@ function newsItemFromGoogleRssItem(item: string): CandidateNews[] {
     const url = xmlTag(item, "link");
     const sourceMatch = item.match(/<source[^>]*url="([^"]+)"[^>]*>([\s\S]*?)<\/source>/i);
     const sourceUrl = decodeXml(sourceMatch?.[1] ?? "");
-    const hostname = new URL(sourceUrl || url).hostname;
-    const profile = profileFor(hostname);
+    const sourceName = decodeXml(sourceMatch?.[2] ?? "");
+    let hostname = "";
+    try {
+      hostname = new URL(sourceUrl || url).hostname;
+    } catch {
+      hostname = "";
+    }
+    const profile = (hostname ? profileFor(hostname) : undefined) ?? profileForLabel(sourceName);
     const publishedAt = new Date(xmlTag(item, "pubDate")).toISOString();
     if (Date.parse(publishedAt) < Date.parse(CAMPAIGN_START)) return [];
+    const cleanDomain = hostname.replace(/^www\./, "");
     return [{
       id: idFor(url),
       title,
-      source: profile?.label ?? decodeXml(sourceMatch?.[2] ?? hostname),
+      source: profile?.label ?? sourceName ?? cleanDomain,
       url,
       publishedAt,
       kind: profile?.official ? "Fuente primaria" as const : "Cobertura periodística" as const,
-      scope: profile?.scope ?? "Internacional",
-      trustedSource: Boolean(profile),
-      country: profile?.country ?? (profile?.scope === "Nacional" ? "Colombia" : "Sin identificar"),
+      scope: profile?.scope ?? (cleanDomain.endsWith(".co") || /colombia/i.test(sourceName) ? "Nacional" : "Internacional"),
+      trustedSource: Boolean(profile) || Boolean(sourceName && cleanDomain && !cleanDomain.includes("google")),
+      country: profile?.country ?? (profile?.scope === "Nacional" || cleanDomain.endsWith(".co") ? "Colombia" : "Sin identificar"),
       language: "Español",
-      domain: hostname.replace(/^www\./, ""),
+      domain: cleanDomain,
     }];
   } catch { return []; }
 }
